@@ -123,8 +123,30 @@ pub impl @json.FromJson for Schema with from_json(
   guard json is Json::Object(obj) else {
     raise @json.JsonDecodeError((json_path, "Expected an object"))
   }
-  match obj.get("type") {
-    Some(String(type_str)) =>
+  match obj {
+    { "anyOf": Array(schemas), .. } =>
+      Schema::any_of(
+        schemas.map(fn(s) {
+          @json.from_json(s, path=json_path.add_key("anyOf"))
+        }),
+      )
+    { "allOf": Array(schemas), .. } =>
+      Schema::all_of(
+        schemas.map(fn(s) {
+          @json.from_json(s, path=json_path.add_key("allOf"))
+        }),
+      )
+    { "oneOf": Array(schemas), .. } =>
+      Schema::one_of(
+        schemas.map(fn(s) {
+          @json.from_json(s, path=json_path.add_key("oneOf"))
+        }),
+      )
+    { "not": schema, .. } =>
+      Schema::not(@json.from_json(schema, path=json_path.add_key("not")))
+    { "enum": Array(values), .. } => Schema::enum_values(values)
+    { "const": value, .. } => Schema::const_value(value)
+    { "type": String(type_str), .. } =>
       match type_str {
         "null" => Schema::null()
         "boolean" => Schema::boolean()
@@ -182,60 +204,8 @@ pub impl @json.FromJson for Schema with from_json(
         }
         _ => Schema::any()
       }
-    Some(Array(types)) => {
-      // Multiple types
-      let schema_types : Array[SchemaType] = []
-      for i = 0; i < types.length(); i = i + 1 {
-        match types[i] {
-          @json.String("null") => schema_types.push(Null)
-          @json.String("boolean") => schema_types.push(Boolean)
-          @json.String("string") => schema_types.push(String)
-          @json.String("number") => schema_types.push(Number)
-          @json.String("integer") => schema_types.push(Integer)
-          @json.String("array") => schema_types.push(Array)
-          @json.String("object") => schema_types.push(Object)
-          _ => ()
-        }
-      }
-      if schema_types.length() > 0 {
-        Schema::multiple(schema_types)
-      } else {
-        Schema::any()
-      }
-    }
-    // no "type" field
-    // None =>
-    //   // Check for composition keywords
-    //   match obj {
-    //     { "anyOf": Array(schemas), .. } =>
-    //       Schema::any_of(
-    //         schemas.map(fn(s) {
-    //           @json.from_json(s, path=json_path.add_key("anyOf"))
-    //         }),
-    //       )
-    //     { "allOf": Array(schemas), .. } =>
-    //       Schema::all_of(
-    //         schemas.map(fn(s) {
-    //           @json.from_json(s, path=json_path.add_key("allOf"))
-    //         }),
-    //       )
-    //     { "oneOf": Array(schemas), .. } =>
-    //       Schema::one_of(
-    //         schemas.map(fn(s) {
-    //           @json.from_json(s, path=json_path.add_key("oneOf"))
-    //         }),
-    //       )
-    //     { "not": schema, .. } =>
-    //       Schema::not(@json.from_json(schema, path=json_path.add_key("not")))
-    //     { "enum": Array(values), .. } => Schema::enum_values(values)
-    //     { "const": value, .. } => Schema::const_value(value)
-    //   }
     _ => Schema::any()
   }
-
-  // Schema::from_json(json)
-  // let out = parse_schema_object(obj)
-  // out
 }
 
 ///|

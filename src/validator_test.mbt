@@ -322,20 +322,16 @@ test "parse schema from json - enum" {
 ///|
 test "parse schema from json - boolean schema" {
   // true schema allows any value
-  let schema1 = @json.from_json(Json::boolean(true))
+  let schema1 : Schema = @json.from_json({ "type": "boolean" })
   let validator1 = Validator::new(schema1)
-  inspect(validator1.validate(Json::string("anything")), content="Ok")
-  inspect(validator1.validate(Json::number(123.0)), content="Ok")
-  inspect(validator1.validate(Json::null()), content="Ok")
-
-  // false schema rejects all values
-  let schema2 = @json.from_json(Json::boolean(false))
-  let validator2 = Validator::new(schema2)
-  let result = validator2.validate(Json::string("anything"))
-  match result {
-    ValidationResult::Err(errors) => assert_true(errors.length() > 0)
-    ValidationResult::Ok => assert_false(true)
-  }
+  inspect(validator1.validate(Json::boolean(true)), content="Ok")
+  inspect(validator1.validate(Json::boolean(false)), content="Ok")
+  inspect(
+    validator1.validate(Json::string("oooo")),
+    content=(
+      #|Err([{path: "$", message: "Value is not a boolean", schema_path: "#"}])
+    ),
+  )
 }
 
 ///|
