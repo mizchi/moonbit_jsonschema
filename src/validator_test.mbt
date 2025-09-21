@@ -202,14 +202,14 @@ test "validate any type" {
 
 ///|
 test "parse schema from json - string type" {
-  let schema_json = Json::object(
+  let schema_json : Json = Json::object(
     Map::of([
       ("type", Json::string("string")),
       ("minLength", Json::number(3.0)),
       ("maxLength", Json::number(10.0)),
     ]),
   )
-  let schema = Schema::from_json(schema_json)
+  let schema : Schema = @json.from_json(schema_json)
   let validator = Validator::new(schema)
 
   // Valid string
@@ -234,7 +234,7 @@ test "parse schema from json - number with constraints" {
       ("maximum", Json::number(100.0)),
     ]),
   )
-  let schema = Schema::from_json(schema_json)
+  let schema : Schema = @json.from_json(schema_json)
   let validator = Validator::new(schema)
 
   // Valid number
@@ -252,34 +252,23 @@ test "parse schema from json - number with constraints" {
 
 ///|
 test "parse schema from json - object with properties" {
-  let properties_map = Map::of([
-    ("name", Json::object(Map::of([("type", Json::string("string"))]))),
-    ("age", Json::object(Map::of([("type", Json::string("number"))]))),
-  ])
-  let required_array : Array[Json] = []
-  required_array.push(Json::string("name"))
-  let schema_json = Json::object(
-    Map::of([
-      ("type", Json::string("object")),
-      ("properties", Json::object(properties_map)),
-      ("required", Json::array(required_array)),
-    ]),
-  )
-  let schema = Schema::from_json(schema_json)
+  let schema : Schema = @json.from_json({
+    "type": "object",
+    "required": ["name"],
+    "properties": { "name": { "type": "string" }, "age": { "type": "number" } },
+    "required": ["name"],
+  })
   let validator = Validator::new(schema)
 
   // Valid object
-  let obj = Map::of([
-    ("name", Json::string("John")),
-    ("age", Json::number(30.0)),
-  ])
-  let result1 = validator.validate(Json::object(obj))
+  let obj : Json = { "name": "Alice", "age": 30.0 }
+  let result1 = validator.validate(obj)
   inspect(result1, content="Ok")
 
   // Missing required property
   let validator2 = Validator::new(schema)
-  let obj2 = Map::of([("age", Json::number(25.0))])
-  let result2 = validator2.validate(Json::object(obj2))
+  let obj2 : Json = { "age": 25.0 }
+  let result2 = validator2.validate(obj2)
   match result2 {
     ValidationResult::Err(errors) => assert_true(errors.length() > 0)
     ValidationResult::Ok => assert_false(true)
@@ -288,13 +277,9 @@ test "parse schema from json - object with properties" {
 
 ///|
 test "parse schema from json - anyOf" {
-  let schemas_array : Array[Json] = []
-  schemas_array.push(Json::object(Map::of([("type", Json::string("string"))])))
-  schemas_array.push(Json::object(Map::of([("type", Json::string("number"))])))
-  let schema_json = Json::object(
-    Map::of([("anyOf", Json::array(schemas_array))]),
-  )
-  let schema = Schema::from_json(schema_json)
+  let schema : Schema = @json.from_json({
+    "anyOf": [{ "type": "string" }, { "type": "number" }],
+  })
   let validator = Validator::new(schema)
 
   // Valid - string
@@ -317,12 +302,8 @@ test "parse schema from json - anyOf" {
 
 ///|
 test "parse schema from json - enum" {
-  let enum_array : Array[Json] = []
-  enum_array.push(Json::string("red"))
-  enum_array.push(Json::string("green"))
-  enum_array.push(Json::string("blue"))
-  let schema_json = Json::object(Map::of([("enum", Json::array(enum_array))]))
-  let schema = Schema::from_json(schema_json)
+  let enum_array : Json = { "enum": ["red", "green", "blue"] }
+  let schema : Schema = @json.from_json(enum_array)
   let validator = Validator::new(schema)
 
   // Valid enum value
@@ -341,14 +322,14 @@ test "parse schema from json - enum" {
 ///|
 test "parse schema from json - boolean schema" {
   // true schema allows any value
-  let schema1 = Schema::from_json(Json::boolean(true))
+  let schema1 = @json.from_json(Json::boolean(true))
   let validator1 = Validator::new(schema1)
   inspect(validator1.validate(Json::string("anything")), content="Ok")
   inspect(validator1.validate(Json::number(123.0)), content="Ok")
   inspect(validator1.validate(Json::null()), content="Ok")
 
   // false schema rejects all values
-  let schema2 = Schema::from_json(Json::boolean(false))
+  let schema2 = @json.from_json(Json::boolean(false))
   let validator2 = Validator::new(schema2)
   let result = validator2.validate(Json::string("anything"))
   match result {

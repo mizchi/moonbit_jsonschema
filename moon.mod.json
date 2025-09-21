@@ -11,6 +11,6 @@
   "keywords": [],
   "description": "",
   "warn-list": "-29",
-  "alert-list": "-24+test_import_all",
+  "alert-list": "-24-test_import_all",
   "preferred-target": "native"
 }

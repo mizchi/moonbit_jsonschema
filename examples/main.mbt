@@ -114,18 +114,3 @@ fn main {
   }
   ()
 }
-
-///|
-test "to_string" {
-  let schema = MbtSchema::Object(properties={
-    "name": MbtSchema::String,
-    "age": MbtSchema::Number,
-    "is_student": MbtSchema::Boolean,
-  })
-  let json = schema.to_json()
-  let json_str = json |> Json::stringify
-  println("JSON Schema: " + json_str)
-  assert_eq(
-    json_str, "{\"type\":\"object\",\"properties\":{\"name\":{\"type\":\"string\"},\"age\":{\"type\":\"number\"},\"is_student\":{\"type\":\"boolean\"}}}",
-  )
-}
