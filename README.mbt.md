@@ -1,1 +1,0 @@
-# mizchi/mbt_jsonschema

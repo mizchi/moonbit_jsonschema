@@ -1,6 +1,10 @@
 {
   "is-main": true,
   "import": [
+    {
+      "path": "../src",
+      "alias": "jsonschema"
+    },
     "moonbitlang/x/json5",
     "moonbitlang/x/sys",
     "moonbitlang/async",

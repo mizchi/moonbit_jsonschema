@@ -1,1 +1,37 @@
-README.mbt.md
+- [x] type: any
+- [x] type: null
+- [x] type: number
+  - [x] minimum
+  - [x] maximum
+  - [ ] exclusiveMinimum
+  - [ ] exclusiveMaximum
+- [x] type: integer
+  - [x] minimum
+  - [x] maximum
+  - [ ] exclusiveMinimum
+  - [ ] exclusiveMaximum
+- [x] type: string
+  - [x] minLength
+  - [x] maxLength
+  - [x] enum
+- [x] type: boolean
+- [x] type: array
+  - [x] items
+  - [x] minItems
+  - [x] maxItems
+  - [ ] uniqueItems
+  - [ ] prefixItems
+  - [ ] contains
+  - [ ] minContains
+  - [ ] maxContains
+- [x] type: object
+  - [x] properties
+  - [x] `additionalProperties: true`
+  - [x] `additionalProperties: false`
+  - [ ] `additionalProperties: { "type": "..." }`
+- [ ] anyOf
+- [ ] allOf
+- [ ] oneOf
+- [ ] `not: ...`
+- [ ] `$ref:`
+- [ ] `if`

@@ -1,119 +1,155 @@
 // JSON Schema types and definitions
 // Using built-in @json.JsonValue instead of custom JsonValue type
-
-///|
-pub enum SchemaType {
-  Null
-  Boolean
-  Number
-  Integer
-  String
-  Array
-  Object
-} derive(Show)
-
 // Schema as enum for context-aware validation
 
 ///|
 pub enum Schema {
-  // Basic types
+  Any
   Null
   Boolean
-  String(StringConstraints)
-  Number(NumberConstraints)
-  Integer(NumberConstraints)
-  Array(ArrayConstraints)
-  Object(ObjectConstraints)
-
-  // Composite schemas
-  EnumValues(Array[Json])
-  ConstValue(Json)
-  AnyOfSchemas(Array[Schema])
-  AllOfSchemas(Array[Schema])
-  OneOfSchemas(Array[Schema])
-  NotSchema(Schema)
-
-  // Reference
+  String(
+    minLength~ : Int?,
+    maxLength~ : Int?,
+    pattern~ : String?,
+    format~ : String?,
+    enum_~ : Array[String]?,
+    contentEncoding~ : String?,
+    contentMediaType~ : String?
+  )
+  Number(
+    minimum~ : Double?,
+    maximum~ : Double?,
+    exclusiveMinimum~ : Double?,
+    exclusiveMaximum~ : Double?,
+    multipleOf~ : Double?
+  )
+  Integer(
+    minimum~ : Int?,
+    maximum~ : Int?,
+    exclusiveMinimum~ : Int?,
+    exclusiveMaximum~ : Int?,
+    multipleOf~ : Int?
+  )
+  Array(
+    items~ : Schema?,
+    prefixItems~ : Array[Schema]?,
+    contains~ : Schema?,
+    minContains~ : Int?,
+    maxContains~ : Int?,
+    minItems~ : Int?,
+    maxItems~ : Int?,
+    uniqueItems~ : Bool?
+  )
+  Object(
+    properties~ : Map[String, Schema]?,
+    required~ : Array[String]?,
+    additionalProperties~ : Json?,
+    patternProperties~ : Map[String, Schema]?,
+    propertyNames~ : Schema?,
+    dependentSchemas~ : Map[String, Schema]?,
+    dependentRequired~ : Map[String, Array[String]]?,
+    minProperties~ : Int?,
+    maxProperties~ : Int?
+  )
+  Enum(Array[Json])
+  Const(Json)
+  AnyOf(Array[Schema])
+  AllOf(Array[Schema])
+  OneOf(Array[Schema])
+  Not(Schema)
   Ref(String)
-
-  // Conditional
   If(Schema, Schema?, Schema?) // if, then, else
-
-  // Generic schema with multiple types
-  Multiple(Array[SchemaType])
-
-  // Any type allowed
-  Any
 } derive(Show)
 
 ///|
-impl ToJson for Schema with to_json(self) -> Json {
+pub impl ToJson for Schema with to_json(self) -> Json {
   match self {
-    Schema::String(constraints) => {
+    Schema::String(
+      minLength~,
+      maxLength~,
+      pattern~,
+      format~,
+      contentEncoding~,
+      contentMediaType~,
+      enum_~
+    ) => {
       let json : Map[String, Json] = { "type": "string" }
-      if constraints.min_length is Some(v) {
-        json.set("minLength", v.to_json())
+      if minLength is Some(value) {
+        json["minLength"] = value.to_json()
       }
-      if constraints.max_length is Some(v) {
-        json.set("maxLength", v.to_json())
+      if maxLength is Some(value) {
+        json["maxLength"] = value.to_json()
       }
-      if constraints.pattern is Some(v) {
-        json.set("pattern", v.to_json())
+      if pattern is Some(value) {
+        json["pattern"] = value.to_json()
       }
-      if constraints.format is Some(v) {
-        json.set("format", v.to_json())
+      if format is Some(value) {
+        json["format"] = value.to_json()
       }
-      if constraints.content_encoding is Some(v) {
-        json.set("contentEncoding", v.to_json())
+      if contentEncoding is Some(value) {
+        json["contentEncoding"] = value.to_json()
       }
-      if constraints.content_media_type is Some(v) {
-        json.set("contentMediaType", v.to_json())
+      if contentMediaType is Some(value) {
+        json["contentMediaType"] = value.to_json()
+      }
+      if enum_ is Some(values) {
+        json["enum"] = values.to_json()
       }
       json.to_json()
     }
-    Schema::Number(constraints) => {
+    Schema::Number(
+      minimum~,
+      maximum~,
+      exclusiveMinimum~,
+      exclusiveMaximum~,
+      multipleOf~
+    ) => {
       let json : Map[String, Json] = { "type": "number" }
-      if constraints.minimum is Some(v) {
-        json.set("minimum", v.to_json())
+      if minimum is Some(value) {
+        json["minimum"] = value.to_json()
       }
-      if constraints.maximum is Some(v) {
-        json.set("maximum", v.to_json())
+      if maximum is Some(value) {
+        json["maximum"] = value.to_json()
       }
-      if constraints.exclusive_minimum is Some(v) {
-        json.set("exclusiveMinimum", v.to_json())
+      if exclusiveMinimum is Some(value) {
+        json["exclusiveMinimum"] = value.to_json()
       }
-      if constraints.exclusive_maximum is Some(v) {
-        json.set("exclusiveMaximum", v.to_json())
+      if exclusiveMaximum is Some(value) {
+        json["exclusiveMaximum"] = value.to_json()
       }
-      if constraints.multiple_of is Some(v) {
-        json.set("multipleOf", v.to_json())
+      if multipleOf is Some(value) {
+        json["multipleOf"] = value.to_json()
       }
       json.to_json()
     }
-    Schema::Integer(constraints) => {
+    Schema::Integer(
+      minimum~,
+      maximum~,
+      exclusiveMinimum~,
+      exclusiveMaximum~,
+      multipleOf~
+    ) => {
       let json : Map[String, Json] = { "type": "integer" }
-      if constraints.minimum is Some(v) {
-        json.set("minimum", v.to_json())
+      if minimum is Some(value) {
+        json["minimum"] = value.to_json()
       }
-      if constraints.maximum is Some(v) {
-        json.set("maximum", v.to_json())
+      if maximum is Some(value) {
+        json["maximum"] = value.to_json()
       }
-      if constraints.exclusive_minimum is Some(v) {
-        json.set("exclusiveMinimum", v.to_json())
+      if exclusiveMinimum is Some(value) {
+        json["exclusiveMinimum"] = value.to_json()
       }
-      if constraints.exclusive_maximum is Some(v) {
-        json.set("exclusiveMaximum", v.to_json())
+      if exclusiveMaximum is Some(value) {
+        json["exclusiveMaximum"] = value.to_json()
       }
-      if constraints.multiple_of is Some(v) {
-        json.set("multipleOf", v.to_json())
+      if multipleOf is Some(value) {
+        json["multipleOf"] = value.to_json()
       }
       json.to_json()
     }
     _ => { "type": "unknown" }
   }
 }
-
-// ///|
 
 ///|
 pub impl @json.FromJson for Schema with from_json(
@@ -124,619 +160,319 @@ pub impl @json.FromJson for Schema with from_json(
     raise @json.JsonDecodeError((json_path, "Expected an object"))
   }
   match obj {
+    { "type": "null", .. } => Schema::Null
+    { "type": "boolean", .. } => Schema::Boolean
+    { "type": "string", .. } => {
+      let minLength = match obj.get("minLength") {
+        Some(@json.Number(n, ..)) => Some(n.to_int())
+        _ => None
+      }
+      let maxLength = match obj.get("maxLength") {
+        Some(@json.Number(n, ..)) => Some(n.to_int())
+        _ => None
+      }
+      let pattern = match obj.get("pattern") {
+        Some(@json.String(p)) => Some(p)
+        _ => None
+      }
+      let format = match obj.get("format") {
+        Some(@json.String(f)) => Some(f)
+        _ => None
+      }
+      let enum_ = match obj.get("enum") {
+        Some(@json.Array(arr)) => {
+          let enum_values : Array[String] = []
+          for i in arr {
+            match i {
+              @json.String(s) => enum_values.push(s)
+              _ => ()
+            }
+          }
+          Some(enum_values)
+        }
+        _ => None
+      }
+      Schema::String(
+        minLength~,
+        maxLength~,
+        pattern~,
+        enum_~,
+        format~,
+        contentEncoding=None,
+        contentMediaType=None,
+      )
+    }
+    { "type": "number", .. } => {
+      let minimum = match obj.get("minimum") {
+        Some(@json.Number(n, ..)) => Some(n)
+        _ => None
+      }
+      let maximum = match obj.get("maximum") {
+        Some(@json.Number(n, ..)) => Some(n)
+        _ => None
+      }
+      let exclusiveMinimum = match obj.get("exclusiveMinimum") {
+        Some(@json.Number(n, ..)) => Some(n)
+        _ => None
+      }
+      let exclusiveMaximum = match obj.get("exclusiveMaximum") {
+        Some(@json.Number(n, ..)) => Some(n)
+        _ => None
+      }
+      let multipleOf = match obj.get("multipleOf") {
+        Some(@json.Number(n, ..)) => Some(n)
+        _ => None
+      }
+      Schema::Number(
+        minimum~,
+        maximum~,
+        exclusiveMinimum~,
+        exclusiveMaximum~,
+        multipleOf~,
+      )
+    }
+    { "type": "integer", .. } => {
+      let minimum = match obj.get("minimum") {
+        Some(@json.Number(n, ..)) => n.to_int() |> Some
+        _ => None
+      }
+      let maximum = match obj.get("maximum") {
+        Some(@json.Number(n, ..)) => n.to_int() |> Some
+        _ => None
+      }
+      let exclusiveMinimum = match obj.get("exclusiveMinimum") {
+        Some(@json.Number(n, ..)) => n.to_int() |> Some
+        _ => None
+      }
+      let exclusiveMaximum = match obj.get("exclusiveMaximum") {
+        Some(@json.Number(n, ..)) => n.to_int() |> Some
+        _ => None
+      }
+      let multipleOf = match obj.get("multipleOf") {
+        Some(@json.Number(n, ..)) => n.to_int() |> Some
+        _ => None
+      }
+      Schema::Integer(
+        minimum~,
+        maximum~,
+        exclusiveMinimum~,
+        exclusiveMaximum~,
+        multipleOf~,
+      )
+    }
+    { "type": "array", .. } => {
+      let items = match obj.get("items") {
+        Some(item_schema) =>
+          Some(Schema::from_json(item_schema, json_path.add_key("items")))
+        None => None
+      }
+      let minItems = match obj.get("minItems") {
+        Some(@json.Number(n, ..)) => Some(n.to_int())
+        _ => None
+      }
+      let maxItems = match obj.get("maxItems") {
+        Some(@json.Number(n, ..)) => Some(n.to_int())
+        _ => None
+      }
+      let uniqueItems = match obj.get("uniqueItems") {
+        Some(@json.True) => Some(true)
+        Some(@json.False) => Some(false)
+        _ => None
+      }
+      Schema::Array(
+        items~,
+        minItems~,
+        maxItems~,
+        uniqueItems~,
+        prefixItems=None,
+        contains=None,
+        minContains=None,
+        maxContains=None,
+      )
+    }
+    { "type": "object", .. } => {
+      let properties = match obj.get("properties") {
+        Some(@json.Object(props_obj)) => {
+          let props_map : Map[String, Schema] = {}
+          for k, v in props_obj {
+            props_map.set(k, Schema::from_json(v, json_path.add_key(k)))
+          }
+          Some(props_map)
+        }
+        _ => None
+      }
+      let required = match obj.get("required") {
+        Some(@json.Array(req_array)) => {
+          let req_props : Array[String] = []
+          for i = 0; i < req_array.length(); i = i + 1 {
+            match req_array[i] {
+              @json.String(prop) => req_props.push(prop)
+              _ => ()
+            }
+          }
+          Some(req_props)
+        }
+        _ => None
+      }
+      Schema::Object(
+        properties~,
+        required~,
+        additionalProperties=None,
+        patternProperties=None,
+        propertyNames=None,
+        dependentSchemas=None,
+        dependentRequired=None,
+        minProperties=None,
+        maxProperties=None,
+      )
+    }
     { "anyOf": Array(schemas), .. } =>
-      Schema::any_of(
+      Schema::AnyOf(
         schemas.map(fn(s) {
           @json.from_json(s, path=json_path.add_key("anyOf"))
         }),
       )
     { "allOf": Array(schemas), .. } =>
-      Schema::all_of(
+      Schema::AllOf(
         schemas.map(fn(s) {
           @json.from_json(s, path=json_path.add_key("allOf"))
         }),
       )
     { "oneOf": Array(schemas), .. } =>
-      Schema::one_of(
+      Schema::OneOf(
         schemas.map(fn(s) {
           @json.from_json(s, path=json_path.add_key("oneOf"))
         }),
       )
     { "not": schema, .. } =>
-      Schema::not(@json.from_json(schema, path=json_path.add_key("not")))
-    { "enum": Array(values), .. } => Schema::enum_values(values)
-    { "const": value, .. } => Schema::const_value(value)
-    { "type": String(type_str), .. } =>
-      match type_str {
-        "null" => Schema::null()
-        "boolean" => Schema::boolean()
-        "string" => parse_string_schema(obj)
-        "number" => parse_number_schema(obj)
-        "integer" => parse_integer_schema(obj)
-        "array" => {
-          let child = match obj.get("items") {
-            Some(item_schema) =>
-              Some(Schema::from_json(item_schema, json_path.add_key("items")))
-            None => None
-          }
-          let min_items = match obj.get("minItems") {
-            Some(@json.Number(n, ..)) => Some(n.to_int())
-            _ => None
-          }
-          let max_items = match obj.get("maxItems") {
-            Some(@json.Number(n, ..)) => Some(n.to_int())
-            _ => None
-          }
-          let unique_items = match obj.get("uniqueItems") {
-            Some(@json.True) => Some(true)
-            Some(@json.False) => Some(false)
-            _ => None
-          }
-          Schema::array_with_constraints(
-            child, min_items, max_items, unique_items,
-          )
-        }
-        "object" => {
-          let properties = match obj.get("properties") {
-            Some(@json.Object(props_obj)) => {
-              let props_map : Map[String, Schema] = {}
-              for k, v in props_obj {
-                props_map.set(k, Schema::from_json(v, json_path.add_key(k)))
-              }
-              Some(props_map)
-            }
-            _ => None
-          }
-          let required = match obj.get("required") {
-            Some(@json.Array(req_array)) => {
-              let req_props : Array[String] = []
-              for i = 0; i < req_array.length(); i = i + 1 {
-                match req_array[i] {
-                  @json.String(prop) => req_props.push(prop)
-                  _ => ()
-                }
-              }
-              Some(req_props)
-            }
-            _ => None
-          }
-          Schema::object(properties, required)
-        }
-        _ => Schema::any()
-      }
-    _ => Schema::any()
+      Schema::Not(@json.from_json(schema, path=json_path.add_key("not")))
+    { "enum": Array(values), .. } => Schema::Enum(values)
+    { "const": value, .. } => Schema::Const(value)
+    _ => Schema::Any
   }
 }
 
-///|
-pub struct StringConstraints {
-  min_length : Int?
-  max_length : Int?
-  pattern : String?
-  format : String?
-  content_encoding : String?
-  content_media_type : String?
-} derive(Show)
+// builder
 
 ///|
-impl @json.FromJson for StringConstraints with from_json(
-  json : Json,
-  json_path : @json.JsonPath,
-) -> StringConstraints raise {
-  guard json is Json::Object(obj) else {
-    raise @json.JsonDecodeError((json_path, "Expected an object"))
-  }
-  let min_length = match obj.get("minLength") {
-    Some(@json.Number(n, ..)) => Some(n.to_int())
-    _ => None
-  }
-  let max_length = match obj.get("maxLength") {
-    Some(@json.Number(n, ..)) => Some(n.to_int())
-    _ => None
-  }
-  let pattern = match obj.get("pattern") {
-    Some(@json.String(p)) => Some(p)
-    _ => None
-  }
-  let format = match obj.get("format") {
-    Some(@json.String(f)) => Some(f)
-    _ => None
-  }
-  let content_encoding = match obj.get("contentEncoding") {
-    Some(@json.String(e)) => Some(e)
-    _ => None
-  }
-  let content_media_type = match obj.get("contentMediaType") {
-    Some(@json.String(m)) => Some(m)
-    _ => None
-  }
-  StringConstraints::{
-    min_length,
-    max_length,
-    pattern,
-    format,
-    content_encoding,
-    content_media_type,
-  }
-}
-
-///|
-pub struct NumberConstraints {
-  minimum : Double?
-  maximum : Double?
-  exclusive_minimum : Double?
-  exclusive_maximum : Double?
-  multiple_of : Double?
-} derive(Show)
-
-///|
-pub struct ArrayConstraints {
-  items : Schema?
-  prefix_items : Array[Schema]?
-  contains : Schema?
-  min_contains : Int?
-  max_contains : Int?
-  min_items : Int?
-  max_items : Int?
-  unique_items : Bool?
-} derive(Show)
-
-///|
-pub struct ObjectConstraints {
-  properties : Map[String, Schema]?
-  required : Array[String]?
-  additional_properties : Schema?
-  pattern_properties : Map[String, Schema]?
-  property_names : Schema?
-  dependent_schemas : Map[String, Schema]?
-  dependent_required : Map[String, Array[String]]?
-  min_properties : Int?
-  max_properties : Int?
-} derive(Show)
-
-// Helper constructors
-
-///|
-pub fn Schema::string() -> Schema {
-  String(StringConstraints::{
-    min_length: None,
-    max_length: None,
-    pattern: None,
-    format: None,
-    content_encoding: None,
-    content_media_type: None,
-  })
-}
-
-///|
-pub fn Schema::string_with_constraints(
-  min_length : Int?,
-  max_length : Int?,
-  pattern : String?,
-  format : String?,
+pub fn Schema::string(
+  minLength? : Int,
+  maxLength? : Int,
+  pattern? : String,
+  format? : String,
+  enum_? : Array[String],
+  contentEncoding? : String,
+  contentMediaType? : String,
 ) -> Schema {
-  String(StringConstraints::{
-    min_length,
-    max_length,
-    pattern,
-    format,
-    content_encoding: None,
-    content_media_type: None,
-  })
-}
-
-///|
-pub fn Schema::number() -> Schema {
-  Number(NumberConstraints::{
-    minimum: None,
-    maximum: None,
-    exclusive_minimum: None,
-    exclusive_maximum: None,
-    multiple_of: None,
-  })
-}
-
-///|
-pub fn Schema::number_with_constraints(
-  minimum : Double?,
-  maximum : Double?,
-  exclusive_minimum : Double?,
-  exclusive_maximum : Double?,
-  multiple_of : Double?,
-) -> Schema {
-  Number(NumberConstraints::{
-    minimum,
-    maximum,
-    exclusive_minimum,
-    exclusive_maximum,
-    multiple_of,
-  })
-}
-
-///|
-pub fn Schema::integer() -> Schema {
-  Integer(NumberConstraints::{
-    minimum: None,
-    maximum: None,
-    exclusive_minimum: None,
-    exclusive_maximum: None,
-    multiple_of: None,
-  })
-}
-
-///|
-pub fn Schema::array(items : Schema?) -> Schema {
-  Array(ArrayConstraints::{
-    items,
-    prefix_items: None,
-    contains: None,
-    min_contains: None,
-    max_contains: None,
-    min_items: None,
-    max_items: None,
-    unique_items: None,
-  })
-}
-
-///|
-pub fn Schema::array_with_constraints(
-  items : Schema?,
-  min_items : Int?,
-  max_items : Int?,
-  unique_items : Bool?,
-) -> Schema {
-  Array(ArrayConstraints::{
-    items,
-    prefix_items: None,
-    contains: None,
-    min_contains: None,
-    max_contains: None,
-    min_items,
-    max_items,
-    unique_items,
-  })
-}
-
-///|
-pub fn Schema::object(
-  properties : Map[String, Schema]?,
-  required : Array[String]?,
-) -> Schema {
-  Object(ObjectConstraints::{
-    properties,
-    required,
-    additional_properties: None,
-    pattern_properties: None,
-    property_names: None,
-    dependent_schemas: None,
-    dependent_required: None,
-    min_properties: None,
-    max_properties: None,
-  })
-}
-
-///|
-pub fn Schema::enum_values(values : Array[Json]) -> Schema {
-  EnumValues(values)
-}
-
-///|
-pub fn Schema::any_of(schemas : Array[Schema]) -> Schema {
-  AnyOfSchemas(schemas)
-}
-
-///|
-pub fn Schema::all_of(schemas : Array[Schema]) -> Schema {
-  AllOfSchemas(schemas)
-}
-
-///|
-pub fn Schema::one_of(schemas : Array[Schema]) -> Schema {
-  OneOfSchemas(schemas)
-}
-
-///|
-pub fn Schema::not(schema : Schema) -> Schema {
-  NotSchema(schema)
-}
-
-///|
-pub fn Schema::null() -> Schema {
-  Null
-}
-
-///|
-pub fn Schema::boolean() -> Schema {
-  Boolean
-}
-
-///|
-pub fn Schema::const_value(value : Json) -> Schema {
-  ConstValue(value)
-}
-
-///|
-pub fn Schema::reference(ref_path : String) -> Schema {
-  Ref(ref_path)
-}
-
-///|
-pub fn Schema::if_then_else(
-  if_schema : Schema,
-  then_schema : Schema?,
-  else_schema : Schema?,
-) -> Schema {
-  If(if_schema, then_schema, else_schema)
-}
-
-///|
-pub fn Schema::multiple(types : Array[SchemaType]) -> Schema {
-  Multiple(types)
-}
-
-///|
-pub fn Schema::any() -> Schema {
-  Any
-}
-
-// Parse JSON Schema from JSON object
-
-///|
-// pub fn Schema::from_json(json : Json) -> Schema {
-//   match json {
-//     @json.Object(obj) => parse_schema_object(obj)
-//     @json.True => Schema::any() // true schema allows any value
-//     @json.False => Schema::not(Schema::any()) // false schema rejects all values
-//     _ => Schema::any() // Invalid schema defaults to any
-//   }
-// }
-
-// impl @json.FromJson for Schema with from_json(json, json_path) -> Schema raise {
-//   match json {
-//     @json.Object(obj) => parse_schema_object(obj)
-//     @json.True => Schema::any() // true schema allows any value
-//     @json.False => Schema::not(Schema::any()) // false schema rejects all values
-//     _ => Schema::any() // Invalid schema defaults to any
-//   }
-// }
-
-///|
-// fn parse_schema_object(obj : Map[String, Json]) -> Schema {
-//   // Check for type field
-//   match obj.get("type") {
-//     Some(@json.String(type_str)) =>
-//       match type_str {
-//         "null" => Schema::null()
-//         "boolean" => Schema::boolean()
-//         "string" => parse_string_schema(obj)
-//         "number" => parse_number_schema(obj)
-//         "integer" => parse_integer_schema(obj)
-//         "array" => parse_array_schema(obj)
-//         "object" => parse_object_schema(obj)
-//         _ => Schema::any()
-//       }
-//     Some(@json.Array(types)) => {
-//       // Multiple types
-//       let schema_types : Array[SchemaType] = []
-//       for i = 0; i < types.length(); i = i + 1 {
-//         match types[i] {
-//           @json.String("null") => schema_types.push(Null)
-//           @json.String("boolean") => schema_types.push(Boolean)
-//           @json.String("string") => schema_types.push(String)
-//           @json.String("number") => schema_types.push(Number)
-//           @json.String("integer") => schema_types.push(Integer)
-//           @json.String("array") => schema_types.push(Array)
-//           @json.String("object") => schema_types.push(Object)
-//           _ => ()
-//         }
-//       }
-//       if schema_types.length() > 0 {
-//         Schema::multiple(schema_types)
-//       } else {
-//         Schema::any()
-//       }
-//     }
-//     None =>
-//       // Check for composition keywords
-//       match obj.get("anyOf") {
-//         Some(@json.Array(schemas)) => {
-//           let parsed_schemas : Array[Json] = []
-//           for i in schemas {
-//             parsed_schemas.push(i)
-//           }
-//           // for i = 0; i < schemas.length(); i = i + 1 {
-//           //   let json : Schema = schemas[i].to_json()
-//           //   parsed_schemas.push(Schema::from_json(schemas[i]))
-//           // }
-//           // parsed_schemas
-
-//           Schema::any_of(parsed_schemas)
-//         }
-//         _ =>
-//           match obj.get("allOf") {
-//             Some(@json.Array(schemas)) => {
-//               let parsed_schemas : Array[Schema] = []
-//               for i = 0; i < schemas.length(); i = i + 1 {
-//                 parsed_schemas.push(Schema::from_json(schemas[i]))
-//               }
-//               Schema::all_of(parsed_schemas)
-//             }
-//             _ =>
-//               match obj.get("oneOf") {
-//                 Some(@json.Array(schemas)) => {
-//                   let parsed_schemas : Array[Schema] = []
-//                   for i = 0; i < schemas.length(); i = i + 1 {
-//                     parsed_schemas.push(Schema::from_json(schemas[i]))
-//                   }
-//                   Schema::one_of(parsed_schemas)
-//                 }
-//                 _ =>
-//                   match obj.get("not") {
-//                     Some(schema) => Schema::not(Schema::from_json(schema))
-//                     _ =>
-//                       match obj.get("enum") {
-//                         Some(@json.Array(values)) => Schema::enum_values(values)
-//                         _ =>
-//                           match obj.get("const") {
-//                             Some(value) => Schema::const_value(value)
-//                             _ => Schema::any()
-//                           }
-//                       }
-//                   }
-//               }
-//           }
-//       }
-//     _ => Schema::any()
-//   }
-// }
-
-///|
-fn parse_string_schema(obj : Map[String, Json]) -> Schema {
-  let min_length = match obj.get("minLength") {
-    Some(@json.Number(n, ..)) => Some(n.to_int())
-    _ => None
-  }
-  let max_length = match obj.get("maxLength") {
-    Some(@json.Number(n, ..)) => Some(n.to_int())
-    _ => None
-  }
-  let pattern = match obj.get("pattern") {
-    Some(@json.String(p)) => Some(p)
-    _ => None
-  }
-  let format = match obj.get("format") {
-    Some(@json.String(f)) => Some(f)
-    _ => None
-  }
-  Schema::string_with_constraints(min_length, max_length, pattern, format)
-}
-
-///|
-fn parse_number_schema(obj : Map[String, Json]) -> Schema {
-  let minimum = match obj.get("minimum") {
-    Some(@json.Number(n, ..)) => Some(n)
-    _ => None
-  }
-  let maximum = match obj.get("maximum") {
-    Some(@json.Number(n, ..)) => Some(n)
-    _ => None
-  }
-  let exclusive_minimum = match obj.get("exclusiveMinimum") {
-    Some(@json.Number(n, ..)) => Some(n)
-    _ => None
-  }
-  let exclusive_maximum = match obj.get("exclusiveMaximum") {
-    Some(@json.Number(n, ..)) => Some(n)
-    _ => None
-  }
-  let multiple_of = match obj.get("multipleOf") {
-    Some(@json.Number(n, ..)) => Some(n)
-    _ => None
-  }
-  Schema::number_with_constraints(
-    minimum, maximum, exclusive_minimum, exclusive_maximum, multiple_of,
+  Schema::String(
+    minLength~,
+    maxLength~,
+    pattern~,
+    format~,
+    enum_~,
+    contentEncoding~,
+    contentMediaType~,
   )
 }
 
 ///|
-fn parse_integer_schema(obj : Map[String, Json]) -> Schema {
-  let minimum = match obj.get("minimum") {
-    Some(@json.Number(n, ..)) => Some(n)
-    _ => None
-  }
-  let maximum = match obj.get("maximum") {
-    Some(@json.Number(n, ..)) => Some(n)
-    _ => None
-  }
-  let exclusive_minimum = match obj.get("exclusiveMinimum") {
-    Some(@json.Number(n, ..)) => Some(n)
-    _ => None
-  }
-  let exclusive_maximum = match obj.get("exclusiveMaximum") {
-    Some(@json.Number(n, ..)) => Some(n)
-    _ => None
-  }
-  let multiple_of = match obj.get("multipleOf") {
-    Some(@json.Number(n, ..)) => Some(n)
-    _ => None
-  }
-  Integer(NumberConstraints::{
-    minimum,
-    maximum,
-    exclusive_minimum,
-    exclusive_maximum,
-    multiple_of,
-  })
+pub fn Schema::number(
+  minimum? : Double,
+  maximum? : Double,
+  exclusiveMinimum? : Double,
+  exclusiveMaximum? : Double,
+  multipleOf? : Double,
+) -> Schema {
+  Schema::Number(
+    minimum~,
+    maximum~,
+    exclusiveMinimum~,
+    exclusiveMaximum~,
+    multipleOf~,
+  )
 }
 
 ///|
-// fn parse_array_schema(obj : Map[String, Json]) -> Schema {
-//   let items = match obj.get("items") {
-//     Some(item_schema) => Some(Schema::from_json(item_schema))
-//     None => None
-//   }
-//   let min_items = match obj.get("minItems") {
-//     Some(@json.Number(n, ..)) => Some(n.to_int())
-//     _ => None
-//   }
-//   let max_items = match obj.get("maxItems") {
-//     Some(@json.Number(n, ..)) => Some(n.to_int())
-//     _ => None
-//   }
-//   let unique_items = match obj.get("uniqueItems") {
-//     Some(@json.True) => Some(true)
-//     Some(@json.False) => Some(false)
-//     _ => None
-//   }
-//   Schema::array_with_constraints(items, min_items, max_items, unique_items)
-// }
-
-// ///|
-// fn parse_object_schema(obj : Map[String, Json]) -> Schema {
-//   let properties = match obj.get("properties") {
-//     Some(@json.Object(props_obj)) => {
-//       let props_map : Map[String, Schema] = Map::new()
-//       props_obj.each(fn(key, value) {
-//         props_map.set(key, Schema::from_json(value))
-//       })
-//       Some(props_map)
-//     }
-//     _ => None
-//   }
-//   let required = match obj.get("required") {
-//     Some(@json.Array(req_array)) => {
-//       let req_props : Array[String] = []
-//       for i = 0; i < req_array.length(); i = i + 1 {
-//         match req_array[i] {
-//           @json.String(prop) => req_props.push(prop)
-//           _ => ()
-//         }
-//       }
-//       Some(req_props)
-//     }
-//     _ => None
-//   }
-//   Schema::object(properties, required)
-// }
-
-///|
-pub struct ValidationError {
-  path : String
-  message : String
-  schema_path : String
-} derive(Show)
-
-///|
-pub fn ValidationError::new(
-  path : String,
-  message : String,
-  schema_path : String,
-) -> ValidationError {
-  ValidationError::{ path, message, schema_path }
+pub fn Schema::integer(
+  minimum? : Int,
+  maximum? : Int,
+  exclusiveMinimum? : Int,
+  exclusiveMaximum? : Int,
+  multipleOf? : Int,
+) -> Schema {
+  Schema::Integer(
+    minimum~,
+    maximum~,
+    exclusiveMinimum~,
+    exclusiveMaximum~,
+    multipleOf~,
+  )
 }
 
 ///|
-pub enum ValidationResult {
-  Ok
-  Err(Array[ValidationError])
-} derive(Show)
+pub fn Schema::array(
+  items? : Schema,
+  prefixItems? : Array[Schema],
+  contains? : Schema,
+  minContains? : Int,
+  maxContains? : Int,
+  minItems? : Int,
+  maxItems? : Int,
+  uniqueItems? : Bool,
+) -> Schema {
+  Schema::Array(
+    items~,
+    prefixItems~,
+    contains~,
+    minContains~,
+    maxContains~,
+    minItems~,
+    maxItems~,
+    uniqueItems~,
+  )
+}
+
+///|
+pub fn Schema::null() -> Schema {
+  Schema::Null
+}
+
+///|
+pub fn Schema::boolean() -> Schema {
+  Schema::Boolean
+}
+
+///|
+pub fn Schema::any() -> Schema {
+  Schema::Any
+}
+
+///|
+pub fn Schema::object(
+  properties? : Map[String, Schema],
+  required? : Array[String],
+  additionalProperties? : Json,
+  patternProperties? : Map[String, Schema],
+  propertyNames? : Schema,
+  dependentSchemas? : Map[String, Schema],
+  dependentRequired? : Map[String, Array[String]],
+  minProperties? : Int,
+  maxProperties? : Int,
+) -> Schema {
+  Schema::Object(
+    properties~,
+    required~,
+    additionalProperties~,
+    patternProperties~,
+    propertyNames~,
+    dependentSchemas~,
+    dependentRequired~,
+    minProperties~,
+    maxProperties~,
+  )
+}
+
+///|
+pub fn Schema::enum_(values : Array[Json]) -> Schema {
+  Schema::Enum(values)
+}
