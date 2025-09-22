@@ -6,6 +6,7 @@
   "license": "MIT",
   "keywords": [],
   "description": "",
+  "source": "src",
   "warn-list": "-29-28-6",
   "alert-list": "-24-test_import_all-28",
   "preferred-target": "wasm-gc"
