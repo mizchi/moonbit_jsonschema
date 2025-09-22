@@ -7,7 +7,6 @@
   "keywords": [],
   "description": "",
   "warn-list": "-29-28-6",
-  "source": "src",
   "alert-list": "-24-test_import_all-28",
   "preferred-target": "wasm-gc"
 }
