@@ -361,7 +361,7 @@ test "validate $ref" {
     "definitions": { "PositiveInteger": { "type": "integer", "minimum": 0 } },
     "$ref": "#/definitions/PositiveInteger",
   }
-  let validator = Validator::compile(raw_schema)
+  let validator = Validator::from_json(raw_schema)
   validator.validate(5) |> assert_ok
   validator.validate("err").unwrap_err()
   |> inspect(
@@ -384,7 +384,7 @@ test "validate $ref in array" {
     "type": "array",
     "items": { "$ref": "#/definitions/Point" },
   }
-  let validator = Validator::compile(raw_schema)
+  let validator = Validator::from_json(raw_schema)
   validator.validate([{ "x": 1, "y": 2 }]) |> assert_ok
   validator.validate([{ "x": "err", "y": 2 }]).unwrap_err()
   |> inspect(
@@ -411,11 +411,52 @@ test "validate $ref in object" {
       "p2": { "$ref": "#/definitions/Point" },
     },
   }
-  let validator = Validator::compile(raw_schema)
+  let validator = Validator::from_json(raw_schema)
   validator
   .validate({ "p1": { "x": 1, "y": 2 }, "p2": { "x": 3, "y": 4 } })
   .unwrap()
   |> inspect(content="()")
+  validator
+  .validate({ "p1": { "x": 1, "y": 2 }, "p3": { "x": 3, "y": 4 } })
+  .unwrap_err()
+  |> inspect(
+    content=(
+      #|[{input: Object({"p1": Object({"x": Number(1), "y": Number(2)}), "p3": Object({"x": Number(3), "y": Number(4)})}), json_path: #/p2, schema_path: #/required, message: "Required property 'p2' is missing", children: None}, {input: Object({"p1": Object({"x": Number(1), "y": Number(2)}), "p3": Object({"x": Number(3), "y": Number(4)})}), json_path: #/p3, schema_path: #/additionalProperties, message: "Additional property '{\"p3\"}' is not allowed", children: None}]
+    ),
+  )
+}
+
+///|
+test "validate by schema builder" {
+  let schema = JsonSchema::object(properties={ "v": JsonSchema::string() }, required=[
+    "v",
+  ])
+  schema.validate({ "v": "test" }) |> assert_ok
+}
+
+///|
+test "validate by schema builder with custome resolver" {
+  let schema = JsonSchema::object(
+    properties={
+      "p1": JsonSchema::ref_("#/definitions/Point"),
+      "p2": JsonSchema::ref_("#/definitions/Point"),
+    },
+    required=["p1", "p2"],
+  )
+  let validator = Validator::with_resolver(schema, fn(_p) {
+    if _p == "#/definitions/Point" {
+      Some(
+        JsonSchema::object(
+          properties={ "x": JsonSchema::integer(), "y": JsonSchema::integer() },
+          required=["x", "y"],
+        ),
+      )
+    } else {
+      None
+    }
+  })
+  validator.validate({ "p1": { "x": 1, "y": 2 }, "p2": { "x": 3, "y": 4 } })
+  |> assert_ok
   validator
   .validate({ "p1": { "x": 1, "y": 2 }, "p3": { "x": 3, "y": 4 } })
   .unwrap_err()

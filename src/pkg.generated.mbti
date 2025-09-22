@@ -1,0 +1,84 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "mizchi/jsonschema"
+
+import(
+  "moonbitlang/core/json"
+)
+
+// Values
+
+// Errors
+pub suberror ParseError {
+  JsonDecodeError(@json.JsonDecodeError)
+  PointerParseError(String)
+}
+
+pub suberror RuntimeError {
+  Unsupported(String)
+}
+
+// Types and methods
+type JsonPointer
+impl Eq for JsonPointer
+impl Show for JsonPointer
+
+pub enum JsonSchema {
+  Any(description~ : String?)
+  Null(description~ : String?)
+  Boolean(description~ : String?)
+  String(minLength~ : Int?, maxLength~ : Int?, pattern~ : String?, format~ : String?, enum_~ : Array[String]?, contentEncoding~ : String?, contentMediaType~ : String?, description~ : String?)
+  Number(minimum~ : Double?, maximum~ : Double?, exclusiveMinimum~ : Double?, exclusiveMaximum~ : Double?, multipleOf~ : Double?, description~ : String?)
+  Integer(minimum~ : Int?, maximum~ : Int?, exclusiveMinimum~ : Int?, exclusiveMaximum~ : Int?, multipleOf~ : Int?, description~ : String?)
+  Array(items~ : JsonSchema?, prefixItems~ : Array[JsonSchema]?, contains~ : JsonSchema?, minContains~ : Int?, maxContains~ : Int?, minItems~ : Int?, maxItems~ : Int?, uniqueItems~ : Bool?, description~ : String?)
+  Object(properties~ : Map[String, JsonSchema]?, required~ : Array[String]?, additionalProperties~ : JsonSchema?, patternProperties~ : Map[String, JsonSchema]?, propertyNames~ : JsonSchema?, dependentSchemas~ : Map[String, JsonSchema]?, dependentRequired~ : Map[String, Array[String]]?, minProperties~ : Int?, maxProperties~ : Int?, description~ : String?)
+  Enum(Array[Json])
+  Const(Json)
+  AnyOf(Array[JsonSchema])
+  AllOf(Array[JsonSchema])
+  OneOf(Array[JsonSchema])
+  Not(JsonSchema)
+  Ref(String)
+}
+fn JsonSchema::allOf(Array[Self]) -> Self
+fn JsonSchema::any(description? : String) -> Self
+fn JsonSchema::anyOf(Array[Self]) -> Self
+fn JsonSchema::array(items? : Self, prefixItems? : Array[Self], contains? : Self, minContains? : Int, maxContains? : Int, minItems? : Int, maxItems? : Int, uniqueItems? : Bool, description? : String) -> Self
+fn JsonSchema::boolean(description? : String) -> Self
+fn JsonSchema::const_(Json) -> Self
+fn JsonSchema::enum_(Array[Json]) -> Self
+fn JsonSchema::integer(description? : String, minimum? : Int, maximum? : Int, exclusiveMinimum? : Int, exclusiveMaximum? : Int, multipleOf? : Int) -> Self
+fn JsonSchema::null(description? : String) -> Self
+fn JsonSchema::number(description? : String, minimum? : Double, maximum? : Double, exclusiveMinimum? : Double, exclusiveMaximum? : Double, multipleOf? : Double) -> Self
+fn JsonSchema::object(description? : String, properties? : Map[String, Self], required? : Array[String], additionalProperties? : Self, patternProperties? : Map[String, Self], propertyNames? : Self, dependentSchemas? : Map[String, Self], dependentRequired? : Map[String, Array[String]], minProperties? : Int, maxProperties? : Int) -> Self
+fn JsonSchema::oneOf(Array[Self]) -> Self
+fn JsonSchema::ref_(String) -> Self
+fn JsonSchema::string(minLength? : Int, maxLength? : Int, pattern? : String, format? : String, enum_? : Array[String], contentEncoding? : String, contentMediaType? : String, description? : String) -> Self
+fn JsonSchema::validate(Self, Json) -> Result[Unit, Array[ValidationError]] raise
+impl Eq for JsonSchema
+impl Show for JsonSchema
+impl ToJson for JsonSchema
+impl @json.FromJson for JsonSchema
+
+pub struct ValidationError {
+  input : Json
+  json_path : JsonPointer
+  schema_path : JsonPointer
+  message : String
+  children : Array[ValidationError]?
+}
+fn ValidationError::new(Json, JsonPointer, JsonPointer, String, children? : Array[Self]) -> Self
+impl Eq for ValidationError
+impl Show for ValidationError
+
+pub struct Validator {
+  schema : JsonSchema
+  // private fields
+}
+fn Validator::from_json(Json) -> Self raise ParseError
+fn Validator::validate(Self, Json) -> Result[Unit, Array[ValidationError]] raise RuntimeError
+fn Validator::with_resolver(JsonSchema, (String) -> JsonSchema?) -> Self
+
+// Type aliases
+
+// Traits
+

@@ -17,7 +17,7 @@ $ moon add mizchi/jsonschema
 ```mbt
 fn run() -> Unit raise {
   let schema : Json = { "type": "string" }
-  let validator = @jsonschema.Validator::compile(schema)
+  let validator = @jsonschema.Validator::from_json(schema)
   match validator.validate(5) {
     Ok(_) => println("passed")
     Err(errors) => println("validation erros: \{errors}")
@@ -25,15 +25,40 @@ fn run() -> Unit raise {
 }
 ```
 
-## with $ref
+## with builder
+
+```
+  let schema = JsonSchema::object(properties={ "v": JsonSchema::string() }, required=[
+    "v",
+  ])
+  schema.validate({ "v": "test" })
+```
+
+NOTE: `Json => JsonSchema => Json` is not perfect yet. Some properties may be dropped.
+
+## with builder and custome resolver
 
 ```mbt
-  let schema : Json = {
-    "definitions": { "PositiveInteger": { "type": "integer", "minimum": 0 } },
-    "$ref": "#/definitions/PositiveInteger",
-  }
-  let validator = Validator::compile(raw_schema)
-  validator.validate(5)
+  let schema = JsonSchema::object(
+    properties={
+      "p1": JsonSchema::ref_("#/definitions/Point"),
+      "p2": JsonSchema::ref_("#/definitions/Point"),
+    },
+    required=["p1", "p2"],
+  )
+  let validator = Validator::with_resolver(schema, fn(_p) {
+    if _p == "#/definitions/Point" {
+      Some(
+        JsonSchema::object(
+          properties={ "x": JsonSchema::integer(), "y": JsonSchema::integer() },
+          required=["x", "y"],
+        ),
+      )
+    } else {
+      None
+    }
+  })
+  validator.validate({ "p1": { "x": 1, "y": 2 }, "p2": { "x": 3, "y": 4 } })
 ```
 
 ## Supported
@@ -86,10 +111,11 @@ fn run() -> Unit raise {
 - [x] oneOf
 - [ ] not
 - [x] `$ref`
+  - [x] key `#/defs/bar`
+  - [x] index `#/defs/items/0/bar`
 - [ ] if
 - [x] const
-- [ ] `{ "type": ["string", "null"] }`
-  - Convert to `{ "oneOf": [ {"type": "string"}, {"type": "null"} ] }`
+- [x] `{ "type": ["string", "null"] }`
 
 ## TIPS
 
@@ -97,3 +123,7 @@ fn run() -> Unit raise {
   - `{ "type": ["string", "null"] }` -> `{ "oneOf": [ {"type": "string"}, {"type": "null"} ] }`
   - `"additionalProperties": true` -> `{ "additionalProperties": { "type": "any" } }`
   - `additionalProperties` requires `{ "type": ... }` like `JsonSchema::Object(additionalProperties=JsonSchema::string())`
+
+## LICENSE
+
+MIT

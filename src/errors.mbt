@@ -1,8 +1,8 @@
 ///|
 /// JsonSchema compilation errors
-pub suberror SchemaParseError {
+pub suberror ParseError {
   JsonDecodeError(@json.JsonDecodeError)
-  JsonPointerDecodeError(String)
+  PointerParseError(String)
 }
 
 ///|

@@ -8,36 +8,38 @@ pub struct Validator {
 /// Example:
 /// ```
 /// let jsonschema : Json = { "type": "string" }
-/// let validator = Validator::compile(jsonschema)
+/// let validator = Validator::from_json(jsonschema)
 /// let _result = validator.validate("hello")
 /// ```
-pub fn Validator::compile(
-  jsonschema : Json,
-) -> Validator raise SchemaParseError {
+pub fn Validator::from_json(jsonschema : Json) -> Validator raise ParseError {
   let schema : JsonSchema = @json.from_json(jsonschema) catch {
-    err => raise SchemaParseError::JsonDecodeError(err)
+    err => raise ParseError::JsonDecodeError(err)
   }
+  let resolver = build_resolver(jsonschema)
+  Validator::{ schema, resolver }
+}
+
+///|
+fn build_resolver(root_json : Json) -> (String) -> JsonSchema? {
   let resolver_map : Map[String, JsonSchema] = {}
-  let using_refs = traverse_refs_in_json(jsonschema)
+  let using_refs = traverse_refs_in_json(root_json)
   for ref_expr in using_refs {
-    let object_path = JsonPointer::from_json_pointer(ref_expr) catch {
+    let object_path = JsonPointer::from_string(ref_expr) catch {
       _err => continue
     }
-    match object_path.access(jsonschema) {
+    match object_path.access(root_json) {
       Some(json) =>
         try {
           let schema : JsonSchema = @json.from_json(json)
           resolver_map.set(ref_expr, schema)
         } catch {
-          err => raise SchemaParseError::JsonDecodeError(err)
+          // TODO: log error
+          _ => ()
         }
       None => ()
     }
   }
-  let resolver = fn(ref_expr : String) -> JsonSchema? {
-    resolver_map.get(ref_expr)
-  }
-  Validator::{ schema, resolver }
+  fn(ref_expr) { resolver_map.get(ref_expr) }
 }
 
 ///|
@@ -325,98 +327,6 @@ fn JsonSchema::validate_internal(
           )
         }
       }
-
-      // Prefix items validation (2020-12)
-      // match constraints.prefixItems {
-      //   Some(prefix_schemas) => {
-      //     let prefix_len = prefix_schemas.length()
-      //     for i = 0; i < len && i < prefix_len; i = i + 1 {
-      //       let item_path = path + "[\{i}]"
-      //       errors.append(
-      //         validate_value(
-      //           value[i],
-      //           prefix_schemas[i],
-      //           item_path,
-      //           schema_path + "/prefixItems[\{i}]",
-      //         ),
-      //       )
-      //     }
-      //     // Items beyond prefix are validated by items schema
-      //     match constraints.items {
-      //       Some(item_schema) =>
-      //         for i = prefix_len; i < len; i = i + 1 {
-      //           let item_path = path + "[\{i}]"
-      //           errors.append(
-      //             validate_value(
-      //               value[i],
-      //               item_schema,
-      //               item_path,
-      //               schema_path + "/items",
-      //             ),
-      //           )
-      //         }
-      //       None => ()
-      //     }
-      //   }
-
-      // Contains validation
-      // match constraints.contains {
-      //   Some(contains_schema) => {
-      //     let mut contains_count = 0
-      //     for i = 0; i < len; i = i + 1 {
-      //       let sub_errors = validate_value(
-      //         value[i],
-      //         contains_schema,
-      //         path + "[\{i}]",
-      //         schema_path + "/contains",
-      //       )
-      //       if sub_errors.length() == 0 {
-      //         contains_count = contains_count + 1
-      //       }
-      //     }
-
-      //     // Check minContains
-      //     match constraints.minContains {
-      //       Some(min) =>
-      //         if contains_count < min {
-      //           errors.push(
-      //             ValidationError::new(
-      //               format_path(path),
-      //               "Array contains only \{contains_count} matching items, less than minimum \{min}",
-      //               schema_path + "/minContains",
-      //             ),
-      //           )
-      //         }
-      //       None =>
-      //         // Default minContains is 1 if contains is present
-      //         if contains_count < 1 {
-      //           errors.push(
-      //             ValidationError::new(
-      //               format_path(path),
-      //               "Array does not contain any item matching the schema",
-      //               schema_path + "/contains",
-      //             ),
-      //           )
-      //         }
-      //     }
-
-      //     // Check maxContains
-      //     match constraints.maxContains {
-      //       Some(max) =>
-      //         if contains_count > max {
-      //           errors.push(
-      //             ValidationError::new(
-      //               format_path(path),
-      //               "Array contains \{contains_count} matching items, more than maximum \{max}",
-      //               schema_path + "/maxContains",
-      //             ),
-      //           )
-      //         }
-      //       None => ()
-      //     }
-      //   }
-      //   None => ()
-      // }
       errors
     }
     Object(properties~, required~, additionalProperties~, ..) => {

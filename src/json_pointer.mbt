@@ -54,9 +54,7 @@ fn access(self : JsonPointer, json : Json) -> Json? {
 
 ///|
 /// Parse JSON Pointer string into JsonPointer
-fn JsonPointer::from_json_pointer(
-  pointer : String,
-) -> JsonPointer raise SchemaParseError {
+fn JsonPointer::from_string(pointer : String) -> JsonPointer raise ParseError {
   if pointer == "#" || pointer == "" {
     return Root
   }
@@ -72,10 +70,7 @@ fn JsonPointer::from_json_pointer(
       pointer
     }
   } catch {
-    _ =>
-      raise SchemaParseError::JsonPointerDecodeError(
-        "Invalid JSON Pointer: \{pointer}",
-      )
+    _ => raise ParseError::PointerParseError("Invalid JSON Pointer: \{pointer}")
   }
 
   // Split by / and build path
@@ -117,28 +112,28 @@ test "JsonPointer::access" {
 }
 
 ///|
-test "JsonPointer::from_json_pointer" {
-  let path1 = JsonPointer::from_json_pointer("#/foo/0/bar")
+test "JsonPointer::from_string" {
+  let path1 = JsonPointer::from_string("#/foo/0/bar")
   let expected1 = Root.add_key("foo").add_index(0).add_key("bar")
   assert_eq(path1, expected1)
-  let path2 = JsonPointer::from_json_pointer("/foo/bar")
+  let path2 = JsonPointer::from_string("/foo/bar")
   let expected2 = Root.add_key("foo").add_key("bar")
   assert_eq(path2, expected2)
-  let path3 = JsonPointer::from_json_pointer("#")
+  let path3 = JsonPointer::from_string("#")
   assert_eq(path3, Root)
-  let path4 = JsonPointer::from_json_pointer("")
+  let path4 = JsonPointer::from_string("")
   assert_eq(path4, Root)
-  let path5 = JsonPointer::from_json_pointer("#/foo~1bar/0")
+  let path5 = JsonPointer::from_string("#/foo~1bar/0")
   let expected5 = Root.add_key("foo/bar").add_index(0)
   assert_eq(path5, expected5)
-  let path6 = JsonPointer::from_json_pointer("#/foo~0bar")
+  let path6 = JsonPointer::from_string("#/foo~0bar")
   let expected6 = Root.add_key("foo~bar")
   assert_eq(path6, expected6)
 }
 
 ///|
 test "JsonPointer::from_json_pointer" {
-  let result = JsonPointer::from_json_pointer("#/abc/items/0/def")
+  let result = JsonPointer::from_string("#/abc/items/0/def")
   result |> inspect(content="#/abc/items/0/def")
   // assert(result is Err(JsonPointerDecodeError(_)))
 }
