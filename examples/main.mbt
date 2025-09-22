@@ -16,7 +16,11 @@ fn main {
     println("Usage: main.mbt <path-to-jsonschema>")
     return
   }
-  let fullpath = @env.current_dir().unwrap() + "/" + path
+  guard @env.current_dir() is Some(cwd) else {
+    println("Cannot get current directory")
+    return
+  }
+  let fullpath = cwd + "/" + path
   println("Reading file: " + fullpath)
   @async.with_event_loop(fn(_root) { run_jsonschema(fullpath) }) catch {
     err => println(err.to_string())

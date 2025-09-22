@@ -27,11 +27,11 @@ fn run() -> Unit raise {
 
 ## with builder
 
-```
-  let schema = JsonSchema::object(properties={ "v": JsonSchema::string() }, required=[
-    "v",
-  ])
-  schema.validate({ "v": "test" })
+```mbt
+let schema = @jsonschema.JsonSchema::object(properties={ "v": @jsonschema.JsonSchema::string() }, required=[
+  "v",
+])
+let v = schema.validate({ "v": "test" })
 ```
 
 NOTE: `Json => JsonSchema => Json` is not perfect yet. Some properties may be dropped.
@@ -39,26 +39,26 @@ NOTE: `Json => JsonSchema => Json` is not perfect yet. Some properties may be dr
 ## with builder and custome resolver
 
 ```mbt
-  let schema = JsonSchema::object(
-    properties={
-      "p1": JsonSchema::ref_("#/definitions/Point"),
-      "p2": JsonSchema::ref_("#/definitions/Point"),
-    },
-    required=["p1", "p2"],
-  )
-  let validator = Validator::with_resolver(schema, fn(_p) {
-    if _p == "#/definitions/Point" {
-      Some(
-        JsonSchema::object(
-          properties={ "x": JsonSchema::integer(), "y": JsonSchema::integer() },
-          required=["x", "y"],
-        ),
-      )
-    } else {
-      None
-    }
-  })
-  validator.validate({ "p1": { "x": 1, "y": 2 }, "p2": { "x": 3, "y": 4 } })
+let schema = @jsonschema.JsonSchema::object(
+  properties={
+    "p1": @jsonschema.JsonSchema::ref_("#/definitions/Point"),
+    "p2": @jsonschema.JsonSchema::ref_("#/definitions/Point"),
+  },
+  required=["p1", "p2"],
+)
+let validator = @jsonschema.Validator::with_resolver(schema, fn(_p) {
+  if _p == "#/definitions/Point" {
+    Some(
+      @jsonschema.JsonSchema::object(
+        properties={ "x": JsonSchema::integer(), "y": JsonSchema::integer() },
+        required=["x", "y"],
+      ),
+    )
+  } else {
+    None
+  }
+})
+let _ = validator.validate({ "p1": { "x": 1, "y": 2 }, "p2": { "x": 3, "y": 4 } })
 ```
 
 ## Supported
