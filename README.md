@@ -1,3 +1,5 @@
+## Validator
+
 - [x] type: any
 - [x] type: null
 - [x] type: number
@@ -37,9 +39,10 @@
   - [ ] minProperties
   - [ ] maxProperties
 
-- [ ] anyOf
-- [ ] allOf
-- [ ] oneOf
+- [x] anyOf
+- [x] allOf
+- [x] oneOf
 - [ ] `not: ...`
 - [ ] `$ref:`
 - [ ] `if`
+- [x] const

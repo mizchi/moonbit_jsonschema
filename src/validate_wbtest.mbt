@@ -7,7 +7,31 @@ test "validate null" {
   schema.validate(1).unwrap_err()
   |> inspect(
     content=(
-      #|[{json_path: $, schema_path: $, message: "Number(1) is not null"}]
+      #|[{json_path: #, schema_path: #, message: "Number(1) is not null", children: None}]
+    ),
+  )
+}
+
+///|
+test "validate const" {
+  let schema = Schema::const_(Json::string("constant"))
+  schema.validate("constant").unwrap() |> inspect(content="()")
+  schema.validate(1).unwrap_err()
+  |> inspect(
+    content=(
+      #|[{json_path: #, schema_path: #, message: "Number(1) does not match constant value String(\"constant\")", children: None}]
+    ),
+  )
+}
+
+///|
+test "validate const nested" {
+  let schema = Schema::const_({ "nested": true })
+  schema.validate({ "nested": true }).unwrap() |> inspect(content="()")
+  schema.validate(1).unwrap_err()
+  |> inspect(
+    content=(
+      #|[{json_path: #, schema_path: #, message: "Number(1) does not match constant value Object({\"nested\": True})", children: None}]
     ),
   )
 }
@@ -26,7 +50,7 @@ test "validate string" {
   schema.validate(1).unwrap_err()
   |> inspect(
     content=(
-      #|[{json_path: $, schema_path: $, message: "Number(1) is not a string"}]
+      #|[{json_path: #, schema_path: #, message: "Number(1) is not a string", children: None}]
     ),
   )
 }
@@ -39,7 +63,7 @@ test "validate string with enum" {
   schema.validate("c").unwrap_err()
   |> inspect(
     content=(
-      #|[{json_path: $, schema_path: $.enum, message: "c is not in [\"a\", \"b\"]"}]
+      #|[{json_path: #, schema_path: #/enum, message: "c is not in [\"a\", \"b\"]", children: None}]
     ),
   )
 }
@@ -51,7 +75,7 @@ test "validate string type with minLength and maxLength" {
   schema.validate("hi").unwrap_err()
   |> inspect(
     content=(
-      #|[{json_path: $, schema_path: $.minLength, message: "String length 2 is less than minimum 3"}]
+      #|[{json_path: #, schema_path: #/minLength, message: "String length 2 is less than minimum 3", children: None}]
     ),
   )
   match schema.validate("hellooo") {
@@ -60,7 +84,7 @@ test "validate string type with minLength and maxLength" {
       inspect(
         errors,
         content=(
-          #|[{json_path: $, schema_path: $.maxLength, message: "String length 7 is greater than maximum 5"}]
+          #|[{json_path: #, schema_path: #/maxLength, message: "String length 7 is greater than maximum 5", children: None}]
         ),
       )
   }
@@ -73,13 +97,13 @@ test "validate enum" {
   schema.validate(1).unwrap_err()
   |> inspect(
     content=(
-      #|[{json_path: $, schema_path: $, message: "Number(1) is not in [String(\"red\"), String(\"green\"), String(\"blue\")]"}]
+      #|[{json_path: #, schema_path: #, message: "Number(1) is not in [String(\"red\"), String(\"green\"), String(\"blue\")]", children: None}]
     ),
   )
   schema.validate("yellow").unwrap_err()
   |> inspect(
     content=(
-      #|[{json_path: $, schema_path: $, message: "String(\"yellow\") is not in [String(\"red\"), String(\"green\"), String(\"blue\")]"}]
+      #|[{json_path: #, schema_path: #, message: "String(\"yellow\") is not in [String(\"red\"), String(\"green\"), String(\"blue\")]", children: None}]
     ),
   )
 }
@@ -100,13 +124,13 @@ test "validate number with constraints" {
   schema.validate(-10).unwrap_err()
   |> inspect(
     content=(
-      #|[{json_path: $, schema_path: $.minimum, message: "-10 is less than minimum 0"}]
+      #|[{json_path: #, schema_path: #/minimum, message: "-10 is less than minimum 0", children: None}]
     ),
   )
   schema.validate("invalid").unwrap_err()
   |> inspect(
     content=(
-      #|[{json_path: $, schema_path: $, message: "Value is not a number"}]
+      #|[{json_path: #, schema_path: #, message: "Value is not a number", children: None}]
     ),
   )
 }
@@ -118,7 +142,7 @@ test "validate integer" {
   schema.validate(1.1).unwrap_err()
   |> inspect(
     content=(
-      #|[{json_path: $, schema_path: $, message: "1.1 is not an integer"}]
+      #|[{json_path: #, schema_path: #, message: "1.1 is not an integer", children: None}]
     ),
   )
   schema.validate(1.0).unwrap() |> inspect(content="()")
@@ -133,13 +157,13 @@ test "validate integer with constraints" {
   schema.validate(-10).unwrap_err()
   |> inspect(
     content=(
-      #|[{json_path: $, schema_path: $.minimum, message: "-10 is less than minimum 0"}]
+      #|[{json_path: #, schema_path: #/minimum, message: "-10 is less than minimum 0", children: None}]
     ),
   )
   schema.validate("invalid").unwrap_err()
   |> inspect(
     content=(
-      #|[{json_path: $, schema_path: $, message: "String(\"invalid\") is not a number"}]
+      #|[{json_path: #, schema_path: #, message: "String(\"invalid\") is not a number", children: None}]
     ),
   )
 }
@@ -154,14 +178,14 @@ test "validate object" {
   schema.validate({ "name": 0 }).unwrap_err()
   |> inspect(
     content=(
-      #|[{json_path: $.name, schema_path: $.properties.name, message: "Number(0) is not a string"}]
+      #|[{json_path: #/name, schema_path: #/properties/name, message: "Number(0) is not a string", children: None}]
     ),
   )
   // no required
   schema.validate({}).unwrap_err()
   |> inspect(
     content=(
-      #|[{json_path: $.name, schema_path: $.required, message: "Required property 'name' is missing"}]
+      #|[{json_path: #/name, schema_path: #/required, message: "Required property 'name' is missing", children: None}]
     ),
   )
   let schema_no_required = Schema::object(properties={
@@ -173,7 +197,7 @@ test "validate object" {
   schema_no_required.validate({ "name": 1 }).unwrap_err()
   |> inspect(
     content=(
-      #|[{json_path: $.name, schema_path: $.properties.name, message: "Number(1) is not a string"}]
+      #|[{json_path: #/name, schema_path: #/properties/name, message: "Number(1) is not a string", children: None}]
     ),
   )
 }
@@ -189,7 +213,7 @@ test "additionalProperties" {
   schema.validate({ "name": "John", "notAllowd": true, "no": 2 }).unwrap_err()
   |> inspect(
     content=(
-      #|[{json_path: $.notAllowd, schema_path: $.additionalProperties, message: "Additional property '[\"notAllowd\", \"no\"]' is not allowed"}, {json_path: $.no, schema_path: $.additionalProperties, message: "Additional property '[\"notAllowd\", \"no\"]' is not allowed"}]
+      #|[{json_path: #/notAllowd, schema_path: #/additionalProperties, message: "Additional property '[\"notAllowd\", \"no\"]' is not allowed", children: None}, {json_path: #/no, schema_path: #/additionalProperties, message: "Additional property '[\"notAllowd\", \"no\"]' is not allowed", children: None}]
     ),
   )
 }
@@ -204,7 +228,7 @@ test "validate array" {
   schema.validate([{ "id": 1 }, { "id": "not-allowed" }]).unwrap_err()
   |> inspect(
     content=(
-      #|[{json_path: $[1].id, schema_path: $.items.properties.id, message: "String(\"not-allowed\") is not a number"}]
+      #|[{json_path: #/1/id, schema_path: #/items/properties/id, message: "String(\"not-allowed\") is not a number", children: None}]
     ),
   )
 }
@@ -215,279 +239,142 @@ test "validate array with constraints" {
   schema.validate([]).unwrap_err()
   |> inspect(
     content=(
-      #|[{json_path: $, schema_path: $.minItems, message: "Array length 0 is less than minimum 1"}]
+      #|[{json_path: #, schema_path: #/minItems, message: "Array length 0 is less than minimum 1", children: None}]
     ),
   )
   schema.validate([1]).unwrap() |> inspect(content="()")
   schema.validate([1, 2, 3, 4]).unwrap_err()
   |> inspect(
     content=(
-      #|[{json_path: $, schema_path: $.maxItems, message: "Array length 4 is greater than maximum 3"}]
+      #|[{json_path: #, schema_path: #/maxItems, message: "Array length 4 is greater than maximum 3", children: None}]
     ),
   )
 }
 
-// ///|
-// // test "validate null type" {
-// //   let schema = Schema::Null
+///|
+test "validate oneOf" {
+  let schema = Schema::oneOf([Schema::string()])
+  schema.validate("hello").unwrap() |> inspect(content="()")
+  let schema = Schema::oneOf([Schema::string(), Schema::null()])
+  schema.validate("hello").unwrap() |> inspect(content="()")
+  schema.validate(null).unwrap() |> inspect(content="()")
+  schema.validate(1).unwrap_err()
+  |> inspect(
+    content=(
+      #|[{json_path: #, schema_path: #/oneOf/0, message: "Number(1) is not a string", children: None}, {json_path: #, schema_path: #/oneOf/1, message: "Number(1) is not null", children: None}, {json_path: #, schema_path: #/oneOf, message: "Number(1) does not match exactly one schema in oneOf", children: None}]
+    ),
+  )
+}
 
-// //   // Valid null
-// //   let result1 = schema.validate(Json::null())
-// //   inspect(result1, content="Ok")
+///|
+test "validate allOf" {
+  let schema = Schema::allOf([Schema::string()])
+  schema.validate("hello").unwrap() |> inspect(content="()")
+  let schema2 = Schema::allOf([Schema::string(), Schema::const_("foo")])
+  schema2.validate("foo").unwrap() |> inspect(content="()")
+  schema2.validate("bar").unwrap_err()
+  |> inspect(
+    content=(
+      #|[{json_path: #, schema_path: #/oneOf/1, message: "String(\"bar\") does not match constant value String(\"foo\")", children: None}, {json_path: #, schema_path: #/allOf, message: "String(\"bar\") does not match exactly one schema in allOf", children: None}]
+    ),
+  )
+}
 
-// //   // Invalid - string instead of null
-// //   let result2 = schema.validate(Json::string("not null"))
-// //   match result2 {
-// //     Err(errors) => assert_true(errors.length() > 0)
-// //     Ok(_) => assert_false(true)
-// //   }
-// // }
+///|
+test "validate anyOf" {
+  let schema = Schema::anyOf([Schema::string()])
+  schema.validate("hello").unwrap() |> inspect(content="()")
+  let schema2 = Schema::anyOf([Schema::string(), Schema::const_("foo")])
+  schema2.validate("foo").unwrap() |> inspect(content="()")
+  schema2.validate(1).unwrap_err()
+  |> inspect(
+    content=(
+      #|[{json_path: #, schema_path: #/anyOf/0, message: "Number(1) is not a string", children: None}, {json_path: #, schema_path: #/anyOf/1, message: "Number(1) does not match constant value String(\"foo\")", children: None}, {json_path: #, schema_path: #/anyOf, message: "Number(1) does not match any schema in anyOf", children: None}]
+    ),
+  )
+  let schema3 = Schema::anyOf([
+    Schema::string(),
+    Schema::const_("foo"),
+    Schema::null(),
+  ])
+  schema3.validate(null).unwrap() |> inspect(content="()")
+  schema3.validate("foo").unwrap() |> inspect(content="()")
+  schema3.validate("bar").unwrap() |> inspect(content="()")
+  schema3.validate(1).unwrap_err()
+  |> inspect(
+    content=(
+      #|[{json_path: #, schema_path: #/anyOf/0, message: "Number(1) is not a string", children: None}, {json_path: #, schema_path: #/anyOf/1, message: "Number(1) does not match constant value String(\"foo\")", children: None}, {json_path: #, schema_path: #/anyOf/2, message: "Number(1) is not null", children: None}, {json_path: #, schema_path: #/anyOf, message: "Number(1) does not match any schema in anyOf", children: None}]
+    ),
+  )
+}
 
-// ///|
-// test "validate boolean type" {
-//   let schema : Schema = Schema::boolean()
+///|
+test "validate $ref" {
+  let raw_schema : Json = {
+    "definitions": { "PositiveInteger": { "type": "integer", "minimum": 0 } },
+    "$ref": "#/definitions/PositiveInteger",
+  }
+  let validator = Validator::from_json(raw_schema)
+  validator.validate(5).unwrap() |> inspect(content="()")
+  validator.validate("err").unwrap_err()
+  |> inspect(
+    content=(
+      #|[{json_path: #, schema_path: #/$ref, message: "String(\"err\") is not a number", children: None}]
+    ),
+  )
+}
 
-//   // Valid boolean
-//   let result1 = schema.validate(Json::boolean(true))
-//   inspect(result1, content="Ok(())")
-//   let result2 = schema.validate(Json::boolean(false))
-//   inspect(result2, content="Ok(())")
+///|
+test "validate $ref in array" {
+  let raw_schema : Json = {
+    "definitions": {
+      "Point": {
+        "type": "object",
+        "required": ["x", "y"],
+        "properties": { "x": { "type": "integer" }, "y": { "type": "integer" } },
+      },
+    },
+    "type": "array",
+    "items": { "$ref": "#/definitions/Point" },
+  }
+  let validator = Validator::from_json(raw_schema)
+  validator.validate([{ "x": 1, "y": 2 }]).unwrap() |> inspect(content="()")
+  validator.validate([{ "x": "err", "y": 2 }]).unwrap_err()
+  |> inspect(
+    content=(
+      #|[{json_path: #/0/x, schema_path: #/items/$ref/properties/x, message: "String(\"err\") is not a number", children: None}]
+    ),
+  )
+}
 
-//   // Invalid - number instead of boolean
-//   let result3 = schema.validate(Json::number(1.0))
-//   match result3 {
-//     Err(errors) => assert_true(errors.length() > 0)
-//     Ok(_) => assert_true(false)
-//   }
-// }
-
-// ///|
-// // test "validate const value" {
-// //   let const_val = Json::string("constant")
-// //   let schema = Schema::Const(const_val)
-// //   let validator = Validator::new(schema)
-
-// //   // Valid - exact match
-// //   let result1 = schema.validate(Json::string("constant"))
-// //   inspect(result1, content="Ok")
-
-// //   // Invalid - different value
-// //   let validator2 = Validator::new(schema)
-// //   let result2 = validator2.validate(Json::string("different"))
-// //   match result2 {
-// //     Err(errors) => assert_true(errors.length() > 0)
-// //     Ok(_) => assert_false(true)
-// //   }
-// // }
-
-// // Multiple types test is skipped due to SchemaType enum constructor limitations
-
-// ///|
-// test "validate any type" {
-//   let schema = Schema::any()
-//   // All types should be valid
-//   inspect(schema.validate(Json::null()), content="Ok(())")
-//   inspect(schema.validate(Json::boolean(true)), content="Ok(())")
-//   inspect(schema.validate(Json::string("any")), content="Ok(())")
-//   inspect(schema.validate(Json::number(123.0)), content="Ok(())")
-// }
-
-// ///|
-// test "parse schema from json - string type" {
-//   let schema_json : Json = Json::object(
-//     Map::of([
-//       ("type", Json::string("string")),
-//       ("minLength", Json::number(3.0)),
-//       ("maxLength", Json::number(10.0)),
-//     ]),
-//   )
-//   let schema : Schema = @json.from_json(schema_json)
-
-//   // Valid string
-//   let result1 = schema.validate(Json::string("hello"))
-//   inspect(result1, content="Ok(())")
-
-//   // Too short
-//   let result2 = schema.validate(Json::string("hi"))
-//   match result2 {
-//     Err(errors) => assert_true(errors.length() > 0)
-//     Ok(_) => assert_false(true)
-//   }
-// }
-
-// ///|
-// test "parse schema from json - number with constraints" {
-//   let schema_json = Json::object(
-//     Map::of([
-//       ("type", Json::string("number")),
-//       ("minimum", Json::number(0.0)),
-//       ("maximum", Json::number(100.0)),
-//     ]),
-//   )
-//   let schema : Schema = @json.from_json(schema_json)
-
-//   // Valid number
-//   let result1 = schema.validate(Json::number(50.0))
-//   inspect(result1, content="Ok(())")
-
-//   // Too large
-//   let result2 = schema.validate(Json::number(150.0))
-//   match result2 {
-//     Err(errors) => assert_true(errors.length() > 0)
-//     Ok(_) => assert_false(true)
-//   }
-// }
-
-// ///|
-// test "parse schema from json - object with properties" {
-//   let schema : Schema = @json.from_json({
-//     "type": "object",
-//     "required": ["name"],
-//     "properties": { "name": { "type": "string" }, "age": { "type": "number" } },
-//     "required": ["name"],
-//   })
-
-//   // Valid object
-//   let obj : Json = { "name": "Alice", "age": 30.0 }
-//   let result1 = schema.validate(obj)
-//   inspect(result1, content="Ok(())")
-
-//   // Missing required property
-//   let obj2 : Json = { "age": 25.0 }
-//   let result2 = schema.validate(obj2)
-//   match result2 {
-//     Err(errors) => assert_true(errors.length() > 0)
-//     Ok(_) => assert_false(true)
-//   }
-// }
-
-// ///|
-// test "parse schema from json - anyOf" {
-//   let schema : Schema = @json.from_json({
-//     "anyOf": [{ "type": "string" }, { "type": "number" }],
-//   })
-
-//   // Valid - string
-//   let result1 = schema.validate(Json::string("hello"))
-//   inspect(result1, content="Ok")
-
-//   // Valid - number
-//   let result2 = schema.validate(Json::number(42.0))
-//   inspect(result2, content="Ok")
-
-//   // Invalid - boolean
-//   let result3 = schema.validate(Json::boolean(true))
-//   match result3 {
-//     Err(errors) => assert_true(errors.length() > 0)
-//     Ok(_) => assert_false(true)
-//   }
-// }
-
-// ///|
-// test "parse schema from json - enum" {
-//   let enum_array : Json = { "enum": ["red", "green", "blue"] }
-//   let schema : Schema = @json.from_json(enum_array)
-
-//   // Valid enum value
-//   let result1 = schema.validate(Json::string("red"))
-//   inspect(result1, content="Ok")
-
-//   // Invalid enum value
-//   let result2 = schema.validate(Json::string("yellow"))
-//   match result2 {
-//     Err(errors) => assert_true(errors.length() > 0)
-//     Ok(_) => assert_false(true)
-//   }
-// }
-
-// ///|
-// test "parse schema from json - boolean schema" {
-//   // true schema allows any value
-//   let schema1 : Schema = @json.from_json({ "type": "boolean" })
-//   inspect(schema1.validate(Json::boolean(true)), content="Ok(())")
-//   inspect(schema1.validate(Json::boolean(false)), content="Ok(())")
-//   inspect(
-//     schema1.validate(Json::string("oooo")),
-//     content=(
-//       #|Err([{json_path: $, schema_path: $, message: "Value is not a boolean"}])
-
-//     ),
-//   )
-// }
-
-// ///|
-// // test "format errors for human output" {
-// //   let schema = Schema::object(
-// //     Some(Map::of([("name", Schema::string()), ("age", Schema::number())])),
-// //     Some(["name", "age"]),
-// //   )
-// //   let validator = Validator::new(schema)
-
-// //   // Invalid object - missing required properties
-// //   let obj = Map::of([("email", Json::string("test@example.com"))])
-// //   let result = schema.validate(Json::object(obj))
-// //   match result {
-// //     Err(errors) => {
-// //       let formatted = format_errors(errors)
-// //       // Check that formatted string contains expected content
-// //       assert_true(formatted.contains("Validation failed"))
-// //       assert_true(formatted.contains("Required property"))
-// //       assert_true(formatted.contains("name"))
-// //       assert_true(formatted.contains("age"))
-// //     }
-// //     Ok(_) => assert_false(true)
-// //   }
-// // }
-
-// // ///|
-// // test "immutable validator reuse" {
-// //   let schema = Schema::number_with_constraints(
-// //     Some(0.0),
-// //     Some(100.0),
-// //     None,
-// //     None,
-// //     None,
-// //   )
-// //   let validator = Validator::new(schema)
-
-// //   // Use the same validator multiple times
-// //   let result1 = schema.validate(Json::number(50.0))
-// //   inspect(result1, content="Ok")
-// //   let result2 = schema.validate(Json::number(150.0))
-// //   match result2 {
-// //     Err(errors) => assert_true(errors.length() > 0)
-// //     Ok(_) => assert_false(true)
-// //   }
-
-// //   // Validator can still be used after errors
-// //   let result3 = schema.validate(Json::number(25.0))
-// //   inspect(result3, content="Ok")
-// // }
-
-// // ///|
-// // test "validate anyOf schemas" {
-// //   let string_schema = Schema::string()
-// //   let number_schema = Schema::number()
-// //   let schemas : Array[Schema] = []
-// //   schemas.push(string_schema)
-// //   schemas.push(number_schema)
-// //   let schema = Schema::any_of(schemas)
-// //   let validator = Validator::new(schema)
-
-// //   // Valid - string
-// //   let result1 = schema.validate(Json::string("hello"))
-// //   inspect(result1, content="Ok")
-
-// //   // Valid - number
-// //   let validator2 = Validator::new(schema)
-// //   let result2 = validator2.validate(Json::number(42.0))
-// //   inspect(result2, content="Ok")
-
-// //   // Invalid - boolean
-// //   let validator3 = Validator::new(schema)
-// //   let result3 = validator3.validate(Json::boolean(true))
-// //   match result3 {
-// //     Err(errors) => assert_true(errors.length() > 0)
-// //     Ok(_) => assert_false(true)
-// //   }
-// // }
+///|
+test "validate $ref in object" {
+  let raw_schema : Json = {
+    "definitions": {
+      "Point": {
+        "type": "object",
+        "required": ["x", "y"],
+        "properties": { "x": { "type": "integer" }, "y": { "type": "integer" } },
+      },
+    },
+    "type": "object",
+    "required": ["p1", "p2"],
+    "properties": {
+      "p1": { "$ref": "#/definitions/Point" },
+      "p2": { "$ref": "#/definitions/Point" },
+    },
+  }
+  let validator = Validator::from_json(raw_schema)
+  validator
+  .validate({ "p1": { "x": 1, "y": 2 }, "p2": { "x": 3, "y": 4 } })
+  .unwrap()
+  |> inspect(content="()")
+  validator
+  .validate({ "p1": { "x": 1, "y": 2 }, "p3": { "x": 3, "y": 4 } })
+  .unwrap_err()
+  |> inspect(
+    content=(
+      #|[{json_path: #/p2, schema_path: #/required, message: "Required property 'p2' is missing", children: None}]
+    ),
+  )
+}

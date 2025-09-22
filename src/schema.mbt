@@ -100,6 +100,8 @@ pub impl ToJson for Schema with to_json(self) -> Json {
       }
       json.to_json()
     }
+    Schema::Ref(ref_expr) => { "$ref": ref_expr.to_json() }.to_json()
+    Schema::Const(value) => { "const": value }.to_json()
     // after string
     Schema::Enum(values) => { "enum": values.to_json() }.to_json()
     Schema::Number(
@@ -259,6 +261,8 @@ pub impl @json.FromJson for Schema with from_json(
     raise @json.JsonDecodeError((json_path, "Expected an object"))
   }
   match obj {
+    { "const": value, .. } => Schema::Const(value)
+    { "$ref": @json.String(ref_expr), .. } => Schema::Ref(ref_expr)
     { "type": "object", .. } => {
       let properties = match obj.get("properties") {
         Some(@json.Object(props_obj)) => {
@@ -443,14 +447,13 @@ pub impl @json.FromJson for Schema with from_json(
       )
     { "oneOf": Array(schemas), .. } =>
       Schema::OneOf(
-        schemas.map(fn(s) {
-          @json.from_json(s, path=json_path.add_key("oneOf"))
+        schemas.mapi(fn(i, s) {
+          @json.from_json(s, path=json_path.add_key("oneOf").add_index(i))
         }),
       )
     { "not": schema, .. } =>
       Schema::Not(@json.from_json(schema, path=json_path.add_key("not")))
     { "enum": Array(values), .. } => Schema::Enum(values)
-    { "const": value, .. } => Schema::Const(value)
     _ => Schema::Any
   }
 }

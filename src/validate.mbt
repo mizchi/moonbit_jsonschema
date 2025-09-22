@@ -2,11 +2,78 @@
 suberror UnsuppotedSchemaError String
 
 ///|
+pub struct Validator {
+  schema : Schema
+  priv resolver : (String) -> Schema?
+}
+
+///|
+pub fn Validator::from_json(
+  jsonschema : Json,
+) -> Validator raise UnsuppotedSchemaError {
+  let schema : Schema = @json.from_json(jsonschema) catch {
+    err => raise UnsuppotedSchemaError(err.to_string())
+  }
+  let resolver = fn(ref_expr : String) -> Schema? {
+    let object_path = ObjectPath::from_json_pointer(ref_expr) catch {
+      _err => return None
+    }
+    match object_path.access(jsonschema) {
+      Some(json) =>
+        try {
+          let schema : Schema = @json.from_json(json)
+          Some(schema)
+        } catch {
+          _err => None
+        }
+      None => None
+    }
+  }
+  Validator::{ schema, resolver }
+}
+
+///|
+pub fn Validator::with_resolver(
+  schema : Schema,
+  resolver : (String) -> Schema?,
+) -> Validator {
+  Validator::{ schema, resolver }
+}
+
+///|
+pub fn Validator::validate(
+  self : Validator,
+  input : Json,
+) -> Result[Unit, Array[ValidationError]] raise UnsuppotedSchemaError {
+  let errors = self.schema.validate_inner(input, resolver=self.resolver)
+  if errors.length() == 0 {
+    Ok(())
+  } else {
+    Err(errors)
+  }
+}
+
+///|
 pub fn Schema::validate(
   self : Schema,
   value : Json,
 ) -> Result[Unit, Array[ValidationError]] raise UnsuppotedSchemaError {
-  match self.validate_inner(value) {
+  let resolver = fn(ref_expr : String) -> Schema? {
+    let object_path = ObjectPath::from_json_pointer(ref_expr) catch {
+      _err => return None
+    }
+    match object_path.access(value) {
+      Some(json) =>
+        try {
+          let schema : Schema = @json.from_json(json)
+          Some(schema)
+        } catch {
+          _err => None
+        }
+      None => None
+    }
+  }
+  match self.validate_inner(value, resolver~) {
     [] => Ok(())
     errors => Err(errors)
   }
@@ -18,6 +85,7 @@ fn Schema::validate_inner(
   value : Json,
   json_path? : ObjectPath = ObjectPath::Root,
   schema_path? : ObjectPath = ObjectPath::Root,
+  resolver~ : (String) -> Schema?,
 ) -> Array[ValidationError] raise UnsuppotedSchemaError {
   match self {
     Boolean =>
@@ -40,6 +108,18 @@ fn Schema::validate_inner(
           [ValidationError::new(json_path, schema_path, "\{value} is not null")]
       }
     Any => []
+    Const(expected) =>
+      if value != expected {
+        [
+          ValidationError::new(
+            json_path,
+            schema_path,
+            "\{value} does not match constant value \{expected}",
+          ),
+        ]
+      } else {
+        []
+      }
     Integer(minimum~, maximum~, ..) => {
       guard value is @json.Number(input, ..) else {
         return [
@@ -155,6 +235,7 @@ fn Schema::validate_inner(
               json_path,
               schema_path,
               message: "\{value} is not a string",
+              children: None,
             },
           ]
       }
@@ -195,6 +276,7 @@ fn Schema::validate_inner(
               item,
               json_path=json_path.add_index(i),
               schema_path=schema_path.add_key("items"),
+              resolver~,
             ),
           )
         }
@@ -385,6 +467,7 @@ fn Schema::validate_inner(
             child_value,
             json_path=json_path.add_key(prop_name),
             schema_path=schema_path.add_key("properties").add_key(prop_name),
+            resolver~,
           )
           errors.append(child_errors)
         })
@@ -404,36 +487,122 @@ fn Schema::validate_inner(
       } else {
         []
       }
-    Ref(_ref) => raise UnsuppotedSchemaError("$ref not implemented")
+    Ref(ref_expr) =>
+      match resolver(ref_expr) {
+        Some(resolved_schema) => {
+          // let opath = ObjectPath::from_json_pointer(ref_expr)
+          let errors = resolved_schema.validate_inner(
+            value,
+            json_path~,
+            // TODO: fix schema_path to reference path
+            schema_path=schema_path.add_key("$ref"),
+            resolver~,
+          )
+          errors
+        }
+        None =>
+          [
+            ValidationError::new(
+              json_path,
+              schema_path.add_key("$ref"),
+              "Failed to resolve reference '\{ref_expr}'",
+            ),
+          ]
+      }
     Not(_schema) =>
       raise UnsuppotedSchemaError("not schema validation not implemented")
-    AnyOf(_schemas) =>
-      raise UnsuppotedSchemaError("anyOf schema validation not implemented")
-    AllOf(_schemas) =>
-      raise UnsuppotedSchemaError("allOf schema validation not implemented")
-    OneOf(_schemas) =>
-      raise UnsuppotedSchemaError("oneOf schema validation not implemented")
+    AllOf(schemas) => {
+      let errors : Array[ValidationError] = []
+      let mut passed = 0
+      for idx, schema in schemas {
+        let sub_errors = schema.validate_inner(
+          value,
+          json_path~,
+          schema_path=schema_path.add_key("oneOf").add_index(idx),
+          resolver~,
+        )
+        if sub_errors.length() == 0 {
+          passed += 1
+        } else {
+          errors.append(sub_errors)
+        }
+      }
+      if passed == schemas.length() {
+        []
+      } else {
+        errors.push(
+          ValidationError::new(
+            json_path,
+            schema_path.add_key("allOf"),
+            "\{value} does not match exactly one schema in allOf",
+          ),
+        )
+        errors
+      }
+    }
+    OneOf(schemas) => {
+      let errors : Array[ValidationError] = []
+      let mut passed = 0
+      for idx, schema in schemas {
+        let sub_errors = schema.validate_inner(
+          value,
+          json_path~,
+          schema_path=schema_path.add_key("oneOf").add_index(idx),
+          resolver~,
+        )
+        if sub_errors.length() == 0 {
+          passed += 1
+        } else {
+          errors.append(sub_errors)
+        }
+      }
+      if passed == 1 {
+        []
+      } else {
+        errors.push(
+          ValidationError::new(
+            json_path,
+            schema_path.add_key("oneOf"),
+            "\{value} does not match exactly one schema in oneOf",
+          ),
+        )
+        errors
+      }
+    }
+    AnyOf(schemas) => {
+      let errors : Array[ValidationError] = []
+      let mut passed = 0
+      for idx, schema in schemas {
+        let sub_errors = schema.validate_inner(
+          value,
+          json_path~,
+          schema_path=schema_path.add_key("anyOf").add_index(idx),
+          resolver~,
+        )
+        if sub_errors.length() == 0 {
+          passed += 1
+        } else {
+          errors.append(sub_errors)
+        }
+      }
+      if passed > 0 {
+        []
+      } else {
+        errors.push(
+          ValidationError::new(
+            json_path,
+            schema_path.add_key("anyOf"),
+            "\{value} does not match any schema in anyOf",
+          ),
+        )
+        errors
+      }
+    }
     _ => {
-      // TODO
       println("Schema variant not implemented yet: \{self}")
       panic()
     }
-    // Ref(_) => {
-    //   println("Reference resolution not implemented")
-    //   panic()
-    // }
-    // Not(_) => ...
-    // OneOf(_) => ...
-    // AllOf(_) => ...
-    // AnyOf(_) => ...
-    // Const(_) => ...
-    // Enum(_) => ...
-    // If(_) => ...
-
-    // Multiple(_) => ...
   }
-  // let validator = Validator::new(self)
-  // validator.validate(value)
 }
 
 ///|
@@ -441,6 +610,7 @@ pub struct ValidationError {
   json_path : ObjectPath
   schema_path : ObjectPath
   message : String
+  children : Array[ValidationError]?
 } derive(Show)
 
 ///|
@@ -448,6 +618,7 @@ pub fn ValidationError::new(
   json_path : ObjectPath,
   schema_path : ObjectPath,
   message : String,
+  children? : Array[ValidationError],
 ) -> ValidationError {
-  ValidationError::{ json_path, schema_path, message }
+  ValidationError::{ json_path, schema_path, message, children }
 }

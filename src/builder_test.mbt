@@ -16,7 +16,7 @@ test "parse object" {
   schema.validate({ "name": 42, "age": 30.0 }).unwrap_err()
   |> inspect(
     content=(
-      #|[{json_path: $.name, schema_path: $.properties.name, message: "Number(42) is not a string"}]
+      #|[{json_path: #/name, schema_path: #/properties/name, message: "Number(42) is not a string", children: None}]
     ),
   )
   schema.to_json().to_string()
@@ -41,7 +41,7 @@ test "parse array" {
   schema.validate(["a", 1]).unwrap_err()
   |> inspect(
     content=(
-      #|[{json_path: $[1], schema_path: $.items, message: "Number(1) is not a string"}]
+      #|[{json_path: #/1, schema_path: #/items, message: "Number(1) is not a string", children: None}]
     ),
   )
 }
@@ -83,7 +83,7 @@ test "parse nested" {
   .unwrap_err()
   |> inspect(
     content=(
-      #|[{json_path: $.friends[0], schema_path: $.properties.friends.items, message: "Number(1) is not a string"}]
+      #|[{json_path: #/friends/0, schema_path: #/properties/friends/items, message: "Number(1) is not a string", children: None}]
     ),
   )
 }

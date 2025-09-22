@@ -122,3 +122,28 @@ pub fn Schema::object(
 pub fn Schema::enum_(values : Array[Json]) -> Schema {
   Schema::Enum(values)
 }
+
+///|
+pub fn Schema::const_(value : Json) -> Schema {
+  Schema::Const(value)
+}
+
+///|
+pub fn Schema::oneOf(schemas : Array[Schema]) -> Schema {
+  Schema::OneOf(schemas)
+}
+
+///|
+pub fn Schema::anyOf(schemas : Array[Schema]) -> Schema {
+  Schema::AnyOf(schemas)
+}
+
+///|
+pub fn Schema::allOf(schemas : Array[Schema]) -> Schema {
+  Schema::AllOf(schemas)
+}
+
+///|
+pub fn Schema::ref_(schema : String) -> Schema {
+  Schema::Ref(schema)
+}
