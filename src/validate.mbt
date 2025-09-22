@@ -81,7 +81,7 @@ fn JsonSchema::validate_internal(
   schema_path? : JsonPointer = JsonPointer::Root,
 ) -> Array[ValidationError] raise RuntimeError {
   match self {
-    Boolean =>
+    Boolean(_) =>
       match value {
         @json.True => []
         @json.False => []
@@ -92,7 +92,7 @@ fn JsonSchema::validate_internal(
             ),
           ]
       }
-    Null =>
+    Null(_) =>
       match value {
         @json.Null => []
         _ =>
@@ -102,7 +102,7 @@ fn JsonSchema::validate_internal(
             ),
           ]
       }
-    Any => []
+    Any(_) => []
     Const(expected) =>
       if value != expected {
         [
@@ -116,7 +116,7 @@ fn JsonSchema::validate_internal(
       } else {
         []
       }
-    Integer(minimum~, maximum~, ..) => {
+    Integer(minimum~, maximum~, exclusiveMaximum~, exclusiveMinimum~, ..) => {
       guard value is @json.Number(input, ..) else {
         return [
           ValidationError::new(
@@ -139,7 +139,7 @@ fn JsonSchema::validate_internal(
             value,
             json_path,
             schema_path.add_key("minimum"),
-            "\{input} is less than minimum \{min}",
+            "Value is less than minimum \{min}",
           ),
         )
       }
@@ -149,13 +149,33 @@ fn JsonSchema::validate_internal(
             value,
             json_path,
             schema_path.add_key("maximum"),
-            "\{input} is greater than maximum \{max}",
+            "Value is greater than maximum \{max}",
+          ),
+        )
+      }
+      if exclusiveMaximum is Some(max) && input >= max {
+        errors.push(
+          ValidationError::new(
+            value,
+            json_path,
+            schema_path.add_key("exclusiveMaximum"),
+            "Value is not less than exclusive maximum \{max}",
+          ),
+        )
+      }
+      if exclusiveMinimum is Some(min) && input <= min {
+        errors.push(
+          ValidationError::new(
+            value,
+            json_path,
+            schema_path.add_key("exclusiveMinimum"),
+            "Value is not greater than exclusive minimum \{min}",
           ),
         )
       }
       errors
     }
-    Number(minimum~, maximum~, ..) => {
+    Number(minimum~, maximum~, exclusiveMaximum~, exclusiveMinimum~, ..) => {
       guard value is @json.Number(input, ..) else {
         return [
           ValidationError::new(
@@ -170,7 +190,7 @@ fn JsonSchema::validate_internal(
             value,
             json_path,
             schema_path.add_key("minimum"),
-            "\{input} is less than minimum \{min}",
+            "Value is less than minimum \{min}",
           ),
         )
       }
@@ -180,7 +200,27 @@ fn JsonSchema::validate_internal(
             value,
             json_path,
             schema_path.add_key("maximum"),
-            "\{input} is greater than maximum \{max}",
+            "Value is greater than maximum \{max}",
+          ),
+        )
+      }
+      if exclusiveMaximum is Some(max) && input >= max {
+        errors.push(
+          ValidationError::new(
+            value,
+            json_path,
+            schema_path.add_key("exclusiveMaximum"),
+            "\{input} is not less than exclusive maximum \{max}",
+          ),
+        )
+      }
+      if exclusiveMinimum is Some(min) && input <= min {
+        errors.push(
+          ValidationError::new(
+            value,
+            json_path,
+            schema_path.add_key("exclusiveMinimum"),
+            "Value is not greater than exclusive minimum \{min}",
           ),
         )
       }

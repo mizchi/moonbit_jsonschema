@@ -10,8 +10,10 @@ pub fn JsonSchema::string(
   enum_? : Array[String],
   contentEncoding? : String,
   contentMediaType? : String,
+  description? : String,
 ) -> JsonSchema {
   JsonSchema::String(
+    description~,
     minLength~,
     maxLength~,
     pattern~,
@@ -25,6 +27,7 @@ pub fn JsonSchema::string(
 ///|
 /// { "type": "number" }
 pub fn JsonSchema::number(
+  description? : String,
   minimum? : Double,
   maximum? : Double,
   exclusiveMinimum? : Double,
@@ -32,6 +35,7 @@ pub fn JsonSchema::number(
   multipleOf? : Double,
 ) -> JsonSchema {
   JsonSchema::Number(
+    description~,
     minimum~,
     maximum~,
     exclusiveMinimum~,
@@ -43,6 +47,7 @@ pub fn JsonSchema::number(
 ///|
 /// { "type": "integer" }
 pub fn JsonSchema::integer(
+  description? : String,
   minimum? : Int,
   maximum? : Int,
   exclusiveMinimum? : Int,
@@ -50,6 +55,7 @@ pub fn JsonSchema::integer(
   multipleOf? : Int,
 ) -> JsonSchema {
   JsonSchema::Integer(
+    description~,
     minimum~,
     maximum~,
     exclusiveMinimum~,
@@ -69,8 +75,10 @@ pub fn JsonSchema::array(
   minItems? : Int,
   maxItems? : Int,
   uniqueItems? : Bool,
+  description? : String,
 ) -> JsonSchema {
   JsonSchema::Array(
+    description~,
     items~,
     prefixItems~,
     contains~,
@@ -84,25 +92,26 @@ pub fn JsonSchema::array(
 
 ///|
 /// { "type": "null" }
-pub fn JsonSchema::null() -> JsonSchema {
-  JsonSchema::Null
+pub fn JsonSchema::null(description? : String) -> JsonSchema {
+  JsonSchema::Null(description~)
 }
 
 ///|
 /// { "type": "boolean" }
-pub fn JsonSchema::boolean() -> JsonSchema {
-  JsonSchema::Boolean
+pub fn JsonSchema::boolean(description? : String) -> JsonSchema {
+  JsonSchema::Boolean(description~)
 }
 
 ///|
 /// { "type": "any" }
-pub fn JsonSchema::any() -> JsonSchema {
-  JsonSchema::Any
+pub fn JsonSchema::any(description? : String) -> JsonSchema {
+  JsonSchema::Any(description~)
 }
 
 ///|
 /// { "type": "object" }
 pub fn JsonSchema::object(
+  description? : String,
   properties? : Map[String, JsonSchema],
   required? : Array[String],
   additionalProperties? : JsonSchema,
@@ -114,6 +123,7 @@ pub fn JsonSchema::object(
   maxProperties? : Int,
 ) -> JsonSchema {
   JsonSchema::Object(
+    description~,
     properties~,
     required~,
     additionalProperties~,
@@ -247,5 +257,19 @@ test "parse nested" {
     content=(
       #|Err([{input: Number(1), json_path: #/friends/0, schema_path: #/properties/friends/items, message: "Value is not a string", children: None}])
     ),
+  )
+}
+
+///|
+test "convert type: [string, null] to anyOf" {
+  let input =
+    #|{
+    #|  "type": ["string", "null"]
+    #|}
+  let jsonschema : Json = @json.parse(input)
+  let schema : JsonSchema = @json.from_json(jsonschema)
+  assert_eq(
+    schema,
+    JsonSchema::anyOf([JsonSchema::string(), JsonSchema::null()]),
   )
 }

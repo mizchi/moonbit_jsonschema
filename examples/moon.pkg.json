@@ -1,10 +1,7 @@
 {
   "is-main": true,
   "import": [
-    {
-      "path": "../src",
-      "alias": "jsonschema"
-    },
+    "mizchi/jsonschema",
     "moonbitlang/x/sys",
     "moonbitlang/async",
     "moonbitlang/async/io",

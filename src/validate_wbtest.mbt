@@ -89,16 +89,12 @@ test "validate string type with minLength and maxLength" {
       #|[{input: String("hi"), json_path: #, schema_path: #/minLength, message: "String length 2 is less than minimum 3", children: None}]
     ),
   )
-  match schema.validate("hellooo") {
-    Ok(_) => panic()
-    Err(errors) =>
-      inspect(
-        errors,
-        content=(
-          #|[{input: String("hellooo"), json_path: #, schema_path: #/maxLength, message: "String length 7 is greater than maximum 5", children: None}]
-        ),
-      )
-  }
+  schema.validate("hellooo")
+  |> inspect(
+    content=(
+      #|Err([{input: String("hellooo"), json_path: #, schema_path: #/maxLength, message: "String length 7 is greater than maximum 5", children: None}])
+    ),
+  )
 }
 
 ///|
@@ -135,7 +131,7 @@ test "validate number with constraints" {
   schema.validate(-10)
   |> inspect(
     content=(
-      #|Err([{input: Number(-10), json_path: #, schema_path: #/minimum, message: "-10 is less than minimum 0", children: None}])
+      #|Err([{input: Number(-10), json_path: #, schema_path: #/minimum, message: "Value is less than minimum 0", children: None}])
     ),
   )
   schema.validate("invalid")
@@ -144,6 +140,14 @@ test "validate number with constraints" {
       #|Err([{input: String("invalid"), json_path: #, schema_path: #, message: "Value is not a number", children: None}])
     ),
   )
+}
+
+///|
+test "validate number with exclusiveMinimum and exclusiveMaximum" {
+  let schema = JsonSchema::number(exclusiveMinimum=0.0, exclusiveMaximum=10.0)
+  schema.validate(0.0) |> assert_err
+  schema.validate(1) |> assert_ok
+  schema.validate(10.0) |> assert_err
 }
 
 ///|
@@ -168,7 +172,7 @@ test "validate integer with constraints" {
   schema.validate(-10)
   |> inspect(
     content=(
-      #|Err([{input: Number(-10), json_path: #, schema_path: #/minimum, message: "-10 is less than minimum 0", children: None}])
+      #|Err([{input: Number(-10), json_path: #, schema_path: #/minimum, message: "Value is less than minimum 0", children: None}])
     ),
   )
   schema.validate("invalid")
@@ -177,6 +181,14 @@ test "validate integer with constraints" {
       #|Err([{input: String("invalid"), json_path: #, schema_path: #, message: "Value is not a number", children: None}])
     ),
   )
+}
+
+///|
+test "validate integer with exclusiveMinimum and exclusiveMaximum" {
+  let schema = JsonSchema::integer(exclusiveMinimum=0, exclusiveMaximum=10)
+  schema.validate(0) |> assert_err
+  schema.validate(1) |> assert_ok
+  schema.validate(10) |> assert_err
 }
 
 ///|

@@ -6,11 +6,11 @@
 /// JsonSchema
 pub enum JsonSchema {
   /// { "type": "any" }
-  Any
+  Any(description~ : String?)
   /// { "type": "null" }
-  Null
+  Null(description~ : String?)
   /// { "type": "boolean" }
-  Boolean
+  Boolean(description~ : String?)
   /// { "type": "string" }
   String(
     minLength~ : Int?,
@@ -19,7 +19,8 @@ pub enum JsonSchema {
     format~ : String?,
     enum_~ : Array[String]?,
     contentEncoding~ : String?,
-    contentMediaType~ : String?
+    contentMediaType~ : String?,
+    description~ : String?
   )
   /// { "type": "number" }
   Number(
@@ -27,7 +28,8 @@ pub enum JsonSchema {
     maximum~ : Double?,
     exclusiveMinimum~ : Double?,
     exclusiveMaximum~ : Double?,
-    multipleOf~ : Double?
+    multipleOf~ : Double?,
+    description~ : String?
   )
   /// { "type": "integer" }
   Integer(
@@ -35,7 +37,8 @@ pub enum JsonSchema {
     maximum~ : Int?,
     exclusiveMinimum~ : Int?,
     exclusiveMaximum~ : Int?,
-    multipleOf~ : Int?
+    multipleOf~ : Int?,
+    description~ : String?
   )
   /// { "type": "array" }
   Array(
@@ -46,7 +49,8 @@ pub enum JsonSchema {
     maxContains~ : Int?,
     minItems~ : Int?,
     maxItems~ : Int?,
-    uniqueItems~ : Bool?
+    uniqueItems~ : Bool?,
+    description~ : String?
   )
   /// { "type": "object" }
   Object(
@@ -58,7 +62,8 @@ pub enum JsonSchema {
     dependentSchemas~ : Map[String, JsonSchema]?,
     dependentRequired~ : Map[String, Array[String]]?,
     minProperties~ : Int?,
-    maxProperties~ : Int?
+    maxProperties~ : Int?,
+    description~ : String?
   )
   /// { "enum": [...] }
   Enum(Array[Json])
@@ -75,14 +80,14 @@ pub enum JsonSchema {
   /// { "$ref": "..." }
   Ref(String)
   // If(Schema, Schema?, Schema?) // if, then, else
-} derive(Show)
+} derive(Show, Eq)
 
 ///|
 pub impl ToJson for JsonSchema with to_json(self) -> Json {
-  match self {
-    JsonSchema::Any => { "type": "any" }.to_json()
-    JsonSchema::Null => { "type": "null" }.to_json()
-    JsonSchema::Boolean => { "type": "boolean" }.to_json()
+  let v : Json = match self {
+    JsonSchema::Any(_) => { "type": "any" }.to_json()
+    JsonSchema::Null(_) => { "type": "null" }.to_json()
+    JsonSchema::Boolean(_) => { "type": "boolean" }.to_json()
     JsonSchema::String(
       minLength~,
       maxLength~,
@@ -90,7 +95,8 @@ pub impl ToJson for JsonSchema with to_json(self) -> Json {
       format~,
       contentEncoding~,
       contentMediaType~,
-      enum_~
+      enum_~,
+      description~
     ) => {
       let json : Map[String, Json] = { "type": "string" }
       if minLength is Some(value) {
@@ -114,6 +120,9 @@ pub impl ToJson for JsonSchema with to_json(self) -> Json {
       if enum_ is Some(values) {
         json["enum"] = values.to_json()
       }
+      if description is Some(value) {
+        json["description"] = value.to_json()
+      }
       json.to_json()
     }
     JsonSchema::Ref(ref_expr) => { "$ref": ref_expr.to_json() }.to_json()
@@ -125,7 +134,8 @@ pub impl ToJson for JsonSchema with to_json(self) -> Json {
       maximum~,
       exclusiveMinimum~,
       exclusiveMaximum~,
-      multipleOf~
+      multipleOf~,
+      description~
     ) => {
       let json : Map[String, Json] = { "type": "number" }
       if minimum is Some(value) {
@@ -143,6 +153,9 @@ pub impl ToJson for JsonSchema with to_json(self) -> Json {
       if multipleOf is Some(value) {
         json["multipleOf"] = value.to_json()
       }
+      if description is Some(value) {
+        json["description"] = value.to_json()
+      }
       json.to_json()
     }
     JsonSchema::Integer(
@@ -150,7 +163,8 @@ pub impl ToJson for JsonSchema with to_json(self) -> Json {
       maximum~,
       exclusiveMinimum~,
       exclusiveMaximum~,
-      multipleOf~
+      multipleOf~,
+      description~
     ) => {
       let json : Map[String, Json] = { "type": "integer" }
       if minimum is Some(value) {
@@ -168,6 +182,9 @@ pub impl ToJson for JsonSchema with to_json(self) -> Json {
       if multipleOf is Some(value) {
         json["multipleOf"] = value.to_json()
       }
+      if description is Some(value) {
+        json["description"] = value.to_json()
+      }
       json.to_json()
     }
     JsonSchema::Array(
@@ -178,7 +195,8 @@ pub impl ToJson for JsonSchema with to_json(self) -> Json {
       maxContains~,
       minItems~,
       maxItems~,
-      uniqueItems~
+      uniqueItems~,
+      description~
     ) => {
       let json : Map[String, Json] = { "type": "array" }
       if items is Some(value) {
@@ -205,6 +223,9 @@ pub impl ToJson for JsonSchema with to_json(self) -> Json {
       if uniqueItems is Some(value) {
         json["uniqueItems"] = value.to_json()
       }
+      if description is Some(value) {
+        json["description"] = value.to_json()
+      }
       json.to_json()
     }
     JsonSchema::Object(
@@ -216,7 +237,8 @@ pub impl ToJson for JsonSchema with to_json(self) -> Json {
       dependentSchemas~,
       dependentRequired~,
       minProperties~,
-      maxProperties~
+      maxProperties~,
+      description~
     ) => {
       let json : Map[String, Json] = { "type": "object" }
       if properties is Some(props) {
@@ -262,10 +284,20 @@ pub impl ToJson for JsonSchema with to_json(self) -> Json {
       if maxProperties is Some(value) {
         json["maxProperties"] = value.to_json()
       }
+      if description is Some(value) {
+        json["description"] = value.to_json()
+      }
       json.to_json()
     }
-    _ => { "type": "unknown" }
+    JsonSchema::AnyOf(schemas) =>
+      { "anyOf": schemas.map(fn(s) { s.to_json() }).to_json() }.to_json()
+    JsonSchema::AllOf(schemas) =>
+      { "allOf": schemas.map(fn(s) { s.to_json() }).to_json() }.to_json()
+    JsonSchema::OneOf(schemas) =>
+      { "oneOf": schemas.map(fn(s) { s.to_json() }).to_json() }.to_json()
+    JsonSchema::Not(schema) => { "not": schema.to_json() }.to_json()
   }
+  v
 }
 
 ///|
@@ -276,9 +308,36 @@ pub impl @json.FromJson for JsonSchema with from_json(
   guard json is Json::Object(obj) else {
     raise @json.JsonDecodeError((json_path, "Expected an object"))
   }
+  let description = match obj.get("description") {
+    Some(String(desc)) => Some(desc)
+    _ => None
+  }
   match obj {
     { "const": value, .. } => JsonSchema::Const(value)
     { "$ref": @json.String(ref_expr), .. } => JsonSchema::Ref(ref_expr)
+    // TODO: redundant patterns
+    { "type": @json.Array(["null", String(item_type)]), .. } => {
+      let schema = match item_type {
+        "string" => JsonSchema::string()
+        "number" => JsonSchema::number()
+        "integer" => JsonSchema::integer()
+        "boolean" => JsonSchema::boolean()
+        // TODO: raise error if unsupported type
+        _ => JsonSchema::any()
+      }
+      JsonSchema::anyOf([schema, JsonSchema::Null(description=None)])
+    }
+    { "type": @json.Array([String(item_type), "null"]), .. } => {
+      let schema = match item_type {
+        "string" => JsonSchema::string()
+        "number" => JsonSchema::number()
+        "integer" => JsonSchema::integer()
+        "boolean" => JsonSchema::boolean()
+        // TODO: raise error if unsupported type
+        _ => JsonSchema::any()
+      }
+      JsonSchema::anyOf([schema, JsonSchema::Null(description=None)])
+    }
     { "type": "object", .. } => {
       let properties = match obj.get("properties") {
         Some(@json.Object(props_obj)) => {
@@ -304,7 +363,7 @@ pub impl @json.FromJson for JsonSchema with from_json(
         _ => None
       }
       let additionalProperties = match obj.get("additionalProperties") {
-        Some(Json::True) => Some(JsonSchema::Any)
+        Some(Json::True) => Some(JsonSchema::Any(description=None))
         Some(Json::False) => None
         Some(json) =>
           JsonSchema::from_json(json, json_path.add_key("additionalProperties"))
@@ -315,6 +374,7 @@ pub impl @json.FromJson for JsonSchema with from_json(
         properties~,
         required~,
         additionalProperties~,
+        description~,
         patternProperties=None,
         propertyNames=None,
         dependentSchemas=None,
@@ -347,15 +407,26 @@ pub impl @json.FromJson for JsonSchema with from_json(
         minItems~,
         maxItems~,
         uniqueItems~,
+        description~,
         prefixItems=None,
         contains=None,
         minContains=None,
         maxContains=None,
       )
     }
-    { "type": "null", .. } => JsonSchema::Null
-    { "type": "boolean", .. } => JsonSchema::Boolean
+    { "type": "null", .. } => JsonSchema::Null(description~)
+    { "type": "boolean", .. } => {
+      let description = match obj.get("description") {
+        Some(@json.String(desc)) => Some(desc)
+        _ => None
+      }
+      JsonSchema::Boolean(description~)
+    }
     { "type": "string", .. } => {
+      let description = match obj.get("description") {
+        Some(@json.String(desc)) => Some(desc)
+        _ => None
+      }
       let minLength = match obj.get("minLength") {
         Some(@json.Number(n, ..)) => Some(n.to_int())
         _ => None
@@ -393,6 +464,7 @@ pub impl @json.FromJson for JsonSchema with from_json(
         format~,
         contentEncoding=None,
         contentMediaType=None,
+        description~,
       )
     }
     { "type": "number", .. } => {
@@ -421,6 +493,7 @@ pub impl @json.FromJson for JsonSchema with from_json(
         maximum~,
         exclusiveMinimum~,
         exclusiveMaximum~,
+        description~,
         multipleOf~,
       )
     }
@@ -446,6 +519,7 @@ pub impl @json.FromJson for JsonSchema with from_json(
         _ => None
       }
       JsonSchema::Integer(
+        description~,
         minimum~,
         maximum~,
         exclusiveMinimum~,
@@ -474,6 +548,6 @@ pub impl @json.FromJson for JsonSchema with from_json(
     { "not": schema, .. } =>
       JsonSchema::Not(@json.from_json(schema, path=json_path.add_key("not")))
     { "enum": Array(values), .. } => JsonSchema::Enum(values)
-    _ => JsonSchema::Any
+    _ => JsonSchema::Any(description~)
   }
 }

@@ -5,13 +5,13 @@
 - [x] type: number
   - [x] minimum
   - [x] maximum
-  - [ ] exclusiveMinimum
-  - [ ] exclusiveMaximum
+  - [x] exclusiveMinimum
+  - [x] exclusiveMaximum
 - [x] type: integer
   - [x] minimum
   - [x] maximum
-  - [ ] exclusiveMinimum
-  - [ ] exclusiveMaximum
+  - [x] exclusiveMinimum
+  - [x] exclusiveMaximum
 - [x] type: string
   - [x] minLength
   - [x] maxLength
@@ -46,3 +46,5 @@
 - [x] `$ref:`
 - [ ] `if`
 - [x] const
+- [ ] `{ "type": ["string", "null"] }`
+  - Convert to `{ "oneOf": [ {"type": "string"}, {"type": "null"} ] }`
