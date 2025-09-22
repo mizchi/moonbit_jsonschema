@@ -64,6 +64,9 @@ pub enum Schema {
 ///|
 pub impl ToJson for Schema with to_json(self) -> Json {
   match self {
+    Schema::Any => { "type": "any" }.to_json()
+    Schema::Null => { "type": "null" }.to_json()
+    Schema::Boolean => { "type": "boolean" }.to_json()
     Schema::String(
       minLength~,
       maxLength~,
@@ -97,6 +100,8 @@ pub impl ToJson for Schema with to_json(self) -> Json {
       }
       json.to_json()
     }
+    // after string
+    Schema::Enum(values) => { "enum": values.to_json() }.to_json()
     Schema::Number(
       minimum~,
       maximum~,
@@ -147,6 +152,100 @@ pub impl ToJson for Schema with to_json(self) -> Json {
       }
       json.to_json()
     }
+    Schema::Array(
+      items~,
+      prefixItems~,
+      contains~,
+      minContains~,
+      maxContains~,
+      minItems~,
+      maxItems~,
+      uniqueItems~
+    ) => {
+      let json : Map[String, Json] = { "type": "array" }
+      if items is Some(value) {
+        json["items"] = value.to_json()
+      }
+      if prefixItems is Some(values) {
+        json["prefixItems"] = values.map(fn(s) { s.to_json() }).to_json()
+      }
+      if contains is Some(value) {
+        json["contains"] = value.to_json()
+      }
+      if minContains is Some(value) {
+        json["minContains"] = value.to_json()
+      }
+      if maxContains is Some(value) {
+        json["maxContains"] = value.to_json()
+      }
+      if minItems is Some(value) {
+        json["minItems"] = value.to_json()
+      }
+      if maxItems is Some(value) {
+        json["maxItems"] = value.to_json()
+      }
+      if uniqueItems is Some(value) {
+        json["uniqueItems"] = value.to_json()
+      }
+      json.to_json()
+    }
+    Schema::Object(
+      properties~,
+      required~,
+      additionalProperties~,
+      patternProperties~,
+      propertyNames~,
+      dependentSchemas~,
+      dependentRequired~,
+      minProperties~,
+      maxProperties~
+    ) => {
+      let json : Map[String, Json] = { "type": "object" }
+      if properties is Some(props) {
+        let props_json : Map[String, Json] = {}
+        for k, v in props {
+          props_json[k] = v.to_json()
+        }
+        json["properties"] = props_json.to_json()
+      }
+      if required is Some(req) {
+        json["required"] = req.to_json()
+      }
+      if additionalProperties is Some(value) {
+        json["additionalProperties"] = value
+      }
+      if patternProperties is Some(pat_props) {
+        let pat_props_json : Map[String, Json] = {}
+        for k, v in pat_props {
+          pat_props_json[k] = v.to_json()
+        }
+        json["patternProperties"] = pat_props_json.to_json()
+      }
+      if propertyNames is Some(value) {
+        json["propertyNames"] = value.to_json()
+      }
+      if dependentSchemas is Some(dep_schemas) {
+        let dep_schemas_json : Map[String, Json] = {}
+        for k, v in dep_schemas {
+          dep_schemas_json[k] = v.to_json()
+        }
+        json["dependentSchemas"] = dep_schemas_json.to_json()
+      }
+      if dependentRequired is Some(dep_req) {
+        let dep_req_json : Map[String, Json] = {}
+        for k, v in dep_req {
+          dep_req_json[k] = v.to_json()
+        }
+        json["dependentRequired"] = dep_req_json.to_json()
+      }
+      if minProperties is Some(value) {
+        json["minProperties"] = value.to_json()
+      }
+      if maxProperties is Some(value) {
+        json["maxProperties"] = value.to_json()
+      }
+      json.to_json()
+    }
     _ => { "type": "unknown" }
   }
 }
@@ -160,6 +259,76 @@ pub impl @json.FromJson for Schema with from_json(
     raise @json.JsonDecodeError((json_path, "Expected an object"))
   }
   match obj {
+    { "type": "object", .. } => {
+      let properties = match obj.get("properties") {
+        Some(@json.Object(props_obj)) => {
+          let props_map : Map[String, Schema] = {}
+          for k, v in props_obj {
+            props_map.set(k, Schema::from_json(v, json_path.add_key(k)))
+          }
+          Some(props_map)
+        }
+        _ => None
+      }
+      let required : Array[String]? = match obj.get("required") {
+        Some(@json.Array(req_array)) => {
+          let req_props : Array[String] = []
+          for i = 0; i < req_array.length(); i = i + 1 {
+            match req_array[i] {
+              @json.String(prop) => req_props.push(prop)
+              _ => ()
+            }
+          }
+          Some(req_props)
+        }
+        _ => None
+      }
+      let additionalProperties = match obj.get("additionalProperties") {
+        Some(value) => Some(value)
+        None => None
+      }
+      Schema::Object(
+        properties~,
+        required~,
+        additionalProperties~,
+        patternProperties=None,
+        propertyNames=None,
+        dependentSchemas=None,
+        dependentRequired=None,
+        minProperties=None,
+        maxProperties=None,
+      )
+    }
+    { "type": "array", .. } => {
+      let items = match obj.get("items") {
+        Some(item_schema) =>
+          Some(Schema::from_json(item_schema, json_path.add_key("items")))
+        None => None
+      }
+      let minItems = match obj.get("minItems") {
+        Some(@json.Number(n, ..)) => Some(n.to_int())
+        _ => None
+      }
+      let maxItems = match obj.get("maxItems") {
+        Some(@json.Number(n, ..)) => Some(n.to_int())
+        _ => None
+      }
+      let uniqueItems = match obj.get("uniqueItems") {
+        Some(@json.True) => Some(true)
+        Some(@json.False) => Some(false)
+        _ => None
+      }
+      Schema::Array(
+        items~,
+        minItems~,
+        maxItems~,
+        uniqueItems~,
+        prefixItems=None,
+        contains=None,
+        minContains=None,
+        maxContains=None,
+      )
+    }
     { "type": "null", .. } => Schema::Null
     { "type": "boolean", .. } => Schema::Boolean
     { "type": "string", .. } => {
@@ -260,72 +429,6 @@ pub impl @json.FromJson for Schema with from_json(
         multipleOf~,
       )
     }
-    { "type": "array", .. } => {
-      let items = match obj.get("items") {
-        Some(item_schema) =>
-          Some(Schema::from_json(item_schema, json_path.add_key("items")))
-        None => None
-      }
-      let minItems = match obj.get("minItems") {
-        Some(@json.Number(n, ..)) => Some(n.to_int())
-        _ => None
-      }
-      let maxItems = match obj.get("maxItems") {
-        Some(@json.Number(n, ..)) => Some(n.to_int())
-        _ => None
-      }
-      let uniqueItems = match obj.get("uniqueItems") {
-        Some(@json.True) => Some(true)
-        Some(@json.False) => Some(false)
-        _ => None
-      }
-      Schema::Array(
-        items~,
-        minItems~,
-        maxItems~,
-        uniqueItems~,
-        prefixItems=None,
-        contains=None,
-        minContains=None,
-        maxContains=None,
-      )
-    }
-    { "type": "object", .. } => {
-      let properties = match obj.get("properties") {
-        Some(@json.Object(props_obj)) => {
-          let props_map : Map[String, Schema] = {}
-          for k, v in props_obj {
-            props_map.set(k, Schema::from_json(v, json_path.add_key(k)))
-          }
-          Some(props_map)
-        }
-        _ => None
-      }
-      let required = match obj.get("required") {
-        Some(@json.Array(req_array)) => {
-          let req_props : Array[String] = []
-          for i = 0; i < req_array.length(); i = i + 1 {
-            match req_array[i] {
-              @json.String(prop) => req_props.push(prop)
-              _ => ()
-            }
-          }
-          Some(req_props)
-        }
-        _ => None
-      }
-      Schema::Object(
-        properties~,
-        required~,
-        additionalProperties=None,
-        patternProperties=None,
-        propertyNames=None,
-        dependentSchemas=None,
-        dependentRequired=None,
-        minProperties=None,
-        maxProperties=None,
-      )
-    }
     { "anyOf": Array(schemas), .. } =>
       Schema::AnyOf(
         schemas.map(fn(s) {
@@ -350,129 +453,4 @@ pub impl @json.FromJson for Schema with from_json(
     { "const": value, .. } => Schema::Const(value)
     _ => Schema::Any
   }
-}
-
-// builder
-
-///|
-pub fn Schema::string(
-  minLength? : Int,
-  maxLength? : Int,
-  pattern? : String,
-  format? : String,
-  enum_? : Array[String],
-  contentEncoding? : String,
-  contentMediaType? : String,
-) -> Schema {
-  Schema::String(
-    minLength~,
-    maxLength~,
-    pattern~,
-    format~,
-    enum_~,
-    contentEncoding~,
-    contentMediaType~,
-  )
-}
-
-///|
-pub fn Schema::number(
-  minimum? : Double,
-  maximum? : Double,
-  exclusiveMinimum? : Double,
-  exclusiveMaximum? : Double,
-  multipleOf? : Double,
-) -> Schema {
-  Schema::Number(
-    minimum~,
-    maximum~,
-    exclusiveMinimum~,
-    exclusiveMaximum~,
-    multipleOf~,
-  )
-}
-
-///|
-pub fn Schema::integer(
-  minimum? : Int,
-  maximum? : Int,
-  exclusiveMinimum? : Int,
-  exclusiveMaximum? : Int,
-  multipleOf? : Int,
-) -> Schema {
-  Schema::Integer(
-    minimum~,
-    maximum~,
-    exclusiveMinimum~,
-    exclusiveMaximum~,
-    multipleOf~,
-  )
-}
-
-///|
-pub fn Schema::array(
-  items? : Schema,
-  prefixItems? : Array[Schema],
-  contains? : Schema,
-  minContains? : Int,
-  maxContains? : Int,
-  minItems? : Int,
-  maxItems? : Int,
-  uniqueItems? : Bool,
-) -> Schema {
-  Schema::Array(
-    items~,
-    prefixItems~,
-    contains~,
-    minContains~,
-    maxContains~,
-    minItems~,
-    maxItems~,
-    uniqueItems~,
-  )
-}
-
-///|
-pub fn Schema::null() -> Schema {
-  Schema::Null
-}
-
-///|
-pub fn Schema::boolean() -> Schema {
-  Schema::Boolean
-}
-
-///|
-pub fn Schema::any() -> Schema {
-  Schema::Any
-}
-
-///|
-pub fn Schema::object(
-  properties? : Map[String, Schema],
-  required? : Array[String],
-  additionalProperties? : Json,
-  patternProperties? : Map[String, Schema],
-  propertyNames? : Schema,
-  dependentSchemas? : Map[String, Schema],
-  dependentRequired? : Map[String, Array[String]],
-  minProperties? : Int,
-  maxProperties? : Int,
-) -> Schema {
-  Schema::Object(
-    properties~,
-    required~,
-    additionalProperties~,
-    patternProperties~,
-    propertyNames~,
-    dependentSchemas~,
-    dependentRequired~,
-    minProperties~,
-    maxProperties~,
-  )
-}
-
-///|
-pub fn Schema::enum_(values : Array[Json]) -> Schema {
-  Schema::Enum(values)
 }

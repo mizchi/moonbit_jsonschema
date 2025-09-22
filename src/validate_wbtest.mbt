@@ -13,6 +13,13 @@ test "validate null" {
 }
 
 ///|
+test "validate any" {
+  let schema = Schema::any()
+  schema.validate(null).unwrap() |> inspect(content="()")
+  schema.validate({}).unwrap() |> inspect(content="()")
+}
+
+///|
 test "validate string" {
   let schema = Schema::string()
   schema.validate("hello").unwrap() |> inspect(content="()")
@@ -93,7 +100,7 @@ test "validate number with constraints" {
   schema.validate(-10).unwrap_err()
   |> inspect(
     content=(
-      #|[{json_path: $, schema_path: $.minimum, message: "Value -10 is less than minimum 0"}]
+      #|[{json_path: $, schema_path: $.minimum, message: "-10 is less than minimum 0"}]
     ),
   )
   schema.validate("invalid").unwrap_err()

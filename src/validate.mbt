@@ -13,7 +13,7 @@ pub fn Schema::validate(
 }
 
 ///|
-pub fn Schema::validate_inner(
+fn Schema::validate_inner(
   self : Schema,
   value : Json,
   json_path? : ObjectPath = ObjectPath::Root,
@@ -93,7 +93,7 @@ pub fn Schema::validate_inner(
           ValidationError::new(
             json_path,
             schema_path.add_key("minimum"),
-            "Value \{input} is less than minimum \{min}",
+            "\{input} is less than minimum \{min}",
           ),
         )
       }
@@ -199,26 +199,6 @@ pub fn Schema::validate_inner(
           )
         }
       }
-      // Unique items
-      // match constraints.uniqueItems {
-      //   Some(unique) =>
-      //     if unique {
-      //       for i = 0; i < len - 1; i = i + 1 {
-      //         for j = i + 1; j < len; j = j + 1 {
-      //           if json_equals(value[i], value[j]) {
-      //             errors.push(
-      //               ValidationError::new(
-      //                 format_path(path),
-      //                 "Array contains duplicate items at indices \{i} and \{j}",
-      //                 schema_path + "/uniqueItems",
-      //               ),
-      //             )
-      //           }
-      //         }
-      //       }
-      //     }
-      //   None => ()
-      // }
 
       // Prefix items validation (2020-12)
       // match constraints.prefixItems {
@@ -397,7 +377,6 @@ pub fn Schema::validate_inner(
         }
 
       }
-
       // Properties validation
       if properties is Some(props) {
         props.each(fn(prop_name, child_schema) {
@@ -425,6 +404,15 @@ pub fn Schema::validate_inner(
       } else {
         []
       }
+    Ref(_ref) => raise UnsuppotedSchemaError("$ref not implemented")
+    Not(_schema) =>
+      raise UnsuppotedSchemaError("not schema validation not implemented")
+    AnyOf(_schemas) =>
+      raise UnsuppotedSchemaError("anyOf schema validation not implemented")
+    AllOf(_schemas) =>
+      raise UnsuppotedSchemaError("allOf schema validation not implemented")
+    OneOf(_schemas) =>
+      raise UnsuppotedSchemaError("oneOf schema validation not implemented")
     _ => {
       // TODO
       println("Schema variant not implemented yet: \{self}")
@@ -462,183 +450,4 @@ pub fn ValidationError::new(
   message : String,
 ) -> ValidationError {
   ValidationError::{ json_path, schema_path, message }
-}
-
-// Pure function that returns errors instead of mutating state
-
-///|
-// fn validate_value(
-//   value : Json,
-//   schema : Schema,
-//   path : String,
-//   schema_path : String,
-// ) -> Array[ValidationError] {
-//   let errors : Array[ValidationError] = []
-//   match schema {
-//     Schema::Enum(allowed_values) => {
-//       let mut found = false
-//       for i = 0; i < allowed_values.length(); i = i + 1 {
-//         if json_equals(value, allowed_values[i]) {
-//           found = true
-//           break
-//         }
-//       }
-//       if not(found) {
-//         errors.push(
-//           ValidationError::new(
-//             format_path(path),
-//             "Value is not in the enumeration",
-//             schema_path,
-//           ),
-//         )
-//       }
-//       errors
-//     }
-//     Schema::Const(const_value) =>
-//       if not(json_equals(value, const_value)) {
-//         errors.push(
-//           ValidationError::new(
-//             format_path(path),
-//             "Value does not match const",
-//             schema_path,
-//           ),
-//         )
-//         errors
-//       } else {
-//         errors
-//       }
-//     Schema::AnyOf(schemas) => {
-//       let mut any_valid = false
-//       for i = 0; i < schemas.length(); i = i + 1 {
-//         let sub_errors = validate_value(
-//           value,
-//           schemas[i],
-//           path,
-//           schema_path + "/anyOf[\{i}]",
-//         )
-//         if sub_errors.length() == 0 {
-//           any_valid = true
-//           break
-//         }
-//       }
-//       if not(any_valid) {
-//         errors.push(
-//           ValidationError::new(
-//             format_path(path),
-//             "Value does not match any schema in anyOf",
-//             schema_path,
-//           ),
-//         )
-//       }
-//       errors
-//     }
-//     Schema::AllOf(schemas) =>
-//       for i = 0; i < schemas.length(); i = i + 1 {
-//         errors.append(
-//           validate_value(value, schemas[i], path, schema_path + "/allOf[\{i}]"),
-//         )
-//       } else {
-//         errors
-//       }
-//     Schema::OneOf(schemas) => {
-//       let mut valid_count = 0
-//       for i = 0; i < schemas.length(); i = i + 1 {
-//         let sub_errors = validate_value(
-//           value,
-//           schemas[i],
-//           path,
-//           schema_path + "/oneOf[\{i}]",
-//         )
-//         if sub_errors.length() == 0 {
-//           valid_count = valid_count + 1
-//         }
-//       }
-//       if valid_count == 0 {
-//         errors.push(
-//           ValidationError::new(
-//             format_path(path),
-//             "Value does not match any schema in oneOf",
-//             schema_path,
-//           ),
-//         )
-//       } else if valid_count > 1 {
-//         errors.push(
-//           ValidationError::new(
-//             format_path(path),
-//             "Value matches multiple schemas in oneOf",
-//             schema_path,
-//           ),
-//         )
-//       }
-//       errors
-//     }
-//     Schema::Not(not_schema) => {
-//       let sub_errors = validate_value(
-//         value,
-//         not_schema,
-//         path,
-//         schema_path + "/not",
-//       )
-//       if sub_errors.length() == 0 {
-//         errors.push(
-//           ValidationError::new(
-//             format_path(path),
-//             "Value should not match the schema in 'not'",
-//             schema_path,
-//           ),
-//         )
-//       }
-//       errors
-//     }
-//     Schema::If(if_schema, then_schema, else_schema) => {
-//       let if_errors = validate_value(
-//         value,
-//         if_schema,
-//         path,
-//         schema_path + "/if",
-//       )
-//       if if_errors.length() == 0 {
-//         match then_schema {
-//           Some(schema) =>
-//             errors.append(
-//               validate_value(value, schema, path, schema_path + "/then"),
-//             )
-//           None => ()
-//         }
-//       } else {
-//         match else_schema {
-//           Some(schema) =>
-//             errors.append(
-//               validate_value(value, schema, path, schema_path + "/else"),
-//             )
-//           None => ()
-//         }
-//       }
-//       errors
-//     }
-//   //   Schema::Ref(_ref_path) => {
-//   //     // Reference resolution would be implemented here
-//   //     errors.push(
-//   //       ValidationError::new(
-//   //         format_path(path),
-//   //         "Reference resolution not implemented",
-//   //         schema_path,
-//   //       ),
-//   //     )
-//   //     errors
-//   //   }
-//   // }
-// }
-
-///|
-
-///|
-pub fn format_errors(errors : Array[ValidationError]) -> String {
-  let mut result = "Validation failed with \{errors.length()} error(s):\n"
-  for i = 0; i < errors.length(); i = i + 1 {
-    let error = errors[i]
-    result = result +
-      "  - \{error.json_path}: \{error.message} (schema: \{error.schema_path})\n"
-  }
-  result
 }

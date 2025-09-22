@@ -25,10 +25,18 @@
   - [ ] minContains
   - [ ] maxContains
 - [x] type: object
+
   - [x] properties
   - [x] `additionalProperties: true`
   - [x] `additionalProperties: false`
   - [ ] `additionalProperties: { "type": "..." }`
+  - [ ] patternProperties
+  - [ ] propertyNames
+  - [ ] dependentSchemas
+  - [ ] dependentRequired
+  - [ ] minProperties
+  - [ ] maxProperties
+
 - [ ] anyOf
 - [ ] allOf
 - [ ] oneOf
