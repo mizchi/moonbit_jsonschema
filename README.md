@@ -43,6 +43,6 @@
 - [x] allOf
 - [x] oneOf
 - [ ] `not: ...`
-- [ ] `$ref:`
+- [x] `$ref:`
 - [ ] `if`
 - [x] const
