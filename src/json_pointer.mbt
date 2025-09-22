@@ -56,7 +56,7 @@ fn access(self : JsonPointer, json : Json) -> Json? {
 /// Parse JSON Pointer string into JsonPointer
 fn JsonPointer::from_json_pointer(
   pointer : String,
-) -> JsonPointer raise SchemaError {
+) -> JsonPointer raise SchemaParseError {
   if pointer == "#" || pointer == "" {
     return Root
   }
@@ -73,7 +73,7 @@ fn JsonPointer::from_json_pointer(
     }
   } catch {
     _ =>
-      raise SchemaError::JsonPointerDecodeError(
+      raise SchemaParseError::JsonPointerDecodeError(
         "Invalid JSON Pointer: \{pointer}",
       )
   }

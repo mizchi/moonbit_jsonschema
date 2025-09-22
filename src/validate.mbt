@@ -11,9 +11,11 @@ pub struct Validator {
 /// let validator = Validator::compile(jsonschema)
 /// let _result = validator.validate("hello")
 /// ```
-pub fn Validator::compile(jsonschema : Json) -> Validator raise SchemaError {
+pub fn Validator::compile(
+  jsonschema : Json,
+) -> Validator raise SchemaParseError {
   let schema : JsonSchema = @json.from_json(jsonschema) catch {
-    err => raise SchemaError::JsonDecodeError(err)
+    err => raise SchemaParseError::JsonDecodeError(err)
   }
   let resolver_map : Map[String, JsonSchema] = {}
   let using_refs = traverse_refs_in_json(jsonschema)
@@ -27,7 +29,7 @@ pub fn Validator::compile(jsonschema : Json) -> Validator raise SchemaError {
           let schema : JsonSchema = @json.from_json(json)
           resolver_map.set(ref_expr, schema)
         } catch {
-          err => raise SchemaError::JsonDecodeError(err)
+          err => raise SchemaParseError::JsonDecodeError(err)
         }
       None => ()
     }
