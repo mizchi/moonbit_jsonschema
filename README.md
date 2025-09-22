@@ -20,7 +20,7 @@ fn run() -> Unit raise {
   let validator = @jsonschema.Validator::from_json(schema)
   match validator.validate(5) {
     Ok(_) => println("passed")
-    Err(errors) => println("validation erros: \{errors}")
+    Err(errors) => println("validation errors: \{errors}")
   }
 }
 ```
@@ -36,7 +36,7 @@ let v = schema.validate({ "v": "test" })
 
 NOTE: `Json => JsonSchema => Json` is not perfect yet. Some properties may be dropped.
 
-## with builder and custome resolver
+## with builder and custom ref resolver
 
 ```mbt
 let schema = @jsonschema.JsonSchema::object(
