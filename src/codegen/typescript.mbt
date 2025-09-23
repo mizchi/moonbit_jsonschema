@@ -1,9 +1,23 @@
 ///|
-fn generate_typescript(schema : JsonSchema) -> String {
+/// experimental TypeScript code generator from JSON Schema
+fn generate_typescript(
+  schema : JsonSchema,
+  root_name? : String = "Root",
+  depth? : Int = 0,
+) -> String {
   match schema {
     JsonSchema::Object(properties~, ..) => {
       let logger = StringBuilder::new()
-      logger.write_string("export type MyStruct = {\n")
+      let prefix = "  ".repeat(depth)
+      let is_root = depth == 0
+
+      // open brace
+      if is_root {
+        logger.write_string("export type \{root_name} = {")
+      } else {
+        logger.write_string("{")
+      }
+      // logger.write_string("export type MyStruct = {")
       if properties is Some(properties) {
         let required_keys = match schema {
           JsonSchema::Object(required~, ..) =>
@@ -13,18 +27,19 @@ fn generate_typescript(schema : JsonSchema) -> String {
             }
           _ => Set::new()
         }
+        let child_prefix = "  ".repeat(depth + 1)
         for key, subschema in properties {
-          let key_is_required = required_keys.contains(key)
-          if key_is_required {
-            logger.write_string("  \{key}: ")
+          if required_keys.contains(key) {
+            logger.write_string("\n\{child_prefix}\{key}: ")
           } else {
-            logger.write_string("  \{key}?: ")
+            logger.write_string("\n\{child_prefix}\{key}?: ")
           }
-          let subtype = generate_typescript(subschema)
-          logger.write_string(subtype + ";\n")
+          let subtype = generate_typescript(subschema, depth=depth + 1)
+          logger.write_string("\{subtype}")
         }
       }
-      logger.write_string("}\n")
+      // close
+      logger.write_string("\n\{prefix}};")
       return logger.to_string()
     }
     JsonSchema::String(..) => "string"
@@ -82,14 +97,47 @@ test "ts code generation" {
   inspect(
     code,
     content=(
-      #|export type MyStruct = {
-      #|  name: string;
-      #|  age: number;
-      #|  items?: Array<string>;
-      #|  opt_str?: string | null;
-      #|  opt_number?: number | null;
+      #|export type Root = {
+      #|  name: string
+      #|  age: number
+      #|  items?: Array<string>
+      #|  opt_str?: string | null
+      #|  opt_number?: number | null
+      #|};
+    ),
+  )
+}
+
+///|
+test "ts code generation nested" {
+  let schema : Json = @json.parse(
+    (
+      #|{
+      #|  "type": "object",
+      #|  "properties": {
+      #|    "nested": {
+      #|      "type": "object",
+      #|      "properties": {
+      #|         "v1": { "type": "number" },
+      #|         "v2": { "type": "number" }
+      #|      }
+      #|    }
+      #|  },
+      #|  "required": ["nested"]
       #|}
-      #|
+    ),
+  )
+  let jschema : JsonSchema = @json.from_json(schema)
+  let code = generate_typescript(jschema)
+  inspect(
+    code,
+    content=(
+      #|export type Root = {
+      #|  nested: {
+      #|    v1?: number
+      #|    v2?: number
+      #|  };
+      #|};
     ),
   )
 }

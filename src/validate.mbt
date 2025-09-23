@@ -258,7 +258,7 @@ fn JsonSchema::validate_internal(
             ),
           ]
       }
-    Array(minItems~, maxItems~, items~, ..) => {
+    Array(minItems~, maxItems~, items~, prefixItems~, ..) => {
       guard value is @json.Array(array) else {
         return [
           ValidationError::new(
@@ -292,6 +292,7 @@ fn JsonSchema::validate_internal(
           ),
         )
       }
+      // check items
       if items is Some(item_schema) {
         for i, item in array {
           errors.append(
@@ -302,6 +303,31 @@ fn JsonSchema::validate_internal(
               resolver~,
             ),
           )
+        }
+      }
+      // check prefixItems
+      if prefixItems is Some(prefix_items) {
+        for idx, item_schema in prefix_items {
+          match array.get(idx) {
+            Some(item_value) =>
+              errors.append(
+                item_schema.validate_internal(
+                  item_value,
+                  json_path=json_path.index(idx),
+                  schema_path=schema_path.key("prefixItems").index(idx),
+                  resolver~,
+                ),
+              )
+            None =>
+              errors.push(
+                ValidationError::new(
+                  value,
+                  json_path,
+                  schema_path.key("prefixItems").index(idx),
+                  "Array does not have item at index \{idx}",
+                ),
+              )
+          }
         }
       }
       errors

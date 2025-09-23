@@ -293,6 +293,18 @@ test "validate array with constraints" {
 }
 
 ///|
+test "validate array with prefixItems" {
+  let schema = JsonSchema::array(prefixItems=[
+    JsonSchema::const_("t"),
+    JsonSchema::integer(),
+  ])
+  schema.validate([]) |> assert_err
+  schema.validate(["t", 1]) |> assert_ok
+  schema.validate(["t", "v"]) |> assert_err
+  schema.validate(["x", 1, 2]) |> assert_err
+}
+
+///|
 test "validate oneOf" {
   let schema = JsonSchema::oneOf([JsonSchema::string()])
   schema.validate("hello") |> assert_ok

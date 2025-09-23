@@ -1,21 +1,21 @@
 ///|
 pub fn generate_moonbit(
   raw_json : Json,
-  entries : Set[JsonPointer],
+  entrypoints : Array[JsonPointer],
+  root_name? : String = "Root",
   include_refs? : Bool = true,
-  root_struct_name? : String = "Root",
-  derives? : Array[String] = ["Show", "FromJson", "ToJson"],
-  struct_prefix? : String = "",
+  // derives? : Array[String] = ["Show", "FromJson", "ToJson"],
+  prefix? : String = "",
 ) -> Result[String, String] {
   let logger = StringBuilder::new()
-  let entries : Set[JsonPointer] = Set::copy(entries)
+  let entries : Set[JsonPointer] = Set::from_array(entrypoints)
   if include_refs {
-    for ref_expr in traverse_refs_in_json(raw_json) {
+    for ref_expr in @jsonschema.collect_refs(raw_json) {
       guard JsonPointer::from_string(ref_expr) is Ok(pointer) else { continue }
       entries.add(pointer)
     }
   }
-  for ref_expr in traverse_refs_in_json(raw_json) {
+  for ref_expr in @jsonschema.collect_refs(raw_json) {
     guard JsonPointer::from_string(ref_expr) is Ok(pointer) else { continue }
     entries.add(pointer)
   }
@@ -23,7 +23,7 @@ pub fn generate_moonbit(
   for entry_path in entries {
     guard entry_path.access(raw_json) is Some(json) else { continue }
     let struct_name = match entry_path {
-      @jsonschema.JsonPointer::Root => root_struct_name
+      @jsonschema.JsonPointer::Root => root_name
       @jsonschema.JsonPointer::Key(_, key~) => key
       _ => continue
     }
@@ -31,13 +31,12 @@ pub fn generate_moonbit(
     try {
       let schema : JsonSchema = @json.from_json(json)
       logger.write_string("\n// \{entry_path}\n")
-      if generate_moonbit_struct(
+      if generate_moonbit_statement(
           schema,
           struct_name,
           resolver~,
           pointer=entry_path,
-          derives~,
-          struct_prefix~,
+          prefix~,
         )
         is Ok(code) {
         logger.write_string(code)
@@ -52,72 +51,38 @@ pub fn generate_moonbit(
 }
 
 ///|
-fn generate_moonbit_struct(
+fn generate_moonbit_statement(
   schema : JsonSchema,
   struct_name : String,
   resolver~ : (String) -> JsonSchema?,
-  derives? : Array[String] = ["Show", "FromJson", "ToJson"],
-  struct_prefix? : String = "",
+  prefix? : String = "",
   pointer? : JsonPointer = JsonPointer::Root.key(struct_name),
 ) -> Result[String, String] {
   match schema {
-    JsonSchema::OneOf(schemas) => {
-      let enum_values : Map[String, JsonSchema] = {}
-      for schema in schemas {
-        guard schema is JsonSchema::Object(properties=Some(properties), ..) else {
-          return Err("Each schema in oneOf must be object with properties")
-        }
-        if !properties.contains("$tag") {
-          return Err("`$tag` property is required")
-        }
-        // println("----oneOf schema: \{properties}")
-        // println(properties.get("$tag"))
-        match properties.get("$tag") {
-          Some(JsonSchema::Const(String(tag_value))) =>
-            enum_values.set(tag_value, schema)
-          // enum_values.set(tag_value, schema)
-          _ => return Err("`$tag` property is required")
-        }
-      }
-      let logger = StringBuilder::new()
-      logger.write_string("enum \{struct_name} {\n")
-      for tag_value, subschema in enum_values {
-        guard subschema is JsonSchema::Object(properties=Some(properties), ..) else {
-          return Err("Each schema in oneOf must be object with properties")
-        }
-        logger.write_string("  \{tag_value}(")
-        let mut first = true
-        for key, prop_schema in properties {
-          if key == "$tag" {
-            continue
-          }
-          if !first {
-            logger.write_string(", ")
-          }
-          first = false
-          let subtype_code = generate_moonbit_types(
-            prop_schema,
+    // Root is $ref
+    JsonSchema::Ref(ref_pointer) =>
+      match resolver(ref_pointer) {
+        Some(resolved_schema) =>
+          generate_moonbit_statement(
+            resolved_schema,
+            struct_name,
             resolver~,
-            pointer=pointer.key(key),
+            prefix~,
+            pointer~,
           )
-          logger.write_string("~\{key}: \{subtype_code}")
-        }
-        logger.write_string(")\n")
+        None => Err("ref schema not found")
       }
-      logger.write_string("}\n")
-      logger.to_string() |> Ok
-      // Err("`$tag` property is required")
+    JsonSchema::OneOf(_) => {
+      guard parse_enumerable_one_of(schema) is Some(enum_values) else {
+        return Err("OneOf without prefixItems is not supported")
+      }
+      render_enum(struct_name, enum_values, prefix~, resolver~, pointer~) |> Ok
     }
-
-    // // check all schemas has $tag const
-    // // schemas.
-    // let all_have_tag = schemas.all(fn(s) {
-    // Err("OneOf is not supported")
     JsonSchema::Object(properties=None, ..) =>
       return Err("properties is required")
     JsonSchema::Object(properties=Some(properties), required~, ..) => {
       let inner = StringBuilder::new()
-      inner.write_string("\{struct_prefix}struct \{struct_name} {\n")
+      inner.write_string("\{prefix}struct \{struct_name} {\n")
       let required_keys = if required is Some(v) {
         v |> Set::from_array
       } else {
@@ -131,7 +96,7 @@ fn generate_moonbit_struct(
           let sub_struct_name = sub_pointer.to_symbol_name()
           inner.write_string("  \{key}: \{sub_struct_name}\n")
           match
-            generate_moonbit_struct(
+            generate_moonbit_statement(
               subschema,
               sub_struct_name,
               resolver~,
@@ -143,7 +108,7 @@ fn generate_moonbit_struct(
         } else {
           // child property
           let key_is_required = required_keys.contains(key)
-          let subtype_code = generate_moonbit_types(
+          let subtype_code = generate_moonbit_property(
             subschema,
             resolver~,
             pointer=pointer.key(key),
@@ -155,12 +120,7 @@ fn generate_moonbit_struct(
           }
         }
       }
-      if derives.length() > 0 {
-        let str_derives = derives.join(", ")
-        inner.write_string("} derive(\{str_derives})\n")
-      } else {
-        inner.write_string("}\n")
-      }
+      inner.write_string("} derive(Show, FromJson, ToJson)\n")
       inner.write_string(outer.to_string())
       inner.to_string() |> Ok
     }
@@ -169,7 +129,7 @@ fn generate_moonbit_struct(
 }
 
 ///|
-fn generate_moonbit_types(
+fn generate_moonbit_property(
   schema : JsonSchema,
   resolver~ : (String) -> JsonSchema?,
   pointer? : JsonPointer = JsonPointer::Root,
@@ -181,7 +141,11 @@ fn generate_moonbit_types(
       logger.write_string("Array[")
       if items is Some(value) {
         logger.write_string(
-          generate_moonbit_types(value, resolver~, pointer=pointer.key("index")),
+          generate_moonbit_property(
+            value,
+            resolver~,
+            pointer=pointer.key("index"),
+          ),
         )
       } else {
         logger.write_string("Any")
@@ -197,7 +161,7 @@ fn generate_moonbit_types(
       if schemas.length() == 2 {
         match schemas {
           [JsonSchema::Null(_), other] | [other, JsonSchema::Null(_)] =>
-            return generate_moonbit_types(other, resolver~, pointer~) + "?"
+            return generate_moonbit_property(other, resolver~, pointer~) + "?"
           _ => "Json?"
         }
       } else {
@@ -275,7 +239,7 @@ test "mbt code generation" {
     ),
   )
   let jschema : JsonSchema = @json.from_json(schema)
-  let code = generate_moonbit_struct(jschema, "MyStruct", resolver=fn(_s) {
+  let code = generate_moonbit_statement(jschema, "MyStruct", resolver=fn(_s) {
     None
   })
   inspect(
@@ -326,7 +290,7 @@ test "mbt code generation with inner struct" {
     ),
   )
   let jschema : JsonSchema = @json.from_json(schema)
-  let code = generate_moonbit_struct(jschema, "MyStruct", resolver=fn(_s) {
+  let code = generate_moonbit_statement(jschema, "MyStruct", resolver=fn(_s) {
     None
   })
   inspect(
@@ -367,7 +331,9 @@ test "mbt struct generation with ref" {
     "required": ["points"],
   }
   let jschema : JsonSchema = @json.from_json(schema)
-  let code = generate_moonbit_struct(jschema, "MyStruct", resolver=fn(pointer) {
+  let code = generate_moonbit_statement(jschema, "MyStruct", resolver=fn(
+    pointer,
+  ) {
     if pointer == "#/definitions/Point" {
       JsonSchema::object(
         properties={ "x": JsonSchema::number(), "y": JsonSchema::number() },
@@ -384,36 +350,6 @@ test "mbt struct generation with ref" {
       #|struct MyStruct {
       #|  points: Array[Point]
       #|} derive(Show, FromJson, ToJson)
-      #|
-    ),
-  )
-}
-
-///|
-test "$tag special case: oneOf to enum union types" {
-  let raw : Json = {
-    "oneOf": [
-      {
-        "type": "object",
-        "required": ["$tag", "x"],
-        "properties": { "$tag": { "const": "A" }, "a": { "type": "number" } },
-      },
-      {
-        "type": "object",
-        "properties": { "$tag": { "const": "B" }, "b": { "type": "string" } },
-      },
-    ],
-  }
-  let schema : JsonSchema = @json.from_json(raw)
-  let code = generate_moonbit_struct(schema, "MyEnum", resolver=fn(_) { None })
-  inspect(
-    // code,
-    code.unwrap(),
-    content=(
-      #|enum MyEnum {
-      #|  A(~a: Double)
-      #|  B(~b: String)
-      #|}
       #|
     ),
   )
@@ -446,12 +382,8 @@ test "generate_mbt_code" {
   }
   let code = generate_moonbit(
     schema,
-    Set::from_array([
-      JsonPointer::Root.key("definitions").key("Point3D"),
-      JsonPointer::Root,
-    ]),
-    root_struct_name="MyApp",
-    derives=["Show", "FromJson", "ToJson"],
+    [JsonPointer::Root.key("definitions").key("Point3D"), JsonPointer::Root],
+    root_name="MyApp",
     include_refs=true,
   )
   inspect(

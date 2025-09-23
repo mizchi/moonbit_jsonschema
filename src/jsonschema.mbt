@@ -402,13 +402,25 @@ pub impl @json.FromJson for JsonSchema with from_json(
         Some(@json.False) => Some(false)
         _ => None
       }
+      let prefixItems = match obj.get("prefixItems") {
+        Some(@json.Array(arr)) =>
+          Some(
+            arr.mapi(fn(i, s) {
+              JsonSchema::from_json(
+                s,
+                json_path.add_key("prefixItems").add_index(i),
+              )
+            }),
+          )
+        _ => None
+      }
       JsonSchema::Array(
         items~,
         minItems~,
         maxItems~,
         uniqueItems~,
         description~,
-        prefixItems=None,
+        prefixItems~,
         contains=None,
         minContains=None,
         maxContains=None,

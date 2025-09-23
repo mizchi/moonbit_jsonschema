@@ -31,8 +31,8 @@ $ moon add mizchi/jsonschema
   - [x] items
   - [x] minItems
   - [x] maxItems
-  - [ ] uniqueItems
-  - [ ] prefixItems
+  - [x] prefixItems
+  - [ ] additionalItems
   - [ ] contains
   - [ ] minContains
   - [ ] maxContains
