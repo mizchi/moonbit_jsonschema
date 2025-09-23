@@ -1,0 +1,19 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "mizchi/jsonschema/codegen"
+
+import(
+  "mizchi/jsonschema"
+  "moonbitlang/core/set"
+)
+
+// Values
+fn generate_moonbit(Json, @set.Set[@jsonschema.JsonPointer], include_refs? : Bool, root_struct_name? : String, derives? : Array[String], struct_prefix? : String) -> Result[String, String]
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+

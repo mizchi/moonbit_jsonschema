@@ -1,45 +1,22 @@
 ///|
-pub struct Validator {
-  schema : JsonSchema
-  priv resolver : (String) -> JsonSchema?
-}
-
-///|
 /// Example:
 /// ```
 /// let jsonschema : Json = { "type": "string" }
-/// let validator = Validator::from_json(jsonschema)
+/// let validator = build_validator(jsonschema)
 /// let _result = validator.validate("hello")
 /// ```
-pub fn Validator::from_json(jsonschema : Json) -> Validator raise ParseError {
-  let schema : JsonSchema = @json.from_json(jsonschema) catch {
+pub fn build_validator(root_json : Json) -> Validator raise ParseError {
+  let schema : JsonSchema = @json.from_json(root_json) catch {
     err => raise ParseError::JsonDecodeError(err)
   }
-  let resolver = build_resolver(jsonschema)
+  let resolver = build_resolver(root_json)
   Validator::{ schema, resolver }
 }
 
 ///|
-fn build_resolver(root_json : Json) -> (String) -> JsonSchema? {
-  let resolver_map : Map[String, JsonSchema] = {}
-  let using_refs = traverse_refs_in_json(root_json)
-  for ref_expr in using_refs {
-    let object_path = JsonPointer::from_string(ref_expr) catch {
-      _err => continue
-    }
-    match object_path.access(root_json) {
-      Some(json) =>
-        try {
-          let schema : JsonSchema = @json.from_json(json)
-          resolver_map.set(ref_expr, schema)
-        } catch {
-          // TODO: log error
-          _ => ()
-        }
-      None => ()
-    }
-  }
-  fn(ref_expr) { resolver_map.get(ref_expr) }
+struct Validator {
+  schema : JsonSchema
+  resolver : (String) -> JsonSchema?
 }
 
 ///|
@@ -142,7 +119,7 @@ fn JsonSchema::validate_internal(
           ValidationError::new(
             value,
             json_path,
-            schema_path.add_key("minimum"),
+            schema_path.key("minimum"),
             "Value is less than minimum \{min}",
           ),
         )
@@ -152,7 +129,7 @@ fn JsonSchema::validate_internal(
           ValidationError::new(
             value,
             json_path,
-            schema_path.add_key("maximum"),
+            schema_path.key("maximum"),
             "Value is greater than maximum \{max}",
           ),
         )
@@ -162,7 +139,7 @@ fn JsonSchema::validate_internal(
           ValidationError::new(
             value,
             json_path,
-            schema_path.add_key("exclusiveMaximum"),
+            schema_path.key("exclusiveMaximum"),
             "Value is not less than exclusive maximum \{max}",
           ),
         )
@@ -172,7 +149,7 @@ fn JsonSchema::validate_internal(
           ValidationError::new(
             value,
             json_path,
-            schema_path.add_key("exclusiveMinimum"),
+            schema_path.key("exclusiveMinimum"),
             "Value is not greater than exclusive minimum \{min}",
           ),
         )
@@ -193,7 +170,7 @@ fn JsonSchema::validate_internal(
           ValidationError::new(
             value,
             json_path,
-            schema_path.add_key("minimum"),
+            schema_path.key("minimum"),
             "Value is less than minimum \{min}",
           ),
         )
@@ -203,7 +180,7 @@ fn JsonSchema::validate_internal(
           ValidationError::new(
             value,
             json_path,
-            schema_path.add_key("maximum"),
+            schema_path.key("maximum"),
             "Value is greater than maximum \{max}",
           ),
         )
@@ -213,7 +190,7 @@ fn JsonSchema::validate_internal(
           ValidationError::new(
             value,
             json_path,
-            schema_path.add_key("exclusiveMaximum"),
+            schema_path.key("exclusiveMaximum"),
             "\{input} is not less than exclusive maximum \{max}",
           ),
         )
@@ -223,7 +200,7 @@ fn JsonSchema::validate_internal(
           ValidationError::new(
             value,
             json_path,
-            schema_path.add_key("exclusiveMinimum"),
+            schema_path.key("exclusiveMinimum"),
             "Value is not greater than exclusive minimum \{min}",
           ),
         )
@@ -247,7 +224,7 @@ fn JsonSchema::validate_internal(
               ValidationError::new(
                 value,
                 json_path,
-                schema_path.add_key("minLength"),
+                schema_path.key("minLength"),
                 "String length \{len} is less than minimum \{min}",
               ),
             ]
@@ -257,7 +234,7 @@ fn JsonSchema::validate_internal(
               ValidationError::new(
                 value,
                 json_path,
-                schema_path.add_key("maxLength"),
+                schema_path.key("maxLength"),
                 "String length \{len} is greater than maximum \{max}",
               ),
             ]
@@ -267,7 +244,7 @@ fn JsonSchema::validate_internal(
               ValidationError::new(
                 value,
                 json_path,
-                schema_path.add_key("enum"),
+                schema_path.key("enum"),
                 "\{input} is not in \{enum_values}",
               ),
             ]
@@ -298,7 +275,7 @@ fn JsonSchema::validate_internal(
           ValidationError::new(
             value,
             json_path,
-            schema_path.add_key("minItems"),
+            schema_path.key("minItems"),
             "Array length \{len} is less than minimum \{min}",
           ),
         )
@@ -310,7 +287,7 @@ fn JsonSchema::validate_internal(
           ValidationError::new(
             value,
             json_path,
-            schema_path.add_key("maxItems"),
+            schema_path.key("maxItems"),
             "Array length \{len} is greater than maximum \{max}",
           ),
         )
@@ -320,8 +297,8 @@ fn JsonSchema::validate_internal(
           errors.append(
             item_schema.validate_internal(
               item,
-              json_path=json_path.add_index(i),
-              schema_path=schema_path.add_key("items"),
+              json_path=json_path.index(i),
+              schema_path=schema_path.key("items"),
               resolver~,
             ),
           )
@@ -352,8 +329,8 @@ fn JsonSchema::validate_internal(
           errors.push(
             ValidationError::new(
               value,
-              json_path.add_key(key),
-              schema_path.add_key("required"),
+              json_path.key(key),
+              schema_path.key("required"),
               "Required property '\{key}' is missing",
             ),
           )
@@ -379,8 +356,8 @@ fn JsonSchema::validate_internal(
           guard obj.get(key) is Some(child_value) else { continue }
           let child_errors = schema.validate_internal(
             child_value,
-            json_path=json_path.add_key(key),
-            schema_path=schema_path.add_key("additionalProperties"),
+            json_path=json_path.key(key),
+            schema_path=schema_path.key("additionalProperties"),
             resolver~,
           )
           errors.append(child_errors)
@@ -390,8 +367,8 @@ fn JsonSchema::validate_internal(
           errors.push(
             ValidationError::new(
               value,
-              json_path.add_key(key),
-              schema_path.add_key("additionalProperties"),
+              json_path.key(key),
+              schema_path.key("additionalProperties"),
               "Additional property '\{additional_props}' is not allowed",
             ),
           )
@@ -403,8 +380,8 @@ fn JsonSchema::validate_internal(
           guard obj.get(prop_name) is Some(child_value) else { return }
           let child_errors = child_schema.validate_internal(
             child_value,
-            json_path=json_path.add_key(prop_name),
-            schema_path=schema_path.add_key("properties").add_key(prop_name),
+            json_path=json_path.key(prop_name),
+            schema_path=schema_path.key("properties").key(prop_name),
             resolver~,
           )
           errors.append(child_errors)
@@ -434,7 +411,7 @@ fn JsonSchema::validate_internal(
             value,
             json_path~,
             // TODO: fix schema_path to reference path
-            schema_path=schema_path.add_key("$ref"),
+            schema_path=schema_path.key("$ref"),
             resolver~,
           )
           errors
@@ -444,7 +421,7 @@ fn JsonSchema::validate_internal(
             ValidationError::new(
               value,
               json_path,
-              schema_path.add_key("$ref"),
+              schema_path.key("$ref"),
               "Failed to resolve reference '\{ref_expr}'",
             ),
           ]
@@ -458,7 +435,7 @@ fn JsonSchema::validate_internal(
         let sub_errors = schema.validate_internal(
           value,
           json_path~,
-          schema_path=schema_path.add_key("oneOf").add_index(idx),
+          schema_path=schema_path.key("oneOf").index(idx),
           resolver~,
         )
         if sub_errors.length() == 0 {
@@ -474,7 +451,7 @@ fn JsonSchema::validate_internal(
           ValidationError::new(
             value,
             json_path,
-            schema_path.add_key("allOf"),
+            schema_path.key("allOf"),
             "Value does not match exactly one schema in allOf",
           ),
         )
@@ -488,7 +465,7 @@ fn JsonSchema::validate_internal(
         let sub_errors = schema.validate_internal(
           value,
           json_path~,
-          schema_path=schema_path.add_key("oneOf").add_index(idx),
+          schema_path=schema_path.key("oneOf").index(idx),
           resolver~,
         )
         if sub_errors.length() == 0 {
@@ -504,7 +481,7 @@ fn JsonSchema::validate_internal(
           ValidationError::new(
             value,
             json_path,
-            schema_path.add_key("oneOf"),
+            schema_path.key("oneOf"),
             "Value does not match exactly one schema in oneOf",
           ),
         )
@@ -518,7 +495,7 @@ fn JsonSchema::validate_internal(
         let sub_errors = schema.validate_internal(
           value,
           json_path~,
-          schema_path=schema_path.add_key("anyOf").add_index(idx),
+          schema_path=schema_path.key("anyOf").index(idx),
           resolver~,
         )
         if sub_errors.length() == 0 {
@@ -534,7 +511,7 @@ fn JsonSchema::validate_internal(
           ValidationError::new(
             value,
             json_path,
-            schema_path.add_key("anyOf"),
+            schema_path.key("anyOf"),
             "Value does not match any schema in anyOf",
           ),
         )

@@ -12,7 +12,7 @@ test (b : @bench.T) {
       #|}
     ),
   )
-  let validator = Validator::from_json(jsonschema)
+  let validator = build_validator(jsonschema)
   b.bench(fn() {
     try {
       let _ = validator.validate({ "name": "Alice", "age": 30.0 })

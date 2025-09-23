@@ -361,7 +361,7 @@ test "validate $ref" {
     "definitions": { "PositiveInteger": { "type": "integer", "minimum": 0 } },
     "$ref": "#/definitions/PositiveInteger",
   }
-  let validator = Validator::from_json(raw_schema)
+  let validator = build_validator(raw_schema)
   validator.validate(5) |> assert_ok
   validator.validate("err").unwrap_err()
   |> inspect(
@@ -384,7 +384,7 @@ test "validate $ref in array" {
     "type": "array",
     "items": { "$ref": "#/definitions/Point" },
   }
-  let validator = Validator::from_json(raw_schema)
+  let validator = build_validator(raw_schema)
   validator.validate([{ "x": 1, "y": 2 }]) |> assert_ok
   validator.validate([{ "x": "err", "y": 2 }]).unwrap_err()
   |> inspect(
@@ -411,7 +411,7 @@ test "validate $ref in object" {
       "p2": { "$ref": "#/definitions/Point" },
     },
   }
-  let validator = Validator::from_json(raw_schema)
+  let validator = build_validator(raw_schema)
   validator
   .validate({ "p1": { "x": 1, "y": 2 }, "p2": { "x": 3, "y": 4 } })
   .unwrap()

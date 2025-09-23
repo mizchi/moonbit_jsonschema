@@ -1,6 +1,6 @@
 ///|
 /// get $ref references in json
-fn traverse_refs_in_json(json : Json) -> Set[String] {
+pub fn traverse_refs_in_json(json : Json) -> Set[String] {
   let set : Set[String] = Set::new()
   match json {
     Object(obj) =>
@@ -24,6 +24,30 @@ fn traverse_refs_in_json(json : Json) -> Set[String] {
     _ => ()
   }
   set
+}
+
+///|
+pub fn build_resolver(root_json : Json) -> (String) -> JsonSchema? {
+  let resolver_map : Map[String, JsonSchema] = {}
+  let using_refs = traverse_refs_in_json(root_json)
+  for ref_expr in using_refs {
+    guard JsonPointer::from_string(ref_expr) is Ok(pointer) else {
+      // TODO: warning
+      return fn(_s) { None }
+    }
+    match pointer.access(root_json) {
+      Some(json) =>
+        try {
+          let schema : JsonSchema = @json.from_json(json)
+          resolver_map.set(ref_expr, schema)
+        } catch {
+          // TODO: log error
+          _ => ()
+        }
+      None => ()
+    }
+  }
+  fn(ref_expr) { resolver_map.get(ref_expr) }
 }
 
 ///|

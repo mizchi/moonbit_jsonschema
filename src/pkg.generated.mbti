@@ -3,9 +3,15 @@ package "mizchi/jsonschema"
 
 import(
   "moonbitlang/core/json"
+  "moonbitlang/core/set"
 )
 
 // Values
+fn build_resolver(Json) -> (String) -> JsonSchema?
+
+fn build_validator(Json) -> Validator raise ParseError
+
+fn traverse_refs_in_json(Json) -> @set.Set[String]
 
 // Errors
 pub suberror ParseError {
@@ -18,8 +24,17 @@ pub suberror RuntimeError {
 }
 
 // Types and methods
-type JsonPointer
+pub(all) enum JsonPointer {
+  Root
+  Key(JsonPointer, key~ : String)
+  Index(JsonPointer, index~ : Int)
+}
+fn JsonPointer::access(Self, Json) -> Json?
+fn JsonPointer::from_string(String) -> Result[Self, String]
+fn JsonPointer::index(Self, Int) -> Self
+fn JsonPointer::key(Self, String) -> Self
 impl Eq for JsonPointer
+impl Hash for JsonPointer
 impl Show for JsonPointer
 
 pub enum JsonSchema {
@@ -70,11 +85,7 @@ fn ValidationError::new(Json, JsonPointer, JsonPointer, String, children? : Arra
 impl Eq for ValidationError
 impl Show for ValidationError
 
-pub struct Validator {
-  schema : JsonSchema
-  // private fields
-}
-fn Validator::from_json(Json) -> Self raise ParseError
+type Validator
 fn Validator::validate(Self, Json) -> Result[Unit, Array[ValidationError]] raise RuntimeError
 fn Validator::with_resolver(JsonSchema, (String) -> JsonSchema?) -> Self
 
