@@ -190,8 +190,14 @@ pub fn JsonSchema::allOf(schemas : Array[JsonSchema]) -> JsonSchema {
 
 ///|
 /// { "$ref": ... }
-pub fn JsonSchema::ref_(pointer : String) -> JsonSchema {
-  JsonSchema::Ref(pointer)
+pub fn JsonSchema::ref_from_string(pointer : String) -> JsonSchema {
+  // TODO: validate pointer
+  JsonPointer::from_string(pointer).unwrap() |> JsonSchema::Ref
+}
+
+///|
+pub fn JsonSchema::ref_(pointer : JsonPointer) -> JsonSchema {
+  pointer |> JsonSchema::Ref
 }
 
 ///|

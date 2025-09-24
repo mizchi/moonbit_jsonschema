@@ -56,7 +56,7 @@ pub fn generate_moonbit(
 fn generate_stmt(
   schema : JsonSchema,
   struct_name : String,
-  resolver~ : (String) -> JsonSchema?,
+  resolver~ : (JsonPointer) -> JsonSchema?,
   prefix? : String = "",
   pointer? : JsonPointer = JsonPointer::Root.key(struct_name),
 ) -> Result[String, String] {
@@ -139,7 +139,7 @@ fn generate_stmt(
 ///|
 fn generate_type_expr(
   schema : JsonSchema,
-  resolver~ : (String) -> JsonSchema?,
+  resolver~ : (JsonPointer) -> JsonSchema?,
   pointer? : JsonPointer = JsonPointer::Root,
 ) -> String {
   match schema {
@@ -172,18 +172,23 @@ fn generate_type_expr(
         "Json?"
       }
     JsonSchema::Const(_) | JsonSchema::Enum(_) => "Json"
-    JsonSchema::Ref(ref_pointer) =>
-      ref_to_identifier(ref_pointer).unwrap_or("UnresolvedRef")
+    JsonSchema::Ref(pointer) =>
+      ref_to_identifier(pointer).unwrap_or("UnresolvedRef")
     _ => "\"unsupported type\""
   }
 }
 
 ///|
-fn ref_to_identifier(pointer : String) -> String? {
-  match pointer.split("/").to_array() {
-    [.., last] => Some(last.to_string())
-    _ => None
+fn ref_to_identifier(pointer : JsonPointer) -> String? {
+  match pointer {
+    JsonPointer::Root => Some("Root")
+    JsonPointer::Key(_, key~) => Some(key)
+    JsonPointer::Index(_, index~) => Some(index.to_string())
   }
+  // match pointer.split("/").to_array() {
+  //   [.., last] => Some(last.to_string())
+  //   _ => None
+  // }
 }
 
 ///|
@@ -331,7 +336,7 @@ test "mbt struct generation with ref" {
   }
   let jschema : JsonSchema = @json.from_json(schema)
   let code = generate_stmt(jschema, "MyStruct", resolver=fn(pointer) {
-    if pointer == "#/definitions/Point" {
+    if pointer == JsonPointer::Root.key("definitions").key("Point") {
       JsonSchema::object(
         properties={ "x": JsonSchema::number(), "y": JsonSchema::number() },
         required=["x", "y"],
@@ -411,10 +416,21 @@ test "generate_mbt_code" {
 }
 
 ///|
-test "render nested refs" {
+test "render nested enumberable" {
   let raw : Json = {
     "definitions": {
-      "V": { "type": "number" },
+      "V": {
+        "oneOf": [
+          {
+            "type": "array",
+            "prefixItems": [{ "const": "V1" }, { "type": "number" }],
+          },
+          {
+            "type": "array",
+            "prefixItems": [{ "const": "V2" }, { "type": "integer" }],
+          },
+        ],
+      },
       "A": {
         "type": "object",
         "required": ["a"],
@@ -443,7 +459,11 @@ test "render nested refs" {
       #|} derive(Show, FromJson, ToJson)
       #|
       #|// #/definitions/V
-      #|struct V(Double) derive(Show, Eq, FromJson, ToJson)
+      #|enum V {
+      #|  V1(Double)
+      #|  V2(Int)
+      #|} derive(Show, Eq, FromJson, ToJson)
+      #|
       #|// #/definitions/A
       #|struct A {
       #|  a: V
@@ -458,7 +478,7 @@ test "stmt" {
   let dummy_resolver = fn(_) { Some(JsonSchema::integer()) }
   match
     generate_stmt(
-      JsonSchema::ref_("#/definitions/Num"),
+      JsonSchema::ref_from_string("#/definitions/Num"),
       "Root",
       resolver=dummy_resolver,
     ) {
@@ -479,7 +499,7 @@ test "stmt" {
   }
   match
     generate_stmt(
-      JsonSchema::ref_("#/definitions/Obj"),
+      JsonSchema::ref_from_string("#/definitions/Obj"),
       "Root",
       resolver=dummy_resolver2,
     ) {
@@ -497,12 +517,13 @@ test "stmt" {
 ///|
 test "ref to type expr" {
   let dummy_resolver = fn(_) { None }
-  let refstr = "#/definitions/Num"
+  let refstr = JsonPointer::Root.key("definitions").key("Num")
   ref_to_identifier(refstr) |> assert_eq(Some("Num"))
-  let expr = JsonSchema::ref_("#/definitions/Num")
+  // let expr = JsonSchema::ref_from_string("#/definitions/Num")
+  let expr = JsonPointer::Root.key("definitions").key("Num") |> JsonSchema::ref_
   generate_type_expr(expr, resolver=dummy_resolver) |> assert_eq("Num")
   generate_type_expr(
-    JsonSchema::array(items=JsonSchema::ref_("#/definitions/Num")),
+    JsonSchema::array(items=JsonSchema::ref_from_string("#/definitions/Num")),
     resolver=dummy_resolver,
   )
   |> assert_eq("Array[Num]")

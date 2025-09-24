@@ -1,11 +1,15 @@
 ///|
-pub fn build_resolver(root_json : Json) -> (String) -> JsonSchema? {
+pub struct Resolver {
+  priv resolver_map : Map[String, JsonSchema]
+}
+
+///|
+pub fn Resolver::new(root_json : Json) -> Resolver raise {
   let resolver_map : Map[String, JsonSchema] = {}
   let using_refs = collect_refs(root_json)
   for ref_expr in using_refs {
     guard JsonPointer::from_string(ref_expr) is Ok(pointer) else {
-      // TODO: warning
-      return fn(_s) { None }
+      fail("invalid $ref: " + ref_expr)
     }
     match pointer.access(root_json) {
       Some(json) =>
@@ -19,7 +23,46 @@ pub fn build_resolver(root_json : Json) -> (String) -> JsonSchema? {
       None => ()
     }
   }
-  fn(ref_expr) { resolver_map.get(ref_expr) }
+  Resolver::{ resolver_map, }
+}
+
+///|
+pub fn resolve(self : Resolver, ref_expr : String) -> JsonSchema? {
+  self.resolver_map.get(ref_expr)
+}
+
+///|
+pub fn has(self : Resolver, ref_expr : String) -> Bool {
+  self.resolver_map.contains(ref_expr)
+}
+
+///|
+pub fn get_refs(self : Resolver) -> Array[String] {
+  self.resolver_map.keys().to_array()
+}
+
+///|
+pub fn build_resolver(root_json : Json) -> (JsonPointer) -> JsonSchema? {
+  let resolver_map : Map[String, JsonSchema] = {}
+  let using_refs = collect_refs(root_json)
+  for ref_expr in using_refs {
+    guard JsonPointer::from_string(ref_expr) is Ok(pointer) else {
+      // TODO: warning
+      return fn(_) { None }
+    }
+    match pointer.access(root_json) {
+      Some(json) =>
+        try {
+          let schema : JsonSchema = @json.from_json(json)
+          resolver_map.set(ref_expr, schema)
+        } catch {
+          // TODO: log error
+          _ => ()
+        }
+      None => ()
+    }
+  }
+  fn(ref_expr) { resolver_map.get(ref_expr.to_string()) }
 }
 
 ///|

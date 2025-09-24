@@ -3,3 +3,4 @@ target/
 .mooncakes/
 .moonagent/
 examples/*.mooncakes
+_scratch.mbt

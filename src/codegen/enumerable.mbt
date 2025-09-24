@@ -67,7 +67,7 @@ fn render_enumerable_one_of(
   enum_name : String,
   enum_items : Array[EnumerableOneOf],
   prefix~ : String,
-  resolver~ : (String) -> JsonSchema?,
+  resolver~ : (JsonPointer) -> JsonSchema?,
   pointer~ : JsonPointer,
 ) -> String {
   let logger = StringBuilder::new()

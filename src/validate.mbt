@@ -16,13 +16,13 @@ pub fn build_validator(root_json : Json) -> Validator raise ParseError {
 ///|
 struct Validator {
   schema : JsonSchema
-  resolver : (String) -> JsonSchema?
+  resolver : (JsonPointer) -> JsonSchema?
 }
 
 ///|
 pub fn Validator::with_resolver(
   schema : JsonSchema,
-  resolver : (String) -> JsonSchema?,
+  resolver : (JsonPointer) -> JsonSchema?,
 ) -> Validator {
   Validator::{ schema, resolver }
 }
@@ -46,7 +46,7 @@ pub fn JsonSchema::validate(
   self : JsonSchema,
   value : Json,
 ) -> Result[Unit, Array[ValidationError]] raise Error {
-  let resolver = fn(_ref_expr : String) -> JsonSchema? { None }
+  let resolver = fn(_) -> JsonSchema? { None }
   match self.validate_internal(value, resolver~) {
     [] => Ok(())
     errors => Err(errors)
@@ -57,7 +57,7 @@ pub fn JsonSchema::validate(
 fn JsonSchema::validate_internal(
   self : JsonSchema,
   value : Json,
-  resolver~ : (String) -> JsonSchema?,
+  resolver~ : (JsonPointer) -> JsonSchema?,
   json_path? : JsonPointer = JsonPointer::Root,
   schema_path? : JsonPointer = JsonPointer::Root,
 ) -> Array[ValidationError] raise RuntimeError {
@@ -429,8 +429,8 @@ fn JsonSchema::validate_internal(
       } else {
         []
       }
-    Ref(ref_expr) =>
-      match resolver(ref_expr) {
+    Ref(pointer) =>
+      match resolver(pointer) {
         Some(resolved_schema) => {
           // let opath = ObjectPath::from_json_pointer(ref_expr)
           let errors = resolved_schema.validate_internal(
@@ -448,7 +448,7 @@ fn JsonSchema::validate_internal(
               value,
               json_path,
               schema_path.key("$ref"),
-              "Failed to resolve reference '\{ref_expr}'",
+              "Failed to resolve reference '\{pointer}'",
             ),
           ]
       }

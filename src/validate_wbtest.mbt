@@ -450,13 +450,13 @@ test "validate by schema builder" {
 test "validate by schema builder with custome resolver" {
   let schema = JsonSchema::object(
     properties={
-      "p1": JsonSchema::ref_("#/definitions/Point"),
-      "p2": JsonSchema::ref_("#/definitions/Point"),
+      "p1": JsonSchema::ref_from_string("#/definitions/Point"),
+      "p2": JsonSchema::ref_from_string("#/definitions/Point"),
     },
     required=["p1", "p2"],
   )
-  let validator = Validator::with_resolver(schema, fn(_p) {
-    if _p == "#/definitions/Point" {
+  let validator = Validator::with_resolver(schema, fn(p) {
+    if p == JsonPointer::Root.key("definitions").key("Point") {
       Some(
         JsonSchema::object(
           properties={ "x": JsonSchema::integer(), "y": JsonSchema::integer() },
