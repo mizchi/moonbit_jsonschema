@@ -12,6 +12,7 @@ pub fn Builder::new() -> Builder {
 ///|
 /// { "type": "string" }
 pub fn Builder::string(
+  _self : Builder,
   minLength? : Int,
   maxLength? : Int,
   pattern? : String,
@@ -36,6 +37,7 @@ pub fn Builder::string(
 ///|
 /// { "type": "number" }
 pub fn Builder::number(
+  _self : Builder,
   description? : String,
   minimum? : Double,
   maximum? : Double,
@@ -56,6 +58,7 @@ pub fn Builder::number(
 ///|
 /// { "type": "integer" }
 pub fn Builder::integer(
+  _self : Builder,
   description? : String,
   minimum? : Int,
   maximum? : Int,
@@ -76,6 +79,7 @@ pub fn Builder::integer(
 ///|
 /// { "type": "array" }
 pub fn Builder::array(
+  _self : Builder,
   items? : JsonSchema,
   prefixItems? : Array[JsonSchema],
   contains? : JsonSchema,
@@ -101,25 +105,26 @@ pub fn Builder::array(
 
 ///|
 /// { "type": "null" }
-pub fn Builder::null(description? : String) -> JsonSchema {
+pub fn Builder::null(_self : Builder, description? : String) -> JsonSchema {
   JsonSchema::Null(description~)
 }
 
 ///|
 /// { "type": "boolean" }
-pub fn Builder::boolean(description? : String) -> JsonSchema {
+pub fn Builder::boolean(_self : Builder, description? : String) -> JsonSchema {
   JsonSchema::Boolean(description~)
 }
 
 ///|
 /// { "type": "any" }
-pub fn Builder::any(description? : String) -> JsonSchema {
+pub fn Builder::any(_self : Builder, description? : String) -> JsonSchema {
   JsonSchema::Any(description~)
 }
 
 ///|
 /// { "type": "object" }
 pub fn Builder::object(
+  _self : Builder,
   description? : String,
   properties? : Map[String, JsonSchema],
   required? : Array[String],
@@ -153,25 +158,29 @@ pub fn Builder::object(
 
 ///|
 /// { "enum": [...] }
-pub fn Builder::enum_(values : Array[Json]) -> JsonSchema {
+pub fn Builder::enum_(_self : Builder, values : Array[Json]) -> JsonSchema {
   JsonSchema::Enum(values)
 }
 
 ///|
 /// { "const": value }
-pub fn Builder::const_(value : Json) -> JsonSchema {
+pub fn Builder::const_(_self : Builder, value : Json) -> JsonSchema {
   JsonSchema::Const(value)
 }
 
 ///|
 /// { "oneOf": [...] }
-pub fn Builder::one_of(schemas : Array[JsonSchema]) -> JsonSchema {
+pub fn Builder::one_of(
+  _self : Builder,
+  schemas : Array[JsonSchema],
+) -> JsonSchema {
   JsonSchema::OneOf(schemas)
 }
 
 ///|
 /// { "oneOf": [...] }
 pub fn Builder::enumerable_one_of(
+  self : Builder,
   tag : String,
   schemas : Array[JsonSchema],
   params~ : JsonSchema?,
@@ -179,39 +188,48 @@ pub fn Builder::enumerable_one_of(
   // TODO: validate schemas
   if params is Some(params) {
     JsonSchema::OneOf([
-      Builder::const_(tag.to_json()),
-      Builder::array(prefixItems=schemas),
+      self.const_(tag.to_json()),
+      self.array(prefixItems=schemas),
       params,
     ])
   } else {
     JsonSchema::OneOf([
-      Builder::const_(tag.to_json()),
-      Builder::array(prefixItems=schemas),
+      self.const_(tag.to_json()),
+      self.array(prefixItems=schemas),
     ])
   }
 }
 
 ///|
 /// { "anyOf": [...] }
-pub fn Builder::anyOf(schemas : Array[JsonSchema]) -> JsonSchema {
+pub fn Builder::anyOf(
+  _self : Builder,
+  schemas : Array[JsonSchema],
+) -> JsonSchema {
   JsonSchema::AnyOf(schemas)
 }
 
 ///|
 /// { "allOf": [...] }
-pub fn Builder::allOf(schemas : Array[JsonSchema]) -> JsonSchema {
+pub fn Builder::allOf(
+  _self : Builder,
+  schemas : Array[JsonSchema],
+) -> JsonSchema {
   JsonSchema::AllOf(schemas)
 }
 
 ///|
 /// { "$ref": ... }
-pub fn Builder::ref_from_string(pointer : String) -> JsonSchema {
+pub fn Builder::ref_from_string(
+  _self : Builder,
+  pointer : String,
+) -> JsonSchema {
   // TODO: validate pointer
   JsonPointer::from_string(pointer).unwrap() |> JsonSchema::Ref
 }
 
 ///|
-pub fn Builder::ref_(pointer : JsonPointer) -> JsonSchema {
+pub fn Builder::ref_(_self : Builder, pointer : JsonPointer) -> JsonSchema {
   pointer |> JsonSchema::Ref
 }
 
@@ -305,11 +323,12 @@ test "parse nested" {
 
 ///|
 test "convert type: [string, null] to anyOf" {
+  let b = Builder::new()
   let input =
     #|{
     #|  "type": ["string", "null"]
     #|}
   let jsonschema : Json = @json.parse(input)
   let schema : JsonSchema = @json.from_json(jsonschema)
-  assert_eq(schema, Builder::anyOf([Builder::string(), Builder::null()]))
+  assert_eq(schema, b.anyOf([b.string(), b.null()]))
 }

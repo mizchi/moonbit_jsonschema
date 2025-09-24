@@ -475,13 +475,14 @@ test "render nested enumberable" {
 
 ///|
 test "stmt" {
+  let b = @jsonschema.Builder::new()
   // let dummy_resolver = fn(_) { Some(JsonSchema::integer()) }
   let resolver = @jsonschema.build_resolver({
     "definitions": { "Num": { "type": "integer" } },
   })
   match
     generate_stmt(
-      B::ref_(JsonPointer::Root.key("definitions").key("Num")),
+      b.ref_(JsonPointer::Root.key("definitions").key("Num")),
       "Root",
       resolver~,
     ) {
@@ -503,7 +504,7 @@ test "stmt" {
   })
   match
     generate_stmt(
-      B::ref_from_string("#/definitions/Obj"),
+      b.ref_from_string("#/definitions/Obj"),
       "Root",
       resolver=resolver2,
     ) {
@@ -520,27 +521,24 @@ test "stmt" {
 
 ///|
 test "ref to type expr" {
+  let b = @jsonschema.Builder::new()
   let dummy_resolver = @jsonschema.build_resolver({
     "definitions": { "Num": { "type": "integer" } },
   })
   let refstr = JsonPointer::Root.key("definitions").key("Num")
   ref_to_identifier(refstr) |> assert_eq(Some("Num"))
   // let expr = JsonSchema::ref_from_string("#/definitions/Num")
-  let expr = JsonPointer::Root.key("definitions").key("Num") |> B::ref_
+  let expr = b.ref_(JsonPointer::Root.key("definitions").key("Num"))
   generate_type_expr(expr, resolver=dummy_resolver) |> assert_eq("Num")
   generate_type_expr(
-    B::array(items=B::ref_from_string("#/definitions/Num")),
+    b.array(items=b.ref_from_string("#/definitions/Num")),
     resolver=dummy_resolver,
   )
   |> assert_eq("Array[Num]")
-  generate_type_expr(B::string(), resolver=dummy_resolver)
-  |> assert_eq("String")
-  generate_type_expr(B::integer(), resolver=dummy_resolver) |> assert_eq("Int")
-  generate_type_expr(B::const_("something_json"), resolver=dummy_resolver)
+  generate_type_expr(b.string(), resolver=dummy_resolver) |> assert_eq("String")
+  generate_type_expr(b.integer(), resolver=dummy_resolver) |> assert_eq("Int")
+  generate_type_expr(b.const_("something_json"), resolver=dummy_resolver)
   |> assert_eq("Json")
-  generate_type_expr(
-    B::enum_([{ "a": 1 }, { "b": 2 }]),
-    resolver=dummy_resolver,
-  )
+  generate_type_expr(b.enum_([{ "a": 1 }, { "b": 2 }]), resolver=dummy_resolver)
   |> assert_eq("Json")
 }

@@ -378,6 +378,7 @@ pub impl @json.FromJson for JsonSchema with from_json(
     Some(String(desc)) => Some(desc)
     _ => None
   }
+  let b = Builder::new()
   match obj {
     { "const": value, .. } => JsonSchema::Const(value)
     { "$ref": @json.String(ref_expr), .. } =>
@@ -386,25 +387,25 @@ pub impl @json.FromJson for JsonSchema with from_json(
     // TODO: redundant patterns
     { "type": @json.Array(["null", String(item_type)]), .. } => {
       let schema = match item_type {
-        "string" => Builder::string()
-        "number" => Builder::number()
-        "integer" => Builder::integer()
-        "boolean" => Builder::boolean()
+        "string" => b.string()
+        "number" => b.number()
+        "integer" => b.integer()
+        "boolean" => b.boolean()
         // TODO: raise error if unsupported type
-        _ => Builder::any()
+        _ => b.any()
       }
-      Builder::anyOf([schema, JsonSchema::Null(description=None)])
+      b.anyOf([schema, JsonSchema::Null(description=None)])
     }
     { "type": @json.Array([String(item_type), "null"]), .. } => {
       let schema = match item_type {
-        "string" => Builder::string()
-        "number" => Builder::number()
-        "integer" => Builder::integer()
-        "boolean" => Builder::boolean()
+        "string" => b.string()
+        "number" => b.number()
+        "integer" => b.integer()
+        "boolean" => b.boolean()
         // TODO: raise error if unsupported type
-        _ => Builder::any()
+        _ => b.any()
       }
-      Builder::anyOf([schema, Builder::null()])
+      b.anyOf([schema, b.null()])
     }
     { "type": "object", .. } => {
       let properties = match obj.get("properties") {
