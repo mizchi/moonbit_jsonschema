@@ -1,6 +1,19 @@
 // builder
 
 ///|
+/// Schema builder like a zod schema
+/// Example usage:
+/// ```moon
+/// let b = @jsonschema.Builder::new()
+/// let schema = b.object(
+///   properties={
+///     name: b.string(),
+///     age: b.number(),
+///   },
+///   required=["name", "age"],
+/// )
+/// let _result = schema.validate({ "name": "Alice", "age": 30.0 }).unwrap()
+/// ```
 pub struct Builder {}
 
 ///|
