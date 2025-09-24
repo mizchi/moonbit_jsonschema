@@ -155,6 +155,28 @@ pub fn JsonSchema::oneOf(schemas : Array[JsonSchema]) -> JsonSchema {
 }
 
 ///|
+/// { "oneOf": [...] }
+pub fn JsonSchema::enumerableOneOf(
+  tag : String,
+  schemas : Array[JsonSchema],
+  params~ : JsonSchema?,
+) -> JsonSchema {
+  // TODO: validate schemas
+  if params is Some(params) {
+    JsonSchema::OneOf([
+      JsonSchema::const_(tag.to_json()),
+      JsonSchema::array(prefixItems=schemas),
+      params,
+    ])
+  } else {
+    JsonSchema::OneOf([
+      JsonSchema::const_(tag.to_json()),
+      JsonSchema::array(prefixItems=schemas),
+    ])
+  }
+}
+
+///|
 /// { "anyOf": [...] }
 pub fn JsonSchema::anyOf(schemas : Array[JsonSchema]) -> JsonSchema {
   JsonSchema::AnyOf(schemas)

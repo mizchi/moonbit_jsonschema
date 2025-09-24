@@ -83,6 +83,13 @@ pub enum JsonSchema {
 } derive(Show, Eq)
 
 ///|
+pub struct EnumerableOneOf {
+  tag : String
+  positionals : Array[JsonSchema]
+  params : JsonSchema?
+}
+
+///|
 pub impl ToJson for JsonSchema with to_json(self) -> Json {
   let v : Json = match self {
     JsonSchema::Any(_) => { "type": "any" }.to_json()
@@ -290,12 +297,12 @@ pub impl ToJson for JsonSchema with to_json(self) -> Json {
       json.to_json()
     }
     JsonSchema::AnyOf(schemas) =>
-      { "anyOf": schemas.map(fn(s) { s.to_json() }).to_json() }.to_json()
+      { "anyOf": schemas.map(fn(s) { s.to_json() }) }
     JsonSchema::AllOf(schemas) =>
-      { "allOf": schemas.map(fn(s) { s.to_json() }).to_json() }.to_json()
+      { "allOf": schemas.map(fn(s) { s.to_json() }) }
     JsonSchema::OneOf(schemas) =>
-      { "oneOf": schemas.map(fn(s) { s.to_json() }).to_json() }.to_json()
-    JsonSchema::Not(schema) => { "not": schema.to_json() }.to_json()
+      { "oneOf": schemas.map(fn(s) { s.to_json() }) }
+    JsonSchema::Not(schema) => { "not": schema }
   }
   v
 }

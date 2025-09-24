@@ -3,7 +3,7 @@ async fn run_jsonschema(target : String) -> Unit {
   let fpath : Bytes = target |> @encoding/utf8.encode
   let str = @fs.read_file(fpath) |> @encoding/utf8.decode
   let raw_json : Json = @json.parse(str)
-  let validator = @jsonschema.Validator::from_json(raw_json)
+  let validator = @jsonschema.build_validator(raw_json)
   let instance : Json = 1
   let result = validator.validate(instance)
   println(result)
