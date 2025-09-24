@@ -9,4 +9,5 @@ pub suberror ParseError {
 /// Runtime errors during validation
 pub suberror RuntimeError {
   Unsupported(String)
+  PointerUnresolved
 }

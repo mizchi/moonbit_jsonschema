@@ -1,28 +1,30 @@
+// ///|
+// /// Example:
+// /// ```
+// /// let jsonschema : Json = { "type": "string" }
+// /// let validator = build_validator(jsonschema)
+// /// let _result = validator.validate("hello")
+// /// ```
+
 ///|
-/// Example:
-/// ```
-/// let jsonschema : Json = { "type": "string" }
-/// let validator = build_validator(jsonschema)
-/// let _result = validator.validate("hello")
-/// ```
-pub fn build_validator(root_json : Json) -> Validator raise ParseError {
+pub fn build_validator(root_json : Json) -> Validator raise {
   let schema : JsonSchema = @json.from_json(root_json) catch {
     err => raise ParseError::JsonDecodeError(err)
   }
-  let resolver = build_resolver(root_json)
+  let resolver = Resolver::new(root_json)
   Validator::{ schema, resolver }
 }
 
 ///|
 struct Validator {
   schema : JsonSchema
-  resolver : (JsonPointer) -> JsonSchema?
+  resolver : Resolver
 }
 
 ///|
 pub fn Validator::with_resolver(
   schema : JsonSchema,
-  resolver : (JsonPointer) -> JsonSchema?,
+  resolver : Resolver,
 ) -> Validator {
   Validator::{ schema, resolver }
 }
@@ -46,7 +48,7 @@ pub fn JsonSchema::validate(
   self : JsonSchema,
   value : Json,
 ) -> Result[Unit, Array[ValidationError]] raise Error {
-  let resolver = fn(_) -> JsonSchema? { None }
+  let resolver = Resolver::new({}) // dummy resolver
   match self.validate_internal(value, resolver~) {
     [] => Ok(())
     errors => Err(errors)
@@ -57,7 +59,7 @@ pub fn JsonSchema::validate(
 fn JsonSchema::validate_internal(
   self : JsonSchema,
   value : Json,
-  resolver~ : (JsonPointer) -> JsonSchema?,
+  resolver~ : Resolver,
   json_path? : JsonPointer = JsonPointer::Root,
   schema_path? : JsonPointer = JsonPointer::Root,
 ) -> Array[ValidationError] raise RuntimeError {
@@ -430,7 +432,17 @@ fn JsonSchema::validate_internal(
         []
       }
     Ref(pointer) =>
-      match resolver(pointer) {
+      // guard resolver is Some(resolver) else {
+      //   return [
+      //     ValidationError::new(
+      //       value,
+      //       json_path,
+      //       schema_path.key("$ref"),
+      //       "No resolver provided for $ref",
+      //     ),
+      //   ]
+      // }
+      match resolver.resolve(pointer) {
         Some(resolved_schema) => {
           // let opath = ObjectPath::from_json_pointer(ref_expr)
           let errors = resolved_schema.validate_internal(

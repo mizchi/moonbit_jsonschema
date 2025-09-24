@@ -7,11 +7,11 @@ import(
 )
 
 // Values
-fn build_resolver(Json) -> (String) -> JsonSchema?
+fn build_resolver(Json) -> Resolver raise
 
-fn build_validator(Json) -> Validator raise ParseError
+fn build_validator(Json) -> Validator raise
 
-fn traverse_refs_in_json(Json) -> @set.Set[String]
+fn collect_refs(Json) -> @set.Set[String]
 
 // Errors
 pub suberror ParseError {
@@ -24,6 +24,12 @@ pub suberror RuntimeError {
 }
 
 // Types and methods
+pub struct EnumerableOneOf {
+  tag : String
+  positionals : Array[JsonSchema]
+  params : JsonSchema?
+}
+
 pub(all) enum JsonPointer {
   Root
   Key(JsonPointer, key~ : String)
@@ -52,7 +58,7 @@ pub enum JsonSchema {
   AllOf(Array[JsonSchema])
   OneOf(Array[JsonSchema])
   Not(JsonSchema)
-  Ref(String)
+  Ref(JsonPointer)
 }
 fn JsonSchema::allOf(Array[Self]) -> Self
 fn JsonSchema::any(description? : String) -> Self
@@ -61,18 +67,28 @@ fn JsonSchema::array(items? : Self, prefixItems? : Array[Self], contains? : Self
 fn JsonSchema::boolean(description? : String) -> Self
 fn JsonSchema::const_(Json) -> Self
 fn JsonSchema::enum_(Array[Json]) -> Self
+fn JsonSchema::enumerableOneOf(String, Array[Self], params~ : Self?) -> Self
 fn JsonSchema::integer(description? : String, minimum? : Int, maximum? : Int, exclusiveMinimum? : Int, exclusiveMaximum? : Int, multipleOf? : Int) -> Self
 fn JsonSchema::null(description? : String) -> Self
 fn JsonSchema::number(description? : String, minimum? : Double, maximum? : Double, exclusiveMinimum? : Double, exclusiveMaximum? : Double, multipleOf? : Double) -> Self
 fn JsonSchema::object(description? : String, properties? : Map[String, Self], required? : Array[String], additionalProperties? : Self, patternProperties? : Map[String, Self], propertyNames? : Self, dependentSchemas? : Map[String, Self], dependentRequired? : Map[String, Array[String]], minProperties? : Int, maxProperties? : Int) -> Self
 fn JsonSchema::oneOf(Array[Self]) -> Self
-fn JsonSchema::ref_(String) -> Self
+fn JsonSchema::ref_(JsonPointer) -> Self
+fn JsonSchema::ref_from_string(String) -> Self
 fn JsonSchema::string(minLength? : Int, maxLength? : Int, pattern? : String, format? : String, enum_? : Array[String], contentEncoding? : String, contentMediaType? : String, description? : String) -> Self
 fn JsonSchema::validate(Self, Json) -> Result[Unit, Array[ValidationError]] raise
 impl Eq for JsonSchema
 impl Show for JsonSchema
 impl ToJson for JsonSchema
 impl @json.FromJson for JsonSchema
+
+pub(all) struct Resolver {
+  // private fields
+}
+fn Resolver::get_refs(Self) -> Array[JsonPointer]
+fn Resolver::has(Self, JsonPointer) -> Bool
+fn Resolver::new(Json) -> Self raise
+fn Resolver::resolve(Self, JsonPointer) -> JsonSchema?
 
 pub struct ValidationError {
   input : Json
@@ -87,7 +103,7 @@ impl Show for ValidationError
 
 type Validator
 fn Validator::validate(Self, Json) -> Result[Unit, Array[ValidationError]] raise RuntimeError
-fn Validator::with_resolver(JsonSchema, (String) -> JsonSchema?) -> Self
+fn Validator::with_resolver(JsonSchema, Resolver) -> Self
 
 // Type aliases
 

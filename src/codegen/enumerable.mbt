@@ -67,7 +67,7 @@ fn render_enumerable_one_of(
   enum_name : String,
   enum_items : Array[EnumerableOneOf],
   prefix~ : String,
-  resolver~ : (JsonPointer) -> JsonSchema?,
+  resolver~ : @jsonschema.Resolver,
   pointer~ : JsonPointer,
 ) -> String {
   let logger = StringBuilder::new()
@@ -141,7 +141,7 @@ test "Parse [tagKey, {...}] for moonbit enum" {
     ],
   }
   // let schema : JsonSchema = @json.from_json(raw)
-  let code = generate_moonbit(
+  let code = generate(
     raw,
     [JsonPointer::Root],
     root_name="MyEnum",
@@ -186,7 +186,7 @@ test "all refs in oneOf to enum union types" {
     ],
   }
   // let schema : JsonSchema = @json.from_json(raw)
-  let code = generate_moonbit(
+  let code = generate(
     raw,
     [JsonPointer::Root],
     root_name="MyEnum",

@@ -1,21 +1,26 @@
 ///|
-pub struct Resolver {
-  priv resolver_map : Map[String, JsonSchema]
+pub(all) struct Resolver {
+  priv resolver_map : Map[JsonPointer, JsonSchema]
 }
 
 ///|
-pub fn Resolver::new(root_json : Json) -> Resolver raise {
-  let resolver_map : Map[String, JsonSchema] = {}
+pub fn build_resolver(root_json : Json) -> Resolver raise ParseError {
+  Resolver::new(root_json)
+}
+
+///|
+pub fn Resolver::new(root_json : Json) -> Resolver raise ParseError {
+  let resolver_map : Map[JsonPointer, JsonSchema] = {}
   let using_refs = collect_refs(root_json)
   for ref_expr in using_refs {
     guard JsonPointer::from_string(ref_expr) is Ok(pointer) else {
-      fail("invalid $ref: " + ref_expr)
+      raise ParseError::PointerParseError(ref_expr)
     }
     match pointer.access(root_json) {
       Some(json) =>
         try {
           let schema : JsonSchema = @json.from_json(json)
-          resolver_map.set(ref_expr, schema)
+          resolver_map.set(pointer, schema)
         } catch {
           // TODO: log error
           _ => ()
@@ -27,42 +32,18 @@ pub fn Resolver::new(root_json : Json) -> Resolver raise {
 }
 
 ///|
-pub fn resolve(self : Resolver, ref_expr : String) -> JsonSchema? {
-  self.resolver_map.get(ref_expr)
+pub fn resolve(self : Resolver, pointer : JsonPointer) -> JsonSchema? {
+  self.resolver_map.get(pointer)
 }
 
 ///|
-pub fn has(self : Resolver, ref_expr : String) -> Bool {
+pub fn has(self : Resolver, ref_expr : JsonPointer) -> Bool {
   self.resolver_map.contains(ref_expr)
 }
 
 ///|
-pub fn get_refs(self : Resolver) -> Array[String] {
+pub fn get_refs(self : Resolver) -> Array[JsonPointer] {
   self.resolver_map.keys().to_array()
-}
-
-///|
-pub fn build_resolver(root_json : Json) -> (JsonPointer) -> JsonSchema? {
-  let resolver_map : Map[String, JsonSchema] = {}
-  let using_refs = collect_refs(root_json)
-  for ref_expr in using_refs {
-    guard JsonPointer::from_string(ref_expr) is Ok(pointer) else {
-      // TODO: warning
-      return fn(_) { None }
-    }
-    match pointer.access(root_json) {
-      Some(json) =>
-        try {
-          let schema : JsonSchema = @json.from_json(json)
-          resolver_map.set(ref_expr, schema)
-        } catch {
-          // TODO: log error
-          _ => ()
-        }
-      None => ()
-    }
-  }
-  fn(ref_expr) { resolver_map.get(ref_expr.to_string()) }
 }
 
 ///|

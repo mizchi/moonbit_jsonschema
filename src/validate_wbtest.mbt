@@ -448,25 +448,22 @@ test "validate by schema builder" {
 
 ///|
 test "validate by schema builder with custome resolver" {
-  let schema = JsonSchema::object(
-    properties={
-      "p1": JsonSchema::ref_from_string("#/definitions/Point"),
-      "p2": JsonSchema::ref_from_string("#/definitions/Point"),
+  let raw : Json = {
+    "definitions": {
+      "Point": {
+        "type": "object",
+        "required": ["x", "y"],
+        "properties": { "x": { "type": "integer" }, "y": { "type": "integer" } },
+      },
     },
-    required=["p1", "p2"],
-  )
-  let validator = Validator::with_resolver(schema, fn(p) {
-    if p == JsonPointer::Root.key("definitions").key("Point") {
-      Some(
-        JsonSchema::object(
-          properties={ "x": JsonSchema::integer(), "y": JsonSchema::integer() },
-          required=["x", "y"],
-        ),
-      )
-    } else {
-      None
-    }
-  })
+    "type": "object",
+    "required": ["p1", "p2"],
+    "properties": {
+      "p1": { "$ref": "#/definitions/Point" },
+      "p2": { "$ref": "#/definitions/Point" },
+    },
+  }
+  let validator = build_validator(raw)
   validator.validate({ "p1": { "x": 1, "y": 2 }, "p2": { "x": 3, "y": 4 } })
   |> assert_ok
   validator

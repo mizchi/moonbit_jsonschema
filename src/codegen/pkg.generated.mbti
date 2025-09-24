@@ -3,11 +3,10 @@ package "mizchi/jsonschema/codegen"
 
 import(
   "mizchi/jsonschema"
-  "moonbitlang/core/set"
 )
 
 // Values
-fn generate_moonbit(Json, @set.Set[@jsonschema.JsonPointer], include_refs? : Bool, root_struct_name? : String, derives? : Array[String], struct_prefix? : String) -> Result[String, String]
+fn generate_moonbit(Json, Array[@jsonschema.JsonPointer], root_name? : String, include_refs? : Bool, prefix? : String) -> Result[String, String] raise
 
 // Errors
 

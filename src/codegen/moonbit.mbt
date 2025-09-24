@@ -1,12 +1,12 @@
 ///|
-pub fn generate_moonbit(
+pub fn generate(
   raw_json : Json,
   entrypoints : Array[JsonPointer],
   root_name? : String = "Root",
   include_refs? : Bool = true,
   // derives? : Array[String] = ["Show", "FromJson", "ToJson"],
   prefix? : String = "",
-) -> Result[String, String] {
+) -> Result[String, String] raise {
   let logger = StringBuilder::new()
   let entries : Set[JsonPointer] = Set::from_array(entrypoints)
   if include_refs {
@@ -50,13 +50,11 @@ pub fn generate_moonbit(
   logger.to_string() |> Ok
 }
 
-// pub struct Root(Int)
-
 ///|
 fn generate_stmt(
   schema : JsonSchema,
   struct_name : String,
-  resolver~ : (JsonPointer) -> JsonSchema?,
+  resolver~ : @jsonschema.Resolver,
   prefix? : String = "",
   pointer? : JsonPointer = JsonPointer::Root.key(struct_name),
 ) -> Result[String, String] {
@@ -139,7 +137,7 @@ fn generate_stmt(
 ///|
 fn generate_type_expr(
   schema : JsonSchema,
-  resolver~ : (JsonPointer) -> JsonSchema?,
+  resolver~ : @jsonschema.Resolver,
   pointer? : JsonPointer = JsonPointer::Root,
 ) -> String {
   match schema {
@@ -247,7 +245,8 @@ test "mbt code generation" {
     ),
   )
   let jschema : JsonSchema = @json.from_json(schema)
-  let code = generate_stmt(jschema, "MyStruct", resolver=fn(_s) { None })
+  let resolver = @jsonschema.build_resolver(schema)
+  let code = generate_stmt(jschema, "MyStruct", resolver~)
   inspect(
     code.unwrap(),
     content=(
@@ -296,7 +295,8 @@ test "mbt code generation with inner struct" {
     ),
   )
   let jschema : JsonSchema = @json.from_json(schema)
-  let code = generate_stmt(jschema, "MyStruct", resolver=fn(_s) { None })
+  let resolver = @jsonschema.build_resolver(schema)
+  let code = generate_stmt(jschema, "MyStruct", resolver~)
   inspect(
     code.unwrap(),
     content=(
@@ -335,17 +335,16 @@ test "mbt struct generation with ref" {
     "required": ["points"],
   }
   let jschema : JsonSchema = @json.from_json(schema)
-  let code = generate_stmt(jschema, "MyStruct", resolver=fn(pointer) {
-    if pointer == JsonPointer::Root.key("definitions").key("Point") {
-      JsonSchema::object(
-        properties={ "x": JsonSchema::number(), "y": JsonSchema::number() },
-        required=["x", "y"],
-      )
-      |> Some
-    } else {
-      JsonSchema::any() |> Some
-    }
+  let resolver = @jsonschema.build_resolver({
+    "definitions": {
+      "Point": {
+        "type": "object",
+        "properties": { "x": { "type": "number" }, "y": { "type": "number" } },
+        "required": ["x", "y"],
+      },
+    },
   })
+  let code = generate_stmt(jschema, "MyStruct", resolver~)
   inspect(
     code.unwrap(),
     content=(
@@ -382,7 +381,7 @@ test "generate_mbt_code" {
     },
     "required": ["points"],
   }
-  let code = generate_moonbit(
+  let code = generate(
     schema,
     [JsonPointer::Root.key("definitions").key("Point3D"), JsonPointer::Root],
     root_name="MyApp",
@@ -443,7 +442,7 @@ test "render nested enumberable" {
       },
     },
   }
-  let code = generate_moonbit(
+  let code = generate(
     raw,
     [JsonPointer::Root.key("definitions").key("B")],
     root_name="Root",
@@ -475,12 +474,15 @@ test "render nested enumberable" {
 
 ///|
 test "stmt" {
-  let dummy_resolver = fn(_) { Some(JsonSchema::integer()) }
+  // let dummy_resolver = fn(_) { Some(JsonSchema::integer()) }
+  let resolver = @jsonschema.build_resolver({
+    "definitions": { "Num": { "type": "integer" } },
+  })
   match
     generate_stmt(
-      JsonSchema::ref_from_string("#/definitions/Num"),
+      JsonSchema::ref_(JsonPointer::Root.key("definitions").key("Num")),
       "Root",
-      resolver=dummy_resolver,
+      resolver~,
     ) {
     Err(e) => fail("unreachable: \{e}")
     Ok(code) =>
@@ -489,19 +491,20 @@ test "stmt" {
         content="struct Root(Num) derive(Show, Eq, FromJson, ToJson)",
       )
   }
-  let dummy_resolver2 = fn(_) {
-    Some(
-      JsonSchema::object(
-        properties={ "x": JsonSchema::integer(), "y": JsonSchema::integer() },
-        required=["x", "y"],
-      ),
-    )
-  }
+  let resolver2 = @jsonschema.build_resolver({
+    "definitions": {
+      "Obj": {
+        "type": "object",
+        "properties": { "x": { "type": "integer" }, "y": { "type": "integer" } },
+        "required": ["x", "y"],
+      },
+    },
+  })
   match
     generate_stmt(
       JsonSchema::ref_from_string("#/definitions/Obj"),
       "Root",
-      resolver=dummy_resolver2,
+      resolver=resolver2,
     ) {
     Err(e) => fail("unreachable: \{e}")
     Ok(code) =>
@@ -516,7 +519,9 @@ test "stmt" {
 
 ///|
 test "ref to type expr" {
-  let dummy_resolver = fn(_) { None }
+  let dummy_resolver = @jsonschema.build_resolver({
+    "definitions": { "Num": { "type": "integer" } },
+  })
   let refstr = JsonPointer::Root.key("definitions").key("Num")
   ref_to_identifier(refstr) |> assert_eq(Some("Num"))
   // let expr = JsonSchema::ref_from_string("#/definitions/Num")
