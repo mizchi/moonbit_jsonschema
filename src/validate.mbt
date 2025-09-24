@@ -1,17 +1,15 @@
-// ///|
-// /// Example:
-// /// ```
-// /// let jsonschema : Json = { "type": "string" }
-// /// let validator = build_validator(jsonschema)
-// /// let _result = validator.validate("hello")
-// /// ```
-
 ///|
-pub fn build_validator(root_json : Json) -> Validator raise {
-  let schema : JsonSchema = @json.from_json(root_json) catch {
+/// Example:
+/// ```
+/// let jsonschema : Json = { "type": "string" }
+/// let validator = build_validator(jsonschema)
+/// let _result = validator.validate("hello")
+/// ```
+pub fn build_validator(raw : Json) -> Validator raise {
+  let schema : JsonSchema = @json.from_json(raw) catch {
     err => raise ParseError::JsonDecodeError(err)
   }
-  let resolver = Resolver::new(root_json)
+  let resolver = Resolver::new(raw)
   Validator::{ schema, resolver }
 }
 
@@ -33,6 +31,8 @@ pub fn Validator::with_resolver(
 pub fn Validator::validate(
   self : Validator,
   input : Json,
+  // TODO: support pointer
+  // pointer~ : JsonPointer?,
 ) -> Result[Unit, Array[ValidationError]] raise RuntimeError {
   let errors = self.schema.validate_internal(input, resolver=self.resolver)
   if errors.length() == 0 {

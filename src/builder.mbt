@@ -1,8 +1,17 @@
 // builder
 
 ///|
+pub struct Builder {}
+
+///|
+pub fn Builder::new() -> Builder {
+  // TODO: use with resolver later
+  Builder::{  }
+}
+
+///|
 /// { "type": "string" }
-pub fn JsonSchema::string(
+pub fn Builder::string(
   minLength? : Int,
   maxLength? : Int,
   pattern? : String,
@@ -26,7 +35,7 @@ pub fn JsonSchema::string(
 
 ///|
 /// { "type": "number" }
-pub fn JsonSchema::number(
+pub fn Builder::number(
   description? : String,
   minimum? : Double,
   maximum? : Double,
@@ -46,7 +55,7 @@ pub fn JsonSchema::number(
 
 ///|
 /// { "type": "integer" }
-pub fn JsonSchema::integer(
+pub fn Builder::integer(
   description? : String,
   minimum? : Int,
   maximum? : Int,
@@ -66,7 +75,7 @@ pub fn JsonSchema::integer(
 
 ///|
 /// { "type": "array" }
-pub fn JsonSchema::array(
+pub fn Builder::array(
   items? : JsonSchema,
   prefixItems? : Array[JsonSchema],
   contains? : JsonSchema,
@@ -92,25 +101,25 @@ pub fn JsonSchema::array(
 
 ///|
 /// { "type": "null" }
-pub fn JsonSchema::null(description? : String) -> JsonSchema {
+pub fn Builder::null(description? : String) -> JsonSchema {
   JsonSchema::Null(description~)
 }
 
 ///|
 /// { "type": "boolean" }
-pub fn JsonSchema::boolean(description? : String) -> JsonSchema {
+pub fn Builder::boolean(description? : String) -> JsonSchema {
   JsonSchema::Boolean(description~)
 }
 
 ///|
 /// { "type": "any" }
-pub fn JsonSchema::any(description? : String) -> JsonSchema {
+pub fn Builder::any(description? : String) -> JsonSchema {
   JsonSchema::Any(description~)
 }
 
 ///|
 /// { "type": "object" }
-pub fn JsonSchema::object(
+pub fn Builder::object(
   description? : String,
   properties? : Map[String, JsonSchema],
   required? : Array[String],
@@ -121,11 +130,17 @@ pub fn JsonSchema::object(
   dependentRequired? : Map[String, Array[String]],
   minProperties? : Int,
   maxProperties? : Int,
+  // over
+  required_all? : Bool = false,
 ) -> JsonSchema {
   JsonSchema::Object(
     description~,
     properties~,
-    required~,
+    required=if required_all && properties is Some(props) {
+      props.keys().to_array() |> Some
+    } else {
+      required
+    },
     additionalProperties~,
     patternProperties~,
     propertyNames~,
@@ -138,25 +153,25 @@ pub fn JsonSchema::object(
 
 ///|
 /// { "enum": [...] }
-pub fn JsonSchema::enum_(values : Array[Json]) -> JsonSchema {
+pub fn Builder::enum_(values : Array[Json]) -> JsonSchema {
   JsonSchema::Enum(values)
 }
 
 ///|
 /// { "const": value }
-pub fn JsonSchema::const_(value : Json) -> JsonSchema {
+pub fn Builder::const_(value : Json) -> JsonSchema {
   JsonSchema::Const(value)
 }
 
 ///|
 /// { "oneOf": [...] }
-pub fn JsonSchema::oneOf(schemas : Array[JsonSchema]) -> JsonSchema {
+pub fn Builder::one_of(schemas : Array[JsonSchema]) -> JsonSchema {
   JsonSchema::OneOf(schemas)
 }
 
 ///|
 /// { "oneOf": [...] }
-pub fn JsonSchema::enumerableOneOf(
+pub fn Builder::enumerable_one_of(
   tag : String,
   schemas : Array[JsonSchema],
   params~ : JsonSchema?,
@@ -164,39 +179,39 @@ pub fn JsonSchema::enumerableOneOf(
   // TODO: validate schemas
   if params is Some(params) {
     JsonSchema::OneOf([
-      JsonSchema::const_(tag.to_json()),
-      JsonSchema::array(prefixItems=schemas),
+      Builder::const_(tag.to_json()),
+      Builder::array(prefixItems=schemas),
       params,
     ])
   } else {
     JsonSchema::OneOf([
-      JsonSchema::const_(tag.to_json()),
-      JsonSchema::array(prefixItems=schemas),
+      Builder::const_(tag.to_json()),
+      Builder::array(prefixItems=schemas),
     ])
   }
 }
 
 ///|
 /// { "anyOf": [...] }
-pub fn JsonSchema::anyOf(schemas : Array[JsonSchema]) -> JsonSchema {
+pub fn Builder::anyOf(schemas : Array[JsonSchema]) -> JsonSchema {
   JsonSchema::AnyOf(schemas)
 }
 
 ///|
 /// { "allOf": [...] }
-pub fn JsonSchema::allOf(schemas : Array[JsonSchema]) -> JsonSchema {
+pub fn Builder::allOf(schemas : Array[JsonSchema]) -> JsonSchema {
   JsonSchema::AllOf(schemas)
 }
 
 ///|
 /// { "$ref": ... }
-pub fn JsonSchema::ref_from_string(pointer : String) -> JsonSchema {
+pub fn Builder::ref_from_string(pointer : String) -> JsonSchema {
   // TODO: validate pointer
   JsonPointer::from_string(pointer).unwrap() |> JsonSchema::Ref
 }
 
 ///|
-pub fn JsonSchema::ref_(pointer : JsonPointer) -> JsonSchema {
+pub fn Builder::ref_(pointer : JsonPointer) -> JsonSchema {
   pointer |> JsonSchema::Ref
 }
 
@@ -296,8 +311,5 @@ test "convert type: [string, null] to anyOf" {
     #|}
   let jsonschema : Json = @json.parse(input)
   let schema : JsonSchema = @json.from_json(jsonschema)
-  assert_eq(
-    schema,
-    JsonSchema::anyOf([JsonSchema::string(), JsonSchema::null()]),
-  )
+  assert_eq(schema, Builder::anyOf([Builder::string(), Builder::null()]))
 }

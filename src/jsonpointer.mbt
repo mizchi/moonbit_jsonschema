@@ -7,7 +7,7 @@ pub(all) enum JsonPointer {
   Key(JsonPointer, key~ : String)
   /// Index Access
   Index(JsonPointer, index~ : Int)
-} derive(Eq, Hash)
+} derive(Eq, Hash, FromJson, ToJson)
 
 ///|
 pub fn index(self : JsonPointer, index : Int) -> JsonPointer {

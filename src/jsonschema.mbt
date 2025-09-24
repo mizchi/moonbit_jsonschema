@@ -1,6 +1,4 @@
 // JSON Schema types and definitions
-// Using built-in @json.JsonValue instead of custom JsonValue type
-// Schema as enum for context-aware validation
 
 ///|
 /// JsonSchema
@@ -83,10 +81,71 @@ pub enum JsonSchema {
 } derive(Show, Eq)
 
 ///|
-pub struct EnumerableOneOf {
+pub(all) struct EnumerableOneOf {
   tag : String
   positionals : Array[JsonSchema]
   params : JsonSchema?
+}
+
+///|
+pub fn EnumerableOneOf::new(
+  tag : String,
+  positionals : Array[JsonSchema],
+  params : JsonSchema?,
+) -> EnumerableOneOf {
+  { tag, positionals, params }
+}
+
+///|
+pub fn EnumerableOneOf::parse_enumerable_one_of(
+  schema : JsonSchema,
+) -> Array[EnumerableOneOf]? {
+  guard schema is JsonSchema::OneOf(schemas) else { return None }
+  guard schemas.get(0) is Some(first_schema) else { return None }
+  // prefixItems case
+  if first_schema
+    is JsonSchema::Array(
+      prefixItems=Some([JsonSchema::Const(String(_)), ..]),
+      ..
+    ) {
+    let parsed : Array[EnumerableOneOf] = []
+    for schema in schemas {
+      match schema {
+        // [{"const": "A"}]
+        JsonSchema::Array(
+          prefixItems=Some([JsonSchema::Const(String(tag_value))]),
+          ..
+        ) => parsed.push(EnumerableOneOf::new(tag_value, [], None))
+        // [{"const": "A"}, ..]
+        JsonSchema::Array(
+          prefixItems=Some(
+            [JsonSchema::Const(String(tag_value)), .. child_schemas]
+          ),
+          ..
+        ) => {
+          let matched = match child_schemas.to_array() {
+            [] => { tag: tag_value, positionals: [], params: None }
+            [.. positionals, JsonSchema::Object(_) as params] =>
+              {
+                tag: tag_value,
+                positionals: positionals.to_array(),
+                params: Some(params),
+              }
+            [.. positionals] =>
+              {
+                tag: tag_value,
+                positionals: positionals.to_array(),
+                params: None,
+              }
+          }
+          parsed.push(matched)
+        }
+        _ => ()
+      }
+    }
+    return Some(parsed)
+  }
+  None
 }
 
 ///|
@@ -327,25 +386,25 @@ pub impl @json.FromJson for JsonSchema with from_json(
     // TODO: redundant patterns
     { "type": @json.Array(["null", String(item_type)]), .. } => {
       let schema = match item_type {
-        "string" => JsonSchema::string()
-        "number" => JsonSchema::number()
-        "integer" => JsonSchema::integer()
-        "boolean" => JsonSchema::boolean()
+        "string" => Builder::string()
+        "number" => Builder::number()
+        "integer" => Builder::integer()
+        "boolean" => Builder::boolean()
         // TODO: raise error if unsupported type
-        _ => JsonSchema::any()
+        _ => Builder::any()
       }
-      JsonSchema::anyOf([schema, JsonSchema::Null(description=None)])
+      Builder::anyOf([schema, JsonSchema::Null(description=None)])
     }
     { "type": @json.Array([String(item_type), "null"]), .. } => {
       let schema = match item_type {
-        "string" => JsonSchema::string()
-        "number" => JsonSchema::number()
-        "integer" => JsonSchema::integer()
-        "boolean" => JsonSchema::boolean()
+        "string" => Builder::string()
+        "number" => Builder::number()
+        "integer" => Builder::integer()
+        "boolean" => Builder::boolean()
         // TODO: raise error if unsupported type
-        _ => JsonSchema::any()
+        _ => Builder::any()
       }
-      JsonSchema::anyOf([schema, JsonSchema::Null(description=None)])
+      Builder::anyOf([schema, Builder::null()])
     }
     { "type": "object", .. } => {
       let properties = match obj.get("properties") {

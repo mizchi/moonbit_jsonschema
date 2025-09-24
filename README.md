@@ -4,6 +4,13 @@
 $ moon add mizchi/jsonschema
 ```
 
+## Features
+
+- Parse raw json schema to build Validator
+- Schema Builder like a zod
+- Moonbit Code generation from json schema
+  - `mizchi/jsonschema/codegen`
+
 ## Supported
 
 - [x] type: any
@@ -59,13 +66,6 @@ $ moon add mizchi/jsonschema
 - [ ] if
 - [x] const
 - [x] `{ "type": ["string", "null"] }`
-
-## TIPS
-
-- Internal Conversion
-  - `{ "type": ["string", "null"] }` -> `{ "oneOf": [ {"type": "string"}, {"type": "null"} ] }`
-  - `"additionalProperties": true` -> `{ "additionalProperties": { "type": "any" } }`
-  - `additionalProperties` requires `{ "type": ... }` like `JsonSchema::Object(additionalProperties=JsonSchema::string())`
 
 ## LICENSE
 

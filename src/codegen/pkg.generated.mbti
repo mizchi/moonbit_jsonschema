@@ -6,7 +6,7 @@ import(
 )
 
 // Values
-fn generate_moonbit(Json, Array[@jsonschema.JsonPointer], root_name? : String, include_refs? : Bool, prefix? : String) -> Result[String, String] raise
+fn generate(Json, Array[@jsonschema.JsonPointer], root_name? : String, include_refs? : Bool, prefix? : String) -> Result[String, String] raise
 
 // Errors
 

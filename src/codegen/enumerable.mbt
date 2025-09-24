@@ -1,71 +1,9 @@
 // typealias @jsonschema.
 
 ///|
-priv struct EnumerableOneOf {
-  tag : String
-  positionals : Array[JsonSchema]
-  params : JsonSchema?
-}
-
-///|
-fn parse_enumerable_one_of(schema : JsonSchema) -> Array[EnumerableOneOf]? {
-  guard schema is JsonSchema::OneOf(schemas) else { return None }
-  guard schemas.get(0) is Some(first_schema) else { return None }
-  // prefixItems case
-  if first_schema
-    is JsonSchema::Array(
-      prefixItems=Some([JsonSchema::Const(String(_)), ..]),
-      ..
-    ) {
-    let parsed : Array[EnumerableOneOf] = []
-    for schema in schemas {
-      match schema {
-        // [{"const": "A"}]
-        JsonSchema::Array(
-          prefixItems=Some([JsonSchema::Const(String(tag_value))]),
-          ..
-        ) =>
-          parsed.push(EnumerableOneOf::{
-            tag: tag_value,
-            positionals: [],
-            params: None,
-          })
-        // [{"const": "A"}, ..]
-        JsonSchema::Array(
-          prefixItems=Some(
-            [JsonSchema::Const(String(tag_value)), .. child_schemas]
-          ),
-          ..
-        ) => {
-          let matched = match child_schemas.to_array() {
-            [] => { tag: tag_value, positionals: [], params: None }
-            [.. positionals, JsonSchema::Object(_) as params] =>
-              {
-                tag: tag_value,
-                positionals: positionals.to_array(),
-                params: Some(params),
-              }
-            [.. positionals] =>
-              {
-                tag: tag_value,
-                positionals: positionals.to_array(),
-                params: None,
-              }
-          }
-          parsed.push(matched)
-        }
-        _ => ()
-      }
-    }
-    return Some(parsed)
-  }
-  None
-}
-
-///|
 fn render_enumerable_one_of(
   enum_name : String,
-  enum_items : Array[EnumerableOneOf],
+  enum_items : Array[@jsonschema.EnumerableOneOf],
   prefix~ : String,
   resolver~ : @jsonschema.Resolver,
   pointer~ : JsonPointer,

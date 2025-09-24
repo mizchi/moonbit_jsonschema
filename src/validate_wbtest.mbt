@@ -1,18 +1,8 @@
 // JSON Schema Validator tests
 
 ///|
-fn[T, E] assert_ok(x : Result[T, E]) -> Unit {
-  guard x is Ok(_)
-}
-
-///|
-fn[T, E] assert_err(x : Result[T, E]) -> Unit {
-  guard x is Err(_)
-}
-
-///|
 test "validate null" {
-  let schema = JsonSchema::null()
+  let schema = Builder::null()
   schema.validate(null) |> assert_ok
   schema.validate("not-null") |> assert_err
   schema.validate(1)
@@ -25,7 +15,7 @@ test "validate null" {
 
 ///|
 test "validate const" {
-  let schema = JsonSchema::const_(Json::string("constant"))
+  let schema = Builder::const_("constant")
   schema.validate("constant") |> assert_ok
   schema.validate(1).unwrap_err()
   |> inspect(
@@ -37,7 +27,7 @@ test "validate const" {
 
 ///|
 test "validate const nested" {
-  let schema = JsonSchema::const_({ "nested": true })
+  let schema = Builder::const_({ "nested": true })
   schema.validate({ "nested": true }) |> assert_ok
   schema.validate(1).unwrap_err()
   |> inspect(
@@ -49,14 +39,14 @@ test "validate const nested" {
 
 ///|
 test "validate any" {
-  let schema = JsonSchema::any()
+  let schema = Builder::any()
   schema.validate(null) |> assert_ok
   schema.validate({}) |> assert_ok
 }
 
 ///|
 test "validate string" {
-  let schema = JsonSchema::string()
+  let schema = Builder::string()
   schema.validate("hello") |> assert_ok
   schema.validate(1).unwrap_err()
   |> inspect(
@@ -68,7 +58,7 @@ test "validate string" {
 
 ///|
 test "validate string with enum" {
-  let schema = JsonSchema::string(enum_=["a", "b"])
+  let schema = Builder::string(enum_=["a", "b"])
   schema.validate("a") |> assert_ok
   schema.validate("b") |> assert_ok
   schema.validate("c").unwrap_err()
@@ -81,7 +71,7 @@ test "validate string with enum" {
 
 ///|
 test "validate string type with minLength and maxLength" {
-  let schema = JsonSchema::string(minLength=3, maxLength=5)
+  let schema = Builder::string(minLength=3, maxLength=5)
   schema.validate("hey") |> assert_ok
   schema.validate("hi").unwrap_err()
   |> inspect(
@@ -99,7 +89,7 @@ test "validate string type with minLength and maxLength" {
 
 ///|
 test "validate enum" {
-  let schema = JsonSchema::enum_(["red", "green", "blue"])
+  let schema = Builder::enum_(["red", "green", "blue"])
   schema.validate("red") |> assert_ok
   schema.validate(1).unwrap_err()
   |> inspect(
@@ -117,14 +107,14 @@ test "validate enum" {
 
 ///|
 test "validate number" {
-  let schema = JsonSchema::number(minimum=0.0, maximum=100.0)
+  let schema = Builder::number(minimum=0.0, maximum=100.0)
   schema.validate(0) |> assert_ok
   schema.validate(1.1) |> assert_ok
 }
 
 ///|
 test "validate number with constraints" {
-  let schema = JsonSchema::number(minimum=0.0, maximum=100.0)
+  let schema = Builder::number(minimum=0.0, maximum=100.0)
   schema.validate(0) |> assert_ok
   schema.validate(1) |> assert_ok
   schema.validate(100) |> assert_ok
@@ -144,7 +134,7 @@ test "validate number with constraints" {
 
 ///|
 test "validate number with exclusiveMinimum and exclusiveMaximum" {
-  let schema = JsonSchema::number(exclusiveMinimum=0.0, exclusiveMaximum=10.0)
+  let schema = Builder::number(exclusiveMinimum=0.0, exclusiveMaximum=10.0)
   schema.validate(0.0) |> assert_err
   schema.validate(1) |> assert_ok
   schema.validate(10.0) |> assert_err
@@ -152,7 +142,7 @@ test "validate number with exclusiveMinimum and exclusiveMaximum" {
 
 ///|
 test "validate integer" {
-  let schema = JsonSchema::integer()
+  let schema = Builder::integer()
   schema.validate(0) |> assert_ok
   schema.validate(1.1).unwrap_err()
   |> inspect(
@@ -165,7 +155,7 @@ test "validate integer" {
 
 ///|
 test "validate integer with constraints" {
-  let schema = JsonSchema::integer(minimum=0, maximum=10)
+  let schema = Builder::integer(minimum=0, maximum=10)
   schema.validate(0) |> assert_ok
   schema.validate(1) |> assert_ok
   schema.validate(10) |> assert_ok
@@ -185,7 +175,7 @@ test "validate integer with constraints" {
 
 ///|
 test "validate integer with exclusiveMinimum and exclusiveMaximum" {
-  let schema = JsonSchema::integer(exclusiveMinimum=0, exclusiveMaximum=10)
+  let schema = Builder::integer(exclusiveMinimum=0, exclusiveMaximum=10)
   schema.validate(0) |> assert_err
   schema.validate(1) |> assert_ok
   schema.validate(10) |> assert_err
@@ -193,7 +183,7 @@ test "validate integer with exclusiveMinimum and exclusiveMaximum" {
 
 ///|
 test "validate object" {
-  let schema = JsonSchema::object(properties={ "name": JsonSchema::string() }, required=[
+  let schema = Builder::object(properties={ "name": Builder::string() }, required=[
     "name",
   ])
   // println(schema)
@@ -211,8 +201,8 @@ test "validate object" {
       #|[{input: Object({}), json_path: #/name, schema_path: #/required, message: "Required property 'name' is missing", children: None}]
     ),
   )
-  let schema_no_required = JsonSchema::object(properties={
-    "name": JsonSchema::string(),
+  let schema_no_required = Builder::object(properties={
+    "name": Builder::string(),
   })
   schema_no_required.validate({}) |> assert_ok
   schema_no_required.validate({ "name": "foo" }).unwrap()
@@ -227,7 +217,7 @@ test "validate object" {
 
 ///|
 test "validate object with additionalProperties" {
-  let schema = JsonSchema::object(properties={ "name": JsonSchema::string() }, required=[
+  let schema = Builder::object(properties={ "name": Builder::string() }, required=[
     "name",
   ])
   schema.validate({ "name": "John" }) |> assert_ok()
@@ -237,10 +227,10 @@ test "validate object with additionalProperties" {
       #|Err([{input: Object({"name": String("John"), "notAllowd": True}), json_path: #/notAllowd, schema_path: #/additionalProperties, message: "Additional property '{\"notAllowd\"}' is not allowed", children: None}])
     ),
   )
-  let schema2 = JsonSchema::object(
-    properties={ "name": JsonSchema::string() },
+  let schema2 = Builder::object(
+    properties={ "name": Builder::string() },
     required=["name"],
-    additionalProperties=JsonSchema::string(),
+    additionalProperties=Builder::string(),
   )
   schema2.validate({ "name": "John" }) |> assert_ok
   schema2.validate({ "name": "John", "ex1": "x" }).unwrap()
@@ -255,8 +245,8 @@ test "validate object with additionalProperties" {
 
 ///|
 test "validate array" {
-  let schema = JsonSchema::array(
-    items=JsonSchema::object(properties={ "id": JsonSchema::integer() }, required=[
+  let schema = Builder::array(
+    items=Builder::object(properties={ "id": Builder::integer() }, required=[
       "id",
     ]),
   )
@@ -272,11 +262,7 @@ test "validate array" {
 
 ///|
 test "validate array with constraints" {
-  let schema = JsonSchema::array(
-    items=JsonSchema::integer(),
-    minItems=1,
-    maxItems=3,
-  )
+  let schema = Builder::array(items=Builder::integer(), minItems=1, maxItems=3)
   schema.validate([]).unwrap_err()
   |> inspect(
     content=(
@@ -294,9 +280,9 @@ test "validate array with constraints" {
 
 ///|
 test "validate array with prefixItems" {
-  let schema = JsonSchema::array(prefixItems=[
-    JsonSchema::const_("t"),
-    JsonSchema::integer(),
+  let schema = Builder::array(prefixItems=[
+    Builder::const_("t"),
+    Builder::integer(),
   ])
   schema.validate([]) |> assert_err
   schema.validate(["t", 1]) |> assert_ok
@@ -306,9 +292,9 @@ test "validate array with prefixItems" {
 
 ///|
 test "validate oneOf" {
-  let schema = JsonSchema::oneOf([JsonSchema::string()])
+  let schema = Builder::one_of([Builder::string()])
   schema.validate("hello") |> assert_ok
-  let schema = JsonSchema::oneOf([JsonSchema::string(), JsonSchema::null()])
+  let schema = Builder::one_of([Builder::string(), Builder::null()])
   schema.validate("hello") |> assert_ok
   schema.validate(null) |> assert_ok
   schema.validate(1).unwrap_err()
@@ -321,12 +307,9 @@ test "validate oneOf" {
 
 ///|
 test "validate allOf" {
-  let schema = JsonSchema::allOf([JsonSchema::string()])
+  let schema = Builder::allOf([Builder::string()])
   schema.validate("hello") |> assert_ok
-  let schema2 = JsonSchema::allOf([
-    JsonSchema::string(),
-    JsonSchema::const_("foo"),
-  ])
+  let schema2 = Builder::allOf([Builder::string(), Builder::const_("foo")])
   schema2.validate("foo") |> assert_ok
   schema2.validate("bar").unwrap_err()
   |> inspect(
@@ -338,12 +321,9 @@ test "validate allOf" {
 
 ///|
 test "validate anyOf" {
-  let schema = JsonSchema::anyOf([JsonSchema::string()])
+  let schema = Builder::anyOf([Builder::string()])
   schema.validate("hello") |> assert_ok
-  let schema2 = JsonSchema::anyOf([
-    JsonSchema::string(),
-    JsonSchema::const_("foo"),
-  ])
+  let schema2 = Builder::anyOf([Builder::string(), Builder::const_("foo")])
   schema2.validate("foo") |> assert_ok
   schema2.validate(1).unwrap_err()
   |> inspect(
@@ -351,10 +331,10 @@ test "validate anyOf" {
       #|[{input: Number(1), json_path: #, schema_path: #/anyOf/0, message: "Value is not a string", children: None}, {input: Number(1), json_path: #, schema_path: #/anyOf/1, message: "Value does not match constant value String(\"foo\")", children: None}, {input: Number(1), json_path: #, schema_path: #/anyOf, message: "Value does not match any schema in anyOf", children: None}]
     ),
   )
-  let schema3 = JsonSchema::anyOf([
-    JsonSchema::string(),
-    JsonSchema::const_("foo"),
-    JsonSchema::null(),
+  let schema3 = Builder::anyOf([
+    Builder::string(),
+    Builder::const_("foo"),
+    Builder::null(),
   ])
   schema3.validate(null) |> assert_ok
   schema3.validate("foo") |> assert_ok
@@ -440,7 +420,7 @@ test "validate $ref in object" {
 
 ///|
 test "validate by schema builder" {
-  let schema = JsonSchema::object(properties={ "v": JsonSchema::string() }, required=[
+  let schema = Builder::object(properties={ "v": Builder::string() }, required=[
     "v",
   ])
   schema.validate({ "v": "test" }) |> assert_ok
