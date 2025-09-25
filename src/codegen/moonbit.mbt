@@ -4,7 +4,6 @@ pub fn generate(
   entrypoints : Array[JsonPointer],
   root_name? : String = "Root",
   include_refs? : Bool = true,
-  // derives? : Array[String] = ["Show", "FromJson", "ToJson"],
   prefix? : String = "",
 ) -> Result[String, String] raise {
   let logger = StringBuilder::new()
@@ -59,25 +58,18 @@ fn generate_stmt(
   pointer? : JsonPointer = JsonPointer::Root.key(struct_name),
 ) -> Result[String, String] {
   match schema {
-    JsonSchema::OneOf(_) => {
-      guard EnumerableOneOf::parse_enumerable_one_of(schema)
-        is Some(enum_values) else {
+    OneOf(_) => {
+      guard Enumerable::parse_enumerable(schema) is Some(enumerable) else {
         return Err("OneOf without prefixItems is not supported")
       }
-      render_enumerable_one_of(
-        struct_name,
-        enum_values,
-        prefix~,
-        resolver~,
-        pointer~,
-      )
+      render_enumerable(struct_name, enumerable, prefix~, resolver~, pointer~)
       |> Ok
     }
-    JsonSchema::Object(properties=None, ..) =>
+    Object(properties=None, ..) =>
       // empty object
       "\{prefix}struct \{struct_name} {} derive(Show, Eq, FromJson, ToJson)"
       |> Ok
-    JsonSchema::Object(properties=Some(properties), required~, ..) => {
+    Object(properties=Some(properties), required~, ..) => {
       let inner = StringBuilder::new()
       inner.write_string("\{prefix}struct \{struct_name} {\n")
       let required_keys = if required is Some(v) {
@@ -122,11 +114,7 @@ fn generate_stmt(
       ..write_string(outer.to_string())
       inner.to_string() |> Ok
     }
-    JsonSchema::Integer(..)
-    | JsonSchema::Number(..)
-    | JsonSchema::String(..)
-    | JsonSchema::Boolean(..)
-    | JsonSchema::Ref(_) => {
+    Integer(..) | Number(..) | String(..) | Boolean(..) | Ref(_) => {
       let code = generate_type_expr(schema, resolver~, pointer~)
       "\{prefix}struct \{struct_name}(\{code}) derive(Show, Eq, FromJson, ToJson)"
       |> Ok
@@ -142,8 +130,8 @@ fn generate_type_expr(
   pointer? : JsonPointer = JsonPointer::Root,
 ) -> String {
   match schema {
-    JsonSchema::Object(..) => return "Error: direct nested schema not supported"
-    JsonSchema::Array(items~, ..) => {
+    Object(..) => return "Error: direct nested schema not supported"
+    Array(items~, ..) => {
       let logger = StringBuilder::new()
       logger.write_string("Array[")
       if items is Some(value) {
@@ -156,17 +144,13 @@ fn generate_type_expr(
       logger.write_string("]")
       return logger.to_string()
     }
-    JsonSchema::String(..) => "String"
-    JsonSchema::Number(..) => "Double"
-    JsonSchema::Integer(..) => "Int"
-    JsonSchema::Boolean(..) => "Bool"
-    JsonSchema::OneOf(schemas) =>
-      if schemas.length() == 2 {
-        match schemas {
-          [JsonSchema::Null(_), other] | [other, JsonSchema::Null(_)] =>
-            return generate_type_expr(other, resolver~, pointer~) + "?"
-          _ => "Json?"
-        }
+    String(..) => "String"
+    Number(..) => "Double"
+    Integer(..) => "Int"
+    Boolean(..) => "Bool"
+    OneOf(_) =>
+      if parse_nullable(schema) is Some(other) {
+        generate_type_expr(other, resolver~, pointer~) + "?"
       } else {
         "Json?"
       }
@@ -174,6 +158,19 @@ fn generate_type_expr(
     JsonSchema::Ref(pointer) =>
       ref_to_identifier(pointer).unwrap_or("UnresolvedRef")
     _ => "\"unsupported type\""
+  }
+}
+
+///|
+fn parse_nullable(schema : JsonSchema) -> JsonSchema? {
+  match schema {
+    OneOf(schemas) if schemas.length() == 2 =>
+      match schemas {
+        [JsonSchema::Null(_), other] | [other, JsonSchema::Null(_)] =>
+          Some(other)
+        _ => None
+      }
+    _ => None
   }
 }
 

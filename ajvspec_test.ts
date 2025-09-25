@@ -66,3 +66,56 @@ Deno.test("prefixItems with const", () => {
   expect(validate(["t", "a"])).toBe(true);
   expect(validate(["none", "a"])).toBe(false);
 });
+
+// import { Ajv2020 } from "npm:ajv@8.17.1/dist/2020.js";
+Deno.test("enum", () => {
+  const ajv = new Ajv2020({ strict: false });
+  // moonbit enum compatible
+  /**
+   * enum Root {
+   *   Single,
+   *   Positional(Int),
+   *   Paramed(x~: String),
+   * }
+   */
+  const jsonschema = {
+    type: "array",
+    items: {
+      oneOf: [
+        { const: "Single" },
+        {
+          type: "array",
+          prefixItems: [{ const: "Positional" }, { type: "integer" }],
+          maxItems: 2, // positionals and params
+        },
+        {
+          type: "array",
+          prefixItems: [
+            { const: "Paramed" },
+            {
+              type: "object",
+              required: ["x"],
+              properties: { x: { type: "string" } },
+            },
+          ],
+        },
+      ],
+    },
+  };
+
+  const validate = ajv.compile(jsonschema);
+  const value = ["Single", ["Positional", 1], ["Paramed", { x: "y" }]];
+
+  const result = validate(value);
+  // console.log(result);
+  expect(result).toBe(true);
+
+  const maybeErr = validate([
+    "Single",
+    ["Positional", "not-number"],
+    ["Paramed", {}],
+  ]);
+  expect(maybeErr).toBe(false);
+  // console.log(maybeErr);
+  // console.log(validate.errors);
+});

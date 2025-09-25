@@ -1,18 +1,18 @@
 // typealias @jsonschema.
 
 ///|
-fn render_enumerable_one_of(
+fn render_enumerable(
   enum_name : String,
-  enum_items : Array[@jsonschema.EnumerableOneOf],
+  enumerable : Array[@jsonschema.Enumerable],
   prefix~ : String,
   resolver~ : @jsonschema.Resolver,
   pointer~ : JsonPointer,
 ) -> String {
   let logger = StringBuilder::new()
   logger..write_string(prefix)..write_string("enum \{enum_name} {")
-  for subschema in enum_items {
+  for subschema in enumerable {
     // Tag
-    let has_args = subschema.positionals.length() > 0 ||
+    let has_args = subschema.positionals is Some(_) ||
       subschema.params is Some(_)
     if !has_args {
       logger.write_string("\n  \{subschema.tag}")
@@ -20,17 +20,19 @@ fn render_enumerable_one_of(
     }
     // Tag(
     logger.write_string("\n  \{subschema.tag}(")
-    for s in subschema.positionals {
-      let subtype_code = generate_type_expr(
-        s,
-        resolver~,
-        pointer=pointer.key(subschema.tag).index(0),
-      )
-      logger.write_string(subtype_code)
+    if subschema.positionals is Some(positionals) && positionals.length() > 0 {
+      for s in positionals {
+        let subtype_code = generate_type_expr(
+          s,
+          resolver~,
+          pointer=pointer.key(subschema.tag).index(0),
+        )
+        logger.write_string(subtype_code)
+      }
     }
 
     // Tag(A, ~param: V,
-    if subschema.params is Some(JsonSchema::Object(properties=Some(params), ..)) {
+    if subschema.params is Some(params) {
       let codes = params.map(fn(key, prop_schema) {
         let subtype_code = generate_type_expr(
           prop_schema,
@@ -76,6 +78,8 @@ test "Parse [tagKey, {...}] for moonbit enum" {
         "type": "array",
         "prefixItems": [{ "const": "X" }, { "$ref": "#/definitions/Num" }],
       },
+      // Single
+      { "const": "Single" },
     ],
   }
   // let schema : JsonSchema = @json.from_json(raw)
@@ -97,6 +101,7 @@ test "Parse [tagKey, {...}] for moonbit enum" {
       #|  B
       #|  C
       #|  X(Num)
+      #|  Single
       #|} derive(Show, Eq, FromJson, ToJson)
       #|
       #|// #/definitions/Num
