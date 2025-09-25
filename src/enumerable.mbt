@@ -98,29 +98,30 @@ test "parse enumerable" {
     enum_values,
     content=(
       #|[{tag: "Single", positionals: None, params: None}, {tag: "A", positionals: Some([Integer(minimum=None, maximum=None, exclusiveMinimum=None, exclusiveMaximum=None, multipleOf=None, description=None), String(minLength=None, maxLength=None, pattern=None, format=None, enum_=None, contentEncoding=None, contentMediaType=None, description=None)]), params: None}, {tag: "B", positionals: Some([Number(minimum=None, maximum=None, exclusiveMinimum=None, exclusiveMaximum=None, multipleOf=None, description=None)]), params: None}, {tag: "C", positionals: Some([Integer(minimum=None, maximum=None, exclusiveMinimum=None, exclusiveMaximum=None, multipleOf=None, description=None)]), params: None}]
-
     ),
   )
-  // let value : Json = {
-  // 
-  // }
+}
 
-  // println("Parsed enum values: \{enum_values}")
-  // assert enum_values.length() == 4
-  // assert enum_values[0] == Enumerable::new(
-  //   "A",
-  //   [JsonSchema::Integer, JsonSchema::String],
-  //   None,
-  // )
-  // assert enum_values[1] == Enumerable::new(
-  //   "B",
-  //   [JsonSchema::Number],
-  //   None,
-  // )
-  // assert enum_values[2] == Enumerable::new("C", [], None)
-  // assert enum_values[3] == Enumerable::new(
-  //   "D",
-  //   [JsonSchema::Integer, JsonSchema::String],
-  //   Some(JsonSchema::Object(properties=Some({"extra": JsonSchema::Boolean}), ..)),
-  // )
+///|
+test "validate enum" {
+  let b = Builder::new()
+  let reschema = b.one_of([
+    b.array(prefixItems=[b.const_("A"), b.integer(), b.string()]),
+    b.array(prefixItems=[b.const_("B"), b.number()]),
+    b.array(prefixItems=[b.const_("C"), b.integer()]),
+    b.const_("D"),
+    b.array(prefixItems=[
+      b.const_("Paramed"),
+      b.object(properties={ "a": b.integer() }, required=["a"]),
+    ]),
+  ])
+  reschema.validate("Not match") |> assert_err
+  reschema.validate(["A", 1, "str"]) |> assert_ok
+  reschema.validate(["B", 3.14]) |> assert_ok
+  reschema.validate(["B", "err"]) |> assert_err
+  reschema.validate(["C", 42]) |> assert_ok
+  reschema.validate("D") |> assert_ok
+  reschema.validate("NotExist") |> assert_err
+  reschema.validate(["Paramed", { "a": 10 }]) |> assert_ok
+  reschema.validate(["Paramed", { "a": "not a number" }]) |> assert_err
 }

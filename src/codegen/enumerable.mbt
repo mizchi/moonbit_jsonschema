@@ -105,7 +105,8 @@ test "Parse [tagKey, {...}] for moonbit enum" {
       #|} derive(Show, Eq, FromJson, ToJson)
       #|
       #|// #/definitions/Num
-      #|pub struct Num(Int) derive(Show, Eq, FromJson, ToJson)
+      #|pub struct Num(Int) derive(Eq, Show, FromJson, ToJson)
+
     ),
   )
 }
@@ -150,13 +151,14 @@ test "all refs in oneOf to enum union types" {
       #|// #/definitions/A
       #|pub struct A {
       #|  a: Double?
-      #|} derive(Show, FromJson, ToJson)
+      #|} derive(Eq, Show, FromJson, ToJson)
       #|
       #|// #/definitions/B
       #|pub struct B {
       #|  b: String?
-      #|} derive(Show, FromJson, ToJson)
+      #|} derive(Eq, Show, FromJson, ToJson)
       #|
+
     ),
   )
 }
