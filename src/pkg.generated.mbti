@@ -26,31 +26,33 @@ pub suberror RuntimeError {
 // Types and methods
 pub struct Builder {
 }
-fn Builder::allOf(Array[JsonSchema]) -> JsonSchema
-fn Builder::any(description? : String) -> JsonSchema
-fn Builder::anyOf(Array[JsonSchema]) -> JsonSchema
-fn Builder::array(items? : JsonSchema, prefixItems? : Array[JsonSchema], contains? : JsonSchema, minContains? : Int, maxContains? : Int, minItems? : Int, maxItems? : Int, uniqueItems? : Bool, description? : String) -> JsonSchema
-fn Builder::boolean(description? : String) -> JsonSchema
-fn Builder::const_(Json) -> JsonSchema
-fn Builder::enum_(Array[Json]) -> JsonSchema
-fn Builder::enumerable_one_of(String, Array[JsonSchema], params~ : JsonSchema?) -> JsonSchema
-fn Builder::integer(description? : String, minimum? : Int, maximum? : Int, exclusiveMinimum? : Int, exclusiveMaximum? : Int, multipleOf? : Int) -> JsonSchema
+fn Builder::allOf(Self, Array[JsonSchema]) -> JsonSchema
+fn Builder::any(Self, description? : String) -> JsonSchema
+fn Builder::anyOf(Self, Array[JsonSchema]) -> JsonSchema
+fn Builder::array(Self, items? : JsonSchema, prefixItems? : Array[JsonSchema], contains? : JsonSchema, minContains? : Int, maxContains? : Int, minItems? : Int, maxItems? : Int, uniqueItems? : Bool, description? : String) -> JsonSchema
+fn Builder::boolean(Self, description? : String) -> JsonSchema
+fn Builder::const_(Self, Json) -> JsonSchema
+fn Builder::enum_(Self, Array[Json]) -> JsonSchema
+fn Builder::enumerable_one_of(Self, String, Array[JsonSchema], params~ : JsonSchema?) -> JsonSchema
+fn Builder::integer(Self, description? : String, minimum? : Int, maximum? : Int, exclusiveMinimum? : Int, exclusiveMaximum? : Int, multipleOf? : Int) -> JsonSchema
 fn Builder::new() -> Self
-fn Builder::null(description? : String) -> JsonSchema
-fn Builder::number(description? : String, minimum? : Double, maximum? : Double, exclusiveMinimum? : Double, exclusiveMaximum? : Double, multipleOf? : Double) -> JsonSchema
-fn Builder::object(description? : String, properties? : Map[String, JsonSchema], required? : Array[String], additionalProperties? : JsonSchema, patternProperties? : Map[String, JsonSchema], propertyNames? : JsonSchema, dependentSchemas? : Map[String, JsonSchema], dependentRequired? : Map[String, Array[String]], minProperties? : Int, maxProperties? : Int, required_all? : Bool) -> JsonSchema
-fn Builder::one_of(Array[JsonSchema]) -> JsonSchema
-fn Builder::ref_(JsonPointer) -> JsonSchema
-fn Builder::ref_from_string(String) -> JsonSchema
-fn Builder::string(minLength? : Int, maxLength? : Int, pattern? : String, format? : String, enum_? : Array[String], contentEncoding? : String, contentMediaType? : String, description? : String) -> JsonSchema
+fn Builder::null(Self, description? : String) -> JsonSchema
+fn Builder::number(Self, description? : String, minimum? : Double, maximum? : Double, exclusiveMinimum? : Double, exclusiveMaximum? : Double, multipleOf? : Double) -> JsonSchema
+fn Builder::object(Self, description? : String, properties? : Map[String, JsonSchema], required? : Array[String], additionalProperties? : JsonSchema, patternProperties? : Map[String, JsonSchema], propertyNames? : JsonSchema, dependentSchemas? : Map[String, JsonSchema], dependentRequired? : Map[String, Array[String]], minProperties? : Int, maxProperties? : Int, required_all? : Bool) -> JsonSchema
+fn Builder::one_of(Self, Array[JsonSchema]) -> JsonSchema
+fn Builder::ref_(Self, JsonPointer) -> JsonSchema
+fn Builder::ref_from_string(Self, String) -> JsonSchema
+fn Builder::string(Self, minLength? : Int, maxLength? : Int, pattern? : String, format? : String, enum_? : Array[String], contentEncoding? : String, contentMediaType? : String, description? : String) -> JsonSchema
 
-pub(all) struct EnumerableOneOf {
+pub(all) struct Enumerable {
   tag : String
-  positionals : Array[JsonSchema]
-  params : JsonSchema?
+  positionals : Array[JsonSchema]?
+  params : Map[String, JsonSchema]?
 }
-fn EnumerableOneOf::new(String, Array[JsonSchema], JsonSchema?) -> Self
-fn EnumerableOneOf::parse_enumerable_one_of(JsonSchema) -> Array[Self]?
+fn Enumerable::new(String, Array[JsonSchema]?, Map[String, JsonSchema]?) -> Self
+fn Enumerable::parse_enumerable(JsonSchema) -> Array[Self]?
+impl Eq for Enumerable
+impl Show for Enumerable
 
 pub(all) enum JsonPointer {
   Root
