@@ -155,13 +155,13 @@ pub fn Builder::object(
     } else {
       required
     },
-    additionalProperties,
-    patternProperties,
-    propertyNames,
-    dependentSchemas,
-    dependentRequired,
-    minProperties,
-    maxProperties,
+    additional_properties: additionalProperties,
+    pattern_properties: patternProperties,
+    property_names: propertyNames,
+    dependent_schemas: dependentSchemas,
+    dependent_required: dependentRequired,
+    min_properties: minProperties,
+    max_properties: maxProperties,
   })
 }
 

@@ -380,7 +380,7 @@ fn JsonSchema::validate_internal(
           !required_keys.contains(key) && !props_keys.contains(key)
         })
         |> Set::from_iter
-      if v.additionalProperties is Some(schema) {
+      if v.additional_properties is Some(schema) {
         for key in additional_props {
           guard obj.get(key) is Some(child_value) else { continue }
           let child_errors = schema.validate_internal(

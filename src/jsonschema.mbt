@@ -4,15 +4,40 @@
 pub struct ObjectConstraints {
   properties : Map[String, JsonSchema]?
   required : Array[String]?
-  additionalProperties : JsonSchema?
-  patternProperties : Map[String, JsonSchema]?
-  propertyNames : JsonSchema?
-  dependentSchemas : Map[String, JsonSchema]?
-  dependentRequired : Map[String, Array[String]]?
-  minProperties : Int?
-  maxProperties : Int?
+  additional_properties : JsonSchema?
+  pattern_properties : Map[String, JsonSchema]?
+  property_names : JsonSchema?
+  dependent_schemas : Map[String, JsonSchema]?
+  dependent_required : Map[String, Array[String]]?
+  min_properties : Int?
+  max_properties : Int?
   description : String?
-} derive(Show, Eq)
+} derive (
+  Show,
+  Eq,
+  FromJson(
+    fields(
+      additional_properties(rename="additionalProperties"),
+      pattern_properties(rename="patternProperties"),
+      property_names(rename="propertyNames"),
+      dependent_schemas(rename="dependentSchemas"),
+      dependent_required(rename="dependentRequired"),
+      min_properties(rename="minProperties"),
+      max_properties(rename="maxProperties"),
+    ),
+  ),
+  ToJson(
+    fields(
+      additional_properties(rename="additionalProperties"),
+      pattern_properties(rename="patternProperties"),
+      property_names(rename="propertyNames"),
+      dependent_schemas(rename="dependentSchemas"),
+      dependent_required(rename="dependentRequired"),
+      min_properties(rename="minProperties"),
+      max_properties(rename="maxProperties"),
+    ),
+  ),
+)
 
 ///|
 pub struct StringConstraint {
@@ -48,12 +73,6 @@ pub enum JsonSchema {
   String(StringConstraint)
   /// { "type": "number" }
   Number(NumberConstraint)
-  //   minimum~ : Double?,
-  //   maximum~ : Double?,
-  //   exclusiveMinimum~ : Double?,
-  //   exclusiveMaximum~ : Double?,
-  //   multipleOf~ : Double?,
-  // )
   /// { "type": "integer" }
   Integer(NumberConstraint)
   /// { "type": "array" }
@@ -90,9 +109,9 @@ pub enum JsonSchema {
 ///|
 pub impl ToJson for JsonSchema with to_json(self) -> Json {
   let v : Json = match self {
-    JsonSchema::Any(_) => { "type": "any" }.to_json()
-    JsonSchema::Null(_) => { "type": "null" }.to_json()
-    JsonSchema::Boolean(_) => { "type": "boolean" }.to_json()
+    JsonSchema::Any(_) => { "type": "any" }
+    JsonSchema::Null(_) => { "type": "null" }
+    JsonSchema::Boolean(_) => { "type": "boolean" }
     // description,
     JsonSchema::String(
       {
@@ -129,10 +148,10 @@ pub impl ToJson for JsonSchema with to_json(self) -> Json {
       }
       json.to_json()
     }
-    Ref(pointer) => { "$ref": pointer.to_string() }.to_json()
-    Const(value) => { "const": value }.to_json()
+    Ref(pointer) => { "$ref": pointer.to_string() }
+    Const(value) => { "const": value }
     // after string
-    Enum(values) => { "enum": values.to_json() }.to_json()
+    Enum(values) => { "enum": values.to_json() }
     // description~
     Number({ minimum, maximum, exclusiveMinimum, exclusiveMaximum, multipleOf }) => {
       let json : Map[String, Json] = { "type": "number" }
@@ -215,68 +234,15 @@ pub impl ToJson for JsonSchema with to_json(self) -> Json {
       }
       json.to_json()
     }
-    Object(
-      {
-        properties,
-        required,
-        additionalProperties,
-        patternProperties,
-        propertyNames,
-        dependentSchemas,
-        dependentRequired,
-        minProperties,
-        maxProperties,
-        description,
-      }
-    ) => {
-      let json : Map[String, Json] = { "type": "object" }
-      if properties is Some(props) {
-        let props_json : Map[String, Json] = {}
-        for k, v in props {
-          props_json[k] = v.to_json()
+    // let json : Map[String, Json] = { "type": "object" }
+    Object(c) => {
+      let out : Map[String, Json] = { "type": "object" }
+      if c.to_json() is Object(obj) {
+        for k, v in obj {
+          out[k] = v
         }
-        json["properties"] = props_json.to_json()
       }
-      if required is Some(req) {
-        json["required"] = req.to_json()
-      }
-      if additionalProperties is Some(value) {
-        json["additionalProperties"] = value.to_json()
-      }
-      if patternProperties is Some(pat_props) {
-        let pat_props_json : Map[String, Json] = {}
-        for k, v in pat_props {
-          pat_props_json[k] = v.to_json()
-        }
-        json["patternProperties"] = pat_props_json.to_json()
-      }
-      if propertyNames is Some(value) {
-        json["propertyNames"] = value.to_json()
-      }
-      if dependentSchemas is Some(dep_schemas) {
-        let dep_schemas_json : Map[String, Json] = {}
-        for k, v in dep_schemas {
-          dep_schemas_json[k] = v.to_json()
-        }
-        json["dependentSchemas"] = dep_schemas_json.to_json()
-      }
-      if dependentRequired is Some(dep_req) {
-        let dep_req_json : Map[String, Json] = {}
-        for k, v in dep_req {
-          dep_req_json[k] = v.to_json()
-        }
-        json["dependentRequired"] = dep_req_json.to_json()
-      }
-      if minProperties is Some(value) {
-        json["minProperties"] = value.to_json()
-      }
-      if maxProperties is Some(value) {
-        json["maxProperties"] = value.to_json()
-      }
-      if description is Some(value) {
-        json["description"] = value.to_json()
-      }
-      json.to_json()
+      out.to_json()
     }
     JsonSchema::AnyOf(schemas) =>
       { "anyOf": schemas.map(fn(s) { s.to_json() }) }
@@ -331,106 +297,110 @@ pub impl @json.FromJson for JsonSchema with from_json(
       b.anyOf([schema, b.null()])
     }
     { "type": "object", .. } => {
-      let properties = match obj.get("properties") {
-        Some(Object(props_obj)) => {
-          let props_map : Map[String, JsonSchema] = {}
-          for k, v in props_obj {
-            props_map.set(k, JsonSchema::from_json(v, json_path.add_key(k)))
-          }
-          Some(props_map)
-        }
-        _ => None
-      }
-      let required : Array[String]? = match obj.get("required") {
-        Some(@json.Array(req_array)) => {
-          let req_props : Array[String] = []
-          for i = 0; i < req_array.length(); i = i + 1 {
-            match req_array[i] {
-              @json.String(prop) => req_props.push(prop)
-              _ => ()
-            }
-          }
-          Some(req_props)
-        }
-        _ => None
-      }
-      let additionalProperties = match obj.get("additionalProperties") {
-        Some(Json::True) => Some(JsonSchema::Any(description=None))
-        Some(Json::False) => None
-        Some(json) =>
-          JsonSchema::from_json(json, json_path.add_key("additionalProperties"))
-          |> Some
-        None => None
-      }
-      ObjectConstraints::{
-        properties,
-        required,
-        additionalProperties,
-        patternProperties: match obj.get("patternProperties") {
-          Some(Object(pat_props_obj)) => {
-            let pat_props_map : Map[String, JsonSchema] = {}
-            for k, v in pat_props_obj {
-              pat_props_map.set(
-                k,
-                JsonSchema::from_json(v, json_path.add_key(k)),
-              )
-            }
-            Some(pat_props_map)
-          }
-          _ => None
-        },
-        propertyNames: match obj.get("propertyNames") {
-          Some(json) =>
-            JsonSchema::from_json(json, json_path.add_key("propertyNames"))
-            |> Some
-          None => None
-        },
-        dependentSchemas: match obj.get("dependentSchemas") {
-          Some(Object(dep_schemas_obj)) => {
-            let dep_schemas_map : Map[String, JsonSchema] = {}
-            for k, v in dep_schemas_obj {
-              dep_schemas_map.set(
-                k,
-                JsonSchema::from_json(v, json_path.add_key(k)),
-              )
-            }
-            Some(dep_schemas_map)
-          }
-          _ => None
-        },
-        dependentRequired: match obj.get("dependentRequired") {
-          Some(Object(dep_req_obj)) => {
-            let dep_req_map : Map[String, Array[String]] = {}
-            for k, v in dep_req_obj {
-              match v {
-                @json.Array(arr) => {
-                  let req_props : Array[String] = []
-                  for i = 0; i < arr.length(); i = i + 1 {
-                    match arr[i] {
-                      @json.String(prop) => req_props.push(prop)
-                      _ => ()
-                    }
-                  }
-                  dep_req_map.set(k, req_props)
-                }
-                _ => ()
-              }
-            }
-            Some(dep_req_map)
-          }
-          _ => None
-        },
-        minProperties: match obj.get("minProperties") {
-          Some(@json.Number(n, ..)) => Some(n.to_int())
-          _ => None
-        },
-        maxProperties: match obj.get("maxProperties") {
-          Some(@json.Number(n, ..)) => Some(n.to_int())
-          _ => None
-        },
-        description,
-      }
-      |> JsonSchema::Object
+      // let properties = match obj.get("properties") {
+      //   Some(Object(props_obj)) => {
+      //     let props_map : Map[String, JsonSchema] = {}
+      //     for k, v in props_obj {
+      //       props_map.set(k, JsonSchema::from_json(v, json_path.add_key(k)))
+      //     }
+      //     Some(props_map)
+      //   }
+      //   _ => None
+      // }
+      // let required : Array[String]? = match obj.get("required") {
+      //   Some(@json.Array(req_array)) => {
+      //     let req_props : Array[String] = []
+      //     for i = 0; i < req_array.length(); i = i + 1 {
+      //       match req_array[i] {
+      //         @json.String(prop) => req_props.push(prop)
+      //         _ => ()
+      //       }
+      //     }
+      //     Some(req_props)
+      //   }
+      //   _ => None
+      // }
+      // let additionalProperties = match obj.get("additionalProperties") {
+      //   Some(Json::True) => Some(JsonSchema::Any(description=None))
+      //   Some(Json::False) => None
+      //   Some(json) =>
+      //     JsonSchema::from_json(json, json_path.add_key("additionalProperties"))
+      //     |> Some
+      //   None => None
+      // }
+      let constraints : ObjectConstraints = ObjectConstraints::from_json(
+        json, json_path,
+      )
+      constraints |> JsonSchema::Object
+      // ObjectConstraints::{
+      //   properties,
+      //   required,
+      //   additional_properties: additionalProperties,
+      //   pattern_properties: match obj.get("patternProperties") {
+      //     Some(Object(pat_props_obj)) => {
+      //       let pat_props_map : Map[String, JsonSchema] = {}
+      //       for k, v in pat_props_obj {
+      //         pat_props_map.set(
+      //           k,
+      //           JsonSchema::from_json(v, json_path.add_key(k)),
+      //         )
+      //       }
+      //       Some(pat_props_map)
+      //     }
+      //     _ => None
+      //   },
+      //   property_names: match obj.get("propertyNames") {
+      //     Some(json) =>
+      //       JsonSchema::from_json(json, json_path.add_key("propertyNames"))
+      //       |> Some
+      //     None => None
+      //   },
+      //   dependent_schemas: match obj.get("dependentSchemas") {
+      //     Some(Object(dep_schemas_obj)) => {
+      //       let dep_schemas_map : Map[String, JsonSchema] = {}
+      //       for k, v in dep_schemas_obj {
+      //         dep_schemas_map.set(
+      //           k,
+      //           JsonSchema::from_json(v, json_path.add_key(k)),
+      //         )
+      //       }
+      //       Some(dep_schemas_map)
+      //     }
+      //     _ => None
+      //   },
+      //   dependent_required: match obj.get("dependentRequired") {
+      //     Some(Object(dep_req_obj)) => {
+      //       let dep_req_map : Map[String, Array[String]] = {}
+      //       for k, v in dep_req_obj {
+      //         match v {
+      //           @json.Array(arr) => {
+      //             let req_props : Array[String] = []
+      //             for i = 0; i < arr.length(); i = i + 1 {
+      //               match arr[i] {
+      //                 @json.String(prop) => req_props.push(prop)
+      //                 _ => ()
+      //               }
+      //             }
+      //             dep_req_map.set(k, req_props)
+      //           }
+      //           _ => ()
+      //         }
+      //       }
+      //       Some(dep_req_map)
+      //     }
+      //     _ => None
+      //   },
+      //   min_properties: match obj.get("minProperties") {
+      //     Some(@json.Number(n, ..)) => Some(n.to_int())
+      //     _ => None
+      //   },
+      //   max_properties: match obj.get("maxProperties") {
+      //     Some(@json.Number(n, ..)) => Some(n.to_int())
+      //     _ => None
+      //   },
+      //   description,
+      // }
+      // |> JsonSchema::Object
     }
     { "type": "array", .. } => {
       let items = match obj.get("items") {
