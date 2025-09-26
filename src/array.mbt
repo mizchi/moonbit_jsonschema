@@ -12,9 +12,7 @@ pub struct ArrayConstraint {
   Eq,
   FromJson(
     fields(
-      items(rename="items"),
       prefix_items(rename="prefixItems"),
-      contains(rename="contains"),
       min_contains(rename="minContains"),
       max_contains(rename="maxContains"),
       min_items(rename="minItems"),
@@ -23,9 +21,7 @@ pub struct ArrayConstraint {
   ),
   ToJson(
     fields(
-      items(rename="items"),
       prefix_items(rename="prefixItems"),
-      contains(rename="contains"),
       min_contains(rename="minContains"),
       max_contains(rename="maxContains"),
       min_items(rename="minItems"),
