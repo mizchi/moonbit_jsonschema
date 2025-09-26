@@ -49,19 +49,6 @@ test "validate any" {
 }
 
 ///|
-test "validate string" {
-  let b = Builder::new()
-  let schema = b.string()
-  schema.validate("hello") |> assert_ok
-  schema.validate(1).unwrap_err()
-  |> inspect(
-    content=(
-      #|[{input: Number(1), json_path: #, schema_path: #, message: "Value is not a string", children: None}]
-    ),
-  )
-}
-
-///|
 test "validate string with enum" {
   let b = Builder::new()
   let schema = b.string(enum_=["a", "b"])
@@ -84,16 +71,12 @@ test "validate string type with minLength and maxLength" {
   |> inspect(
     content=(
       #|[{input: String("hi"), json_path: #, schema_path: #/minLength, message: "String length 2 is less than minimum 3", children: None}]
-
-
     ),
   )
   schema.validate("hellooo")
   |> inspect(
     content=(
       #|Err([{input: String("hellooo"), json_path: #, schema_path: #/maxLength, message: "String length 7 is greater than maximum 5", children: None}])
-
-
     ),
   )
 }

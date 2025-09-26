@@ -28,10 +28,11 @@ impl Validatable for StringConstraint with to_json_schema(self) {
 }
 
 ///|
-impl Validatable for StringConstraint with from_json_schema(json, json_path) {
-  try
-    StringConstraint::from_json(json, json_path) |> JsonSchema::String |> Ok
-  catch {
+impl Validatable for StringConstraint with from_json_schema(json) {
+  try {
+    let v : StringConstraint = @json.from_json(json)
+    v |> JsonSchema::String |> Ok
+  } catch {
     _ => Err("Failed to parse StringConstraint".to_string())
   }
   // parsed |> Ok
@@ -84,4 +85,36 @@ impl Validatable for StringConstraint with validate(
     ]
   }
   errors
+}
+
+///|
+test "StringConstraint::from_json validate and to_json" {
+  let json : Json = { "type": "string" }
+  let s = StringConstraint::from_json_schema(json).unwrap()
+  s.validate("hell") |> expect_ok
+  s.to_json() |> assert_eq(json)
+}
+
+///|
+test "StringConstraint::validate" {
+  let schema = StringConstraint::{
+    min_length: Some(3),
+    max_length: Some(5),
+    enum_: None,
+  }
+  let err_with_min_err = schema.validate(
+    "h",
+    json_path=JsonPointer::Root,
+    schema_path=JsonPointer::Root,
+  )
+  assert_not_eq(err_with_min_err, [])
+  schema.validate(
+    "hell",
+    json_path=JsonPointer::Root,
+    schema_path=JsonPointer::Root,
+  )
+  |> assert_eq([])
+  // not string
+  schema.validate(1, json_path=JsonPointer::Root, schema_path=JsonPointer::Root)
+  |> assert_not_eq([])
 }
