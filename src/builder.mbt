@@ -64,23 +64,21 @@ pub fn Builder::integer(
 pub fn Builder::array(
   _self : Builder,
   items? : JsonSchema,
-  prefixItems? : Array[JsonSchema],
+  prefix_items? : Array[JsonSchema],
   contains? : JsonSchema,
-  minContains? : Int,
-  maxContains? : Int,
-  minItems? : Int,
-  maxItems? : Int,
-  uniqueItems? : Bool,
+  min_contains? : Int,
+  max_contains? : Int,
+  min_items? : Int,
+  max_items? : Int,
 ) -> JsonSchema {
   JsonSchema::Array({
     items,
-    prefixItems,
+    prefix_items,
     contains,
-    minContains,
-    maxContains,
-    minItems,
-    maxItems,
-    uniqueItems,
+    min_contains,
+    max_contains,
+    min_items,
+    max_items,
   })
 }
 
@@ -169,13 +167,13 @@ pub fn Builder::enumerable_one_of(
   if params is Some(params) {
     JsonSchema::OneOf([
       self.const_(tag.to_json()),
-      self.array(prefixItems=schemas),
+      self.array(prefix_items=schemas),
       params,
     ])
   } else {
     JsonSchema::OneOf([
       self.const_(tag.to_json()),
-      self.array(prefixItems=schemas),
+      self.array(prefix_items=schemas),
     ])
   }
 }

@@ -8,18 +8,17 @@ pub struct NumberConstraint {
 } derive (
   Show,
   Eq,
-  // FromJson(fields(exclusiveMinimum(rename="exclusiveMinimum"), exclusiveMaximum(rename="exclusiveMaximum"), multipleOf(rename="multipleOf"))),
   ToJson(
     fields(
-      exclusiveMinimum(rename="exclusiveMinimum"),
-      exclusiveMaximum(rename="exclusiveMaximum"),
+      exclusive_minimum(rename="exclusiveMinimum"),
+      exclusive_maximum(rename="exclusiveMaximum"),
       multiple_of(rename="multipleOf"),
     ),
   ),
   FromJson(
     fields(
-      exclusiveMinimum(rename="exclusiveMinimum"),
-      exclusiveMaximum(rename="exclusiveMaximum"),
+      exclusive_minimum(rename="exclusiveMinimum"),
+      exclusive_maximum(rename="exclusiveMaximum"),
       multiple_of(rename="multipleOf"),
     ),
   ),

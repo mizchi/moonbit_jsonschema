@@ -1,13 +1,12 @@
 ///|
 pub struct ArrayConstraint {
   items : JsonSchema?
-  prefixItems : Array[JsonSchema]?
+  prefix_items : Array[JsonSchema]?
   contains : JsonSchema?
-  minContains : Int?
-  maxContains : Int?
-  minItems : Int?
-  maxItems : Int?
-  uniqueItems : Bool?
+  min_contains : Int?
+  max_contains : Int?
+  min_items : Int?
+  max_items : Int?
 } derive (
   Show,
   Eq,
@@ -20,7 +19,6 @@ pub struct ArrayConstraint {
       max_contains(rename="maxContains"),
       min_items(rename="minItems"),
       max_items(rename="maxItems"),
-      unique_items(rename="uniqueItems"),
     ),
   ),
   ToJson(
@@ -32,7 +30,6 @@ pub struct ArrayConstraint {
       max_contains(rename="maxContains"),
       min_items(rename="minItems"),
       max_items(rename="maxItems"),
-      unique_items(rename="uniqueItems"),
     ),
   ),
 )

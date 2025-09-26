@@ -22,6 +22,7 @@ pub enum JsonSchema {
 } derive(Show, Eq)
 
 ///|
+/// TODO: Remove this helper function if possible
 fn with_type_property(json : Json, type_name : String) -> Json {
   guard json is Json::Object(obj) else { return json }
   let json : Map[String, Json] = { "type": type_name.to_json() }
@@ -33,18 +34,18 @@ fn with_type_property(json : Json, type_name : String) -> Json {
 
 ///|
 pub impl ToJson for JsonSchema with to_json(self) -> Json {
-  let v : Json = match self {
+  match self {
     JsonSchema::Any(_) => { "type": "any" }
     JsonSchema::Null(_) => { "type": "null" }
     JsonSchema::Boolean(_) => { "type": "boolean" }
     JsonSchema::String(c) => with_type_property(c.to_json(), "string")
-    Ref(pointer) => { "$ref": pointer.to_string() }
-    Const(value) => { "const": value }
-    Enum(values) => { "enum": values.to_json() }
     Number(c) => with_type_property(c.to_json(), "number")
     Integer(c) => with_type_property(c.to_json(), "integer")
     Array(constraints) => with_type_property(constraints.to_json(), "array")
     Object(c) => with_type_property(c.to_json(), "object")
+    Ref(pointer) => { "$ref": pointer.to_string() }
+    Const(value) => { "const": value }
+    Enum(values) => { "enum": values.to_json() }
     JsonSchema::AnyOf(schemas) =>
       { "anyOf": schemas.map(fn(s) { s.to_json() }) }
     JsonSchema::AllOf(schemas) =>
@@ -53,7 +54,6 @@ pub impl ToJson for JsonSchema with to_json(self) -> Json {
       { "oneOf": schemas.map(fn(s) { s.to_json() }) }
     JsonSchema::Not(schema) => { "not": schema }
   }
-  v
 }
 
 ///|

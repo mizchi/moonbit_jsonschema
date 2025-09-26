@@ -272,7 +272,7 @@ test "validate array" {
 ///|
 test "validate array with constraints" {
   let b = Builder::new()
-  let schema = b.array(items=b.integer(), minItems=1, maxItems=3)
+  let schema = b.array(items=b.integer(), min_items=1, max_items=3)
   schema.validate([]).unwrap_err()
   |> inspect(
     content=(
@@ -291,7 +291,7 @@ test "validate array with constraints" {
 ///|
 test "validate array with prefixItems" {
   let b = Builder::new()
-  let schema = b.array(prefixItems=[b.const_("t"), b.integer()])
+  let schema = b.array(prefix_items=[b.const_("t"), b.integer()])
   schema.validate([]) |> assert_err
   schema.validate(["t", 1]) |> assert_ok
   schema.validate(["t", "v"]) |> assert_err

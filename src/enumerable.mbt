@@ -28,11 +28,11 @@ pub fn Enumerable::parse_enumerable(schema : JsonSchema) -> Array[Enumerable]? {
       Const(String(tag_value)) =>
         parsed.push(Enumerable::new(tag_value, None, None))
       // [{"const": "A"}, { "type": "array", .. }]
-      Array({ prefixItems: Some([JsonSchema::Const(String(tag_value))]), .. }) =>
+      Array({ prefix_items: Some([JsonSchema::Const(String(tag_value))]), .. }) =>
         parsed.push(Enumerable::new(tag_value, None, None))
       // [{"const": "A"}, ..]
       Array(
-        { prefixItems: Some([Const(String(tag_value)), .. child_schemas]), .. }
+        { prefix_items: Some([Const(String(tag_value)), .. child_schemas]), .. }
       ) => {
         let matched = match child_schemas.to_array() {
           [] => { tag: tag_value, positionals: None, params: None }
@@ -102,11 +102,11 @@ test "parse enumerable" {
 test "validate enum" {
   let b = Builder::new()
   let reschema = b.one_of([
-    b.array(prefixItems=[b.const_("A"), b.integer(), b.string()]),
-    b.array(prefixItems=[b.const_("B"), b.number()]),
-    b.array(prefixItems=[b.const_("C"), b.integer()]),
+    b.array(prefix_items=[b.const_("A"), b.integer(), b.string()]),
+    b.array(prefix_items=[b.const_("B"), b.number()]),
+    b.array(prefix_items=[b.const_("C"), b.integer()]),
     b.const_("D"),
-    b.array(prefixItems=[
+    b.array(prefix_items=[
       b.const_("Paramed"),
       b.object(properties={ "a": b.integer() }, required=["a"]),
     ]),
