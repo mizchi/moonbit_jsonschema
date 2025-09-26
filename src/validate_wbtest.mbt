@@ -145,7 +145,7 @@ test "validate number with constraints" {
 ///|
 test "validate number with exclusiveMinimum and exclusiveMaximum" {
   let b = Builder::new()
-  let schema = b.number(exclusiveMinimum=0.0, exclusiveMaximum=10.0)
+  let schema = b.number(exclusive_minimum=0.0, exclusive_maximum=10.0)
   schema.validate(0.0) |> assert_err
   schema.validate(1) |> assert_ok
   schema.validate(10.0) |> assert_err

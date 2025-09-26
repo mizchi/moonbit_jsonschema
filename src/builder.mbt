@@ -28,23 +28,24 @@ pub fn Builder::string(
   _self : Builder,
   minLength? : Int,
   maxLength? : Int,
-  pattern? : String,
-  format? : String,
   enum_? : Array[String],
-  contentEncoding? : String,
-  contentMediaType? : String,
+  // pattern? : String,
+  // format? : String,
+  // contentEncoding? : String,
+  // contentMediaType? : String,
   // description? : String,
 ) -> JsonSchema {
   JsonSchema::String({
-    // description,
-    minLength,
-    maxLength,
-    pattern,
-    format,
-    enum_,
-    contentEncoding,
-    contentMediaType,
-  })
+      // description,
+      minLength,
+      maxLength,
+      enum_,
+    },
+    // pattern,
+    // format,
+    // contentEncoding,
+    // contentMediaType,
+  )
 }
 
 ///|
@@ -53,17 +54,12 @@ pub fn Builder::number(
   _self : Builder,
   minimum? : Double,
   maximum? : Double,
-  exclusiveMinimum? : Double,
-  exclusiveMaximum? : Double,
-  multipleOf? : Double,
+  exclusive_minimum? : Double,
+  exclusive_maximum? : Double,
 ) -> JsonSchema {
-  JsonSchema::Number({
-    minimum,
-    maximum,
-    exclusiveMinimum,
-    exclusiveMaximum,
-    multipleOf,
-  })
+  JsonSchema::Number({ minimum, maximum, exclusive_minimum, exclusive_maximum },
+    // multipleOf,
+  )
 }
 
 ///|
@@ -74,14 +70,12 @@ pub fn Builder::integer(
   maximum? : Double,
   exclusiveMinimum? : Double,
   exclusiveMaximum? : Double,
-  multipleOf? : Double,
 ) -> JsonSchema {
   JsonSchema::Integer({
     minimum,
     maximum,
-    exclusiveMinimum,
-    exclusiveMaximum,
-    multipleOf,
+    exclusive_minimum: exclusiveMinimum,
+    exclusive_maximum: exclusiveMaximum,
   })
 }
 
@@ -134,21 +128,20 @@ pub fn Builder::any(_self : Builder, description? : String) -> JsonSchema {
 /// { "type": "object" }
 pub fn Builder::object(
   _self : Builder,
-  description? : String,
   properties? : Map[String, JsonSchema],
   required? : Array[String],
   additionalProperties? : JsonSchema,
-  patternProperties? : Map[String, JsonSchema],
-  propertyNames? : JsonSchema,
-  dependentSchemas? : Map[String, JsonSchema],
-  dependentRequired? : Map[String, Array[String]],
-  minProperties? : Int,
-  maxProperties? : Int,
+  // patternProperties? : Map[String, JsonSchema],
+  // propertyNames? : JsonSchema,
+  // dependentSchemas? : Map[String, JsonSchema],
+  // dependentRequired? : Map[String, Array[String]],
+  // minProperties? : Int,
+  // maxProperties? : Int,
   // over
   required_all? : Bool = false,
 ) -> JsonSchema {
   JsonSchema::Object(ObjectConstraints::{
-    description,
+    // description,
     properties,
     required: if required_all && properties is Some(props) {
       props.keys().to_array() |> Some
@@ -156,12 +149,12 @@ pub fn Builder::object(
       required
     },
     additional_properties: additionalProperties,
-    pattern_properties: patternProperties,
-    property_names: propertyNames,
-    dependent_schemas: dependentSchemas,
-    dependent_required: dependentRequired,
-    min_properties: minProperties,
-    max_properties: maxProperties,
+    // pattern_properties: patternProperties,
+    // property_names: propertyNames,
+    // dependent_schemas: dependentSchemas,
+    // dependent_required: dependentRequired,
+    // min_properties: minProperties,
+    // max_properties: maxProperties,
   })
 }
 
