@@ -6,7 +6,7 @@ fn generate_typescript(
   depth? : Int = 0,
 ) -> String {
   match schema {
-    JsonSchema::Object(properties~, ..) => {
+    JsonSchema::Object(constraints) => {
       let logger = StringBuilder::new()
       let prefix = "  ".repeat(depth)
       let is_root = depth == 0
@@ -17,11 +17,12 @@ fn generate_typescript(
       } else {
         logger.write_string("{")
       }
+      // let {required,cons} = constraints
       // logger.write_string("export type MyStruct = {")
-      if properties is Some(properties) {
+      if constraints.properties is Some(properties) {
         let required_keys = match schema {
-          JsonSchema::Object(required~, ..) =>
-            match required {
+          JsonSchema::Object(sub_constraints) =>
+            match sub_constraints.required {
               Some(req) => req |> Set::from_array
               None => Set::new()
             }

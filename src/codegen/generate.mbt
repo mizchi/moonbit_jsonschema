@@ -65,22 +65,25 @@ fn generate_stmt(
       render_enumerable(struct_name, enumerable, prefix~, resolver~, pointer~)
       |> Ok
     }
-    Object(properties=None, ..) =>
-      // empty object
-      "\{prefix}struct \{struct_name} {} derive(Show, Eq, FromJson, ToJson)"
-      |> Ok
-    Object(properties=Some(properties), required~, ..) => {
+    // Object(_constraints) =>
+    //   // empty object
+    //   "\{prefix}struct \{struct_name} {} derive(Show, Eq, FromJson, ToJson)"
+    //   |> Ok
+    Object(constraints) => {
+      // let c : @jsonschema.ObjectConstraints = constraints
       let inner = StringBuilder::new()
       inner.write_string("\{prefix}struct \{struct_name} {\n")
-      let required_keys = if required is Some(v) {
+      // constraints
+      // if constraints.
+      let required_keys = if constraints.required is Some(v) {
         v |> Set::from_array
       } else {
         Set::new()
       }
       let outer = StringBuilder::new()
-      for key, subschema in properties {
+      for key, subschema in constraints.properties.unwrap() {
         // nested object
-        if subschema is JsonSchema::Object(..) {
+        if subschema is Object(_) {
           let sub_pointer = pointer.key(key)
           let sub_struct_name = "\{struct_name}_\{key}"
           inner.write_string("  \{key}: \{sub_struct_name}\n")
@@ -130,7 +133,7 @@ fn generate_type_expr(
   pointer? : JsonPointer = JsonPointer::Root,
 ) -> String {
   match schema {
-    Object(..) => return "Error: direct nested schema not supported"
+    Object(_) => return "Error: direct nested schema not supported"
     Array(items~, ..) => {
       let logger = StringBuilder::new()
       logger.write_string("Array[")

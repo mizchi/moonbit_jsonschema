@@ -1,6 +1,20 @@
 // JSON Schema types and definitions
 
 ///|
+pub(all) struct ObjectConstraints {
+  properties : Map[String, JsonSchema]?
+  required : Array[String]?
+  additionalProperties : JsonSchema?
+  patternProperties : Map[String, JsonSchema]?
+  propertyNames : JsonSchema?
+  dependentSchemas : Map[String, JsonSchema]?
+  dependentRequired : Map[String, Array[String]]?
+  minProperties : Int?
+  maxProperties : Int?
+  description : String?
+} derive(Show, Eq)
+
+///|
 /// JsonSchema
 pub enum JsonSchema {
   /// { "type": "any" }
@@ -52,16 +66,17 @@ pub enum JsonSchema {
   )
   /// { "type": "object" }
   Object(
-    properties~ : Map[String, JsonSchema]?,
-    required~ : Array[String]?,
-    additionalProperties~ : JsonSchema?,
-    patternProperties~ : Map[String, JsonSchema]?,
-    propertyNames~ : JsonSchema?,
-    dependentSchemas~ : Map[String, JsonSchema]?,
-    dependentRequired~ : Map[String, Array[String]]?,
-    minProperties~ : Int?,
-    maxProperties~ : Int?,
-    description~ : String?
+    ObjectConstraints
+    // properties~ : Map[String, JsonSchema]?,
+    // required~ : Array[String]?,
+    // additionalProperties~ : JsonSchema?,
+    // patternProperties~ : Map[String, JsonSchema]?,
+    // propertyNames~ : JsonSchema?,
+    // dependentSchemas~ : Map[String, JsonSchema]?,
+    // dependentRequired~ : Map[String, Array[String]]?,
+    // minProperties~ : Int?,
+    // maxProperties~ : Int?,
+    // description~ : String?
   )
   /// { "enum": [...] }
   Enum(Array[Json])
@@ -123,11 +138,11 @@ pub impl ToJson for JsonSchema with to_json(self) -> Json {
       }
       json.to_json()
     }
-    JsonSchema::Ref(pointer) => { "$ref": pointer.to_string() }.to_json()
-    JsonSchema::Const(value) => { "const": value }.to_json()
+    Ref(pointer) => { "$ref": pointer.to_string() }.to_json()
+    Const(value) => { "const": value }.to_json()
     // after string
-    JsonSchema::Enum(values) => { "enum": values.to_json() }.to_json()
-    JsonSchema::Number(
+    Enum(values) => { "enum": values.to_json() }.to_json()
+    Number(
       minimum~,
       maximum~,
       exclusiveMinimum~,
@@ -156,7 +171,7 @@ pub impl ToJson for JsonSchema with to_json(self) -> Json {
       }
       json.to_json()
     }
-    JsonSchema::Integer(
+    Integer(
       minimum~,
       maximum~,
       exclusiveMinimum~,
@@ -185,7 +200,7 @@ pub impl ToJson for JsonSchema with to_json(self) -> Json {
       }
       json.to_json()
     }
-    JsonSchema::Array(
+    Array(
       items~,
       prefixItems~,
       contains~,
@@ -226,17 +241,19 @@ pub impl ToJson for JsonSchema with to_json(self) -> Json {
       }
       json.to_json()
     }
-    JsonSchema::Object(
-      properties~,
-      required~,
-      additionalProperties~,
-      patternProperties~,
-      propertyNames~,
-      dependentSchemas~,
-      dependentRequired~,
-      minProperties~,
-      maxProperties~,
-      description~
+    Object(
+      {
+        properties,
+        required,
+        additionalProperties,
+        patternProperties,
+        propertyNames,
+        dependentSchemas,
+        dependentRequired,
+        minProperties,
+        maxProperties,
+        description,
+      }
     ) => {
       let json : Map[String, Json] = { "type": "object" }
       if properties is Some(props) {
@@ -312,10 +329,10 @@ pub impl @json.FromJson for JsonSchema with from_json(
   }
   let b = Builder::new()
   match obj {
-    { "const": value, .. } => JsonSchema::Const(value)
+    { "const": value, .. } => Const(value)
     { "$ref": @json.String(ref_expr), .. } =>
       // TODO: validate ref_expr
-      JsonPointer::from_string(ref_expr).unwrap() |> JsonSchema::Ref
+      JsonPointer::from_string(ref_expr).unwrap() |> Ref
     // TODO: redundant patterns
     { "type": @json.Array(["null", String(item_type)]), .. } => {
       let schema = match item_type {
@@ -341,7 +358,7 @@ pub impl @json.FromJson for JsonSchema with from_json(
     }
     { "type": "object", .. } => {
       let properties = match obj.get("properties") {
-        Some(@json.Object(props_obj)) => {
+        Some(Object(props_obj)) => {
           let props_map : Map[String, JsonSchema] = {}
           for k, v in props_obj {
             props_map.set(k, JsonSchema::from_json(v, json_path.add_key(k)))
@@ -371,18 +388,75 @@ pub impl @json.FromJson for JsonSchema with from_json(
           |> Some
         None => None
       }
-      JsonSchema::Object(
-        properties~,
-        required~,
-        additionalProperties~,
-        description~,
-        patternProperties=None,
-        propertyNames=None,
-        dependentSchemas=None,
-        dependentRequired=None,
-        minProperties=None,
-        maxProperties=None,
-      )
+      ObjectConstraints::{
+        properties,
+        required,
+        additionalProperties,
+        patternProperties: match obj.get("patternProperties") {
+          Some(Object(pat_props_obj)) => {
+            let pat_props_map : Map[String, JsonSchema] = {}
+            for k, v in pat_props_obj {
+              pat_props_map.set(
+                k,
+                JsonSchema::from_json(v, json_path.add_key(k)),
+              )
+            }
+            Some(pat_props_map)
+          }
+          _ => None
+        },
+        propertyNames: match obj.get("propertyNames") {
+          Some(json) =>
+            JsonSchema::from_json(json, json_path.add_key("propertyNames"))
+            |> Some
+          None => None
+        },
+        dependentSchemas: match obj.get("dependentSchemas") {
+          Some(Object(dep_schemas_obj)) => {
+            let dep_schemas_map : Map[String, JsonSchema] = {}
+            for k, v in dep_schemas_obj {
+              dep_schemas_map.set(
+                k,
+                JsonSchema::from_json(v, json_path.add_key(k)),
+              )
+            }
+            Some(dep_schemas_map)
+          }
+          _ => None
+        },
+        dependentRequired: match obj.get("dependentRequired") {
+          Some(Object(dep_req_obj)) => {
+            let dep_req_map : Map[String, Array[String]] = {}
+            for k, v in dep_req_obj {
+              match v {
+                @json.Array(arr) => {
+                  let req_props : Array[String] = []
+                  for i = 0; i < arr.length(); i = i + 1 {
+                    match arr[i] {
+                      @json.String(prop) => req_props.push(prop)
+                      _ => ()
+                    }
+                  }
+                  dep_req_map.set(k, req_props)
+                }
+                _ => ()
+              }
+            }
+            Some(dep_req_map)
+          }
+          _ => None
+        },
+        minProperties: match obj.get("minProperties") {
+          Some(@json.Number(n, ..)) => Some(n.to_int())
+          _ => None
+        },
+        maxProperties: match obj.get("maxProperties") {
+          Some(@json.Number(n, ..)) => Some(n.to_int())
+          _ => None
+        },
+        description,
+      }
+      |> JsonSchema::Object
     }
     { "type": "array", .. } => {
       let items = match obj.get("items") {
@@ -415,7 +489,7 @@ pub impl @json.FromJson for JsonSchema with from_json(
           )
         _ => None
       }
-      JsonSchema::Array(
+      Array(
         items~,
         minItems~,
         maxItems~,

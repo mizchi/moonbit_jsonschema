@@ -151,22 +151,22 @@ pub fn Builder::object(
   // over
   required_all? : Bool = false,
 ) -> JsonSchema {
-  JsonSchema::Object(
-    description~,
-    properties~,
-    required=if required_all && properties is Some(props) {
+  JsonSchema::Object(ObjectConstraints::{
+    description,
+    properties,
+    required: if required_all && properties is Some(props) {
       props.keys().to_array() |> Some
     } else {
       required
     },
-    additionalProperties~,
-    patternProperties~,
-    propertyNames~,
-    dependentSchemas~,
-    dependentRequired~,
-    minProperties~,
-    maxProperties~,
-  )
+    additionalProperties,
+    patternProperties,
+    propertyNames,
+    dependentSchemas,
+    dependentRequired,
+    minProperties,
+    maxProperties,
+  })
 }
 
 ///|

@@ -25,27 +25,21 @@ pub fn Enumerable::parse_enumerable(schema : JsonSchema) -> Array[Enumerable]? {
   for schema in schemas {
     match schema {
       // {"const": "A"}
-      JsonSchema::Const(String(tag_value)) =>
+      Const(String(tag_value)) =>
         parsed.push(Enumerable::new(tag_value, None, None))
       // [{"const": "A"}, { "type": "array", .. }]
-      JsonSchema::Array(
-        prefixItems=Some([JsonSchema::Const(String(tag_value))]),
-        ..
-      ) => parsed.push(Enumerable::new(tag_value, None, None))
+      Array(prefixItems=Some([JsonSchema::Const(String(tag_value))]), ..) =>
+        parsed.push(Enumerable::new(tag_value, None, None))
       // [{"const": "A"}, ..]
-      JsonSchema::Array(
-        prefixItems=Some(
-          [JsonSchema::Const(String(tag_value)), .. child_schemas]
-        ),
-        ..
-      ) => {
+      Array(prefixItems=Some([Const(String(tag_value)), .. child_schemas]), ..) => {
         let matched = match child_schemas.to_array() {
           [] => { tag: tag_value, positionals: None, params: None }
-          [.. positionals, Object(properties=Some(params), ..)] =>
+          // [.. positionals, Object(properties=Some(params), ..)] =>
+          [.. positionals, Object(v)] =>
             {
               tag: tag_value,
               positionals: positionals.to_array() |> Some,
-              params: Some(params),
+              params: v.properties,
             }
           [.. positionals] =>
             {

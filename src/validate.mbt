@@ -334,7 +334,8 @@ fn JsonSchema::validate_internal(
       }
       errors
     }
-    Object(properties~, required~, additionalProperties~, ..) => {
+    // Object(ObjectConstraints(properties~, required~, additionalProperties~, ..)) => {
+    Object(v) => {
       guard value is @json.Object(obj) else {
         return [
           ValidationError::new(
@@ -349,7 +350,7 @@ fn JsonSchema::validate_internal(
       let errors : Array[ValidationError] = []
 
       // let required_keys: Array[String] = []
-      if required is Some(required_keys) {
+      if v.required is Some(required_keys) {
         let non_exsited_keys = required_keys.filter(fn(key) {
           !obj.contains(key)
         })
@@ -365,11 +366,11 @@ fn JsonSchema::validate_internal(
         }
       }
       // TODO: {type: string}
-      let required_keys = match required {
+      let required_keys = match v.required {
         Some(keys) => Set::from_array(keys)
         None => Set::new()
       }
-      let props_keys = match properties {
+      let props_keys = match v.properties {
         Some(props) => props.keys() |> Set::from_iter
         None => Set::new()
       }
@@ -379,7 +380,7 @@ fn JsonSchema::validate_internal(
           !required_keys.contains(key) && !props_keys.contains(key)
         })
         |> Set::from_iter
-      if additionalProperties is Some(schema) {
+      if v.additionalProperties is Some(schema) {
         for key in additional_props {
           guard obj.get(key) is Some(child_value) else { continue }
           let child_errors = schema.validate_internal(
@@ -403,7 +404,7 @@ fn JsonSchema::validate_internal(
         }
       }
       // Properties validation
-      if properties is Some(props) {
+      if v.properties is Some(props) {
         props.each(fn(prop_name, child_schema) {
           guard obj.get(prop_name) is Some(child_value) else { return }
           let child_errors = child_schema.validate_internal(
