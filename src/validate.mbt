@@ -260,7 +260,7 @@ fn JsonSchema::validate_internal(
             ),
           ]
       }
-    Array(minItems~, maxItems~, items~, prefixItems~, ..) => {
+    Array({ minItems, maxItems, items, prefixItems, .. }) => {
       guard value is @json.Array(array) else {
         return [
           ValidationError::new(

@@ -134,7 +134,7 @@ fn generate_type_expr(
 ) -> String {
   match schema {
     Object(_) => return "Error: direct nested schema not supported"
-    Array(items~, ..) => {
+    Array({ items, .. }) => {
       let logger = StringBuilder::new()
       logger.write_string("Array[")
       if items is Some(value) {

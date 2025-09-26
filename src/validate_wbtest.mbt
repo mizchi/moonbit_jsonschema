@@ -189,7 +189,7 @@ test "validate integer with constraints" {
 ///|
 test "validate integer with exclusiveMinimum and exclusiveMaximum" {
   let b = Builder::new()
-  let schema = b.integer(exclusiveMinimum=0, exclusiveMaximum=10)
+  let schema = b.integer(exclusive_minimum=0, exclusive_maximum=10)
   schema.validate(0) |> assert_err
   schema.validate(1) |> assert_ok
   schema.validate(10) |> assert_err

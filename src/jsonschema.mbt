@@ -1,130 +1,22 @@
 // JSON Schema types and definitions
 
 ///|
-pub struct ObjectConstraints {
-  properties : Map[String, JsonSchema]?
-  required : Array[String]?
-  additional_properties : JsonSchema?
-  // pattern_properties : Map[String, JsonSchema]?
-  // property_names : JsonSchema?
-  // dependent_schemas : Map[String, JsonSchema]?
-  // dependent_required : Map[String, Array[String]]?
-  // min_properties : Int?
-  // max_properties : Int?
-  // description : String?
-} derive (
-  Show,
-  Eq,
-  FromJson(
-    fields(
-      additional_properties(rename="additionalProperties"),
-      pattern_properties(rename="patternProperties"),
-      property_names(rename="propertyNames"),
-      // dependent_schemas(rename="dependentSchemas"),
-      // dependent_required(rename="dependentRequired"),
-      // min_properties(rename="minProperties"),
-      // max_properties(rename="maxProperties"),
-    ),
-  ),
-  ToJson(
-    fields(
-      additional_properties(rename="additionalProperties"),
-      pattern_properties(rename="patternProperties"),
-      // property_names(rename="propertyNames"),
-      // dependent_schemas(rename="dependentSchemas"),
-      // dependent_required(rename="dependentRequired"),
-      // min_properties(rename="minProperties"),
-      // max_properties(rename="maxProperties"),
-    ),
-  ),
-)
-
-///|
-pub struct StringConstraint {
-  minLength : Int?
-  maxLength : Int?
-  enum_ : Array[String]?
-  // pattern : String?
-  // format : String?
-  // contentEncoding : String?
-  // contentMediaType : String?
-  // description : String?
-} derive (
-  Show,
-  Eq,
-  FromJson(fields(enum_(rename="enum"))),
-  ToJson(fields(enum_(rename="enum"))),
-)
-
-///|
-pub struct NumberConstraint {
-  minimum : Double?
-  maximum : Double?
-  exclusive_minimum : Double?
-  exclusive_maximum : Double?
-  // multipleOf : Double?
-} derive (
-  Show,
-  Eq,
-  // FromJson(fields(exclusiveMinimum(rename="exclusiveMinimum"), exclusiveMaximum(rename="exclusiveMaximum"), multipleOf(rename="multipleOf"))),
-  ToJson(
-    fields(
-      exclusiveMinimum(rename="exclusiveMinimum"),
-      exclusiveMaximum(rename="exclusiveMaximum"),
-      multiple_of(rename="multipleOf"),
-    ),
-  ),
-  FromJson(
-    fields(
-      exclusiveMinimum(rename="exclusiveMinimum"),
-      exclusiveMaximum(rename="exclusiveMaximum"),
-      multiple_of(rename="multipleOf"),
-    ),
-  ),
-)
-
-///|
 /// JsonSchema
 pub enum JsonSchema {
-  /// { "type": "any" }
   Any(description~ : String?)
-  /// { "type": "null" }
   Null(description~ : String?)
-  /// { "type": "boolean" }
   Boolean(description~ : String?)
-  /// { "type": "string" }
   String(StringConstraint)
-  /// { "type": "number" }
   Number(NumberConstraint)
-  /// { "type": "integer" }
   Integer(NumberConstraint)
-  /// { "type": "array" }
-  Array(
-    items~ : JsonSchema?,
-    prefixItems~ : Array[JsonSchema]?,
-    contains~ : JsonSchema?,
-    minContains~ : Int?,
-    maxContains~ : Int?,
-    minItems~ : Int?,
-    maxItems~ : Int?,
-    uniqueItems~ : Bool?,
-    description~ : String?
-  )
-  /// { "type": "object" }
+  Array(ArrayConstraint)
   Object(ObjectConstraints)
-  /// { "enum": [...] }
   Enum(Array[Json])
-  /// { "const": ... }
   Const(Json)
-  /// { "anyOf": [...] }
   AnyOf(Array[JsonSchema])
-  /// { "allOf": [...] }
   AllOf(Array[JsonSchema])
-  /// { "oneOf": [...] }
   OneOf(Array[JsonSchema])
-  /// { "not": ... }
   Not(JsonSchema)
-  /// { "$ref": "..." }
   Ref(JsonPointer)
   // If(Schema, Schema?, Schema?) // if, then, else
 } derive(Show, Eq)
@@ -151,48 +43,7 @@ pub impl ToJson for JsonSchema with to_json(self) -> Json {
     Enum(values) => { "enum": values.to_json() }
     Number(c) => with_type_property(c.to_json(), "number")
     Integer(c) => with_type_property(c.to_json(), "integer")
-    Array(
-      items~,
-      prefixItems~,
-      contains~,
-      minContains~,
-      maxContains~,
-      minItems~,
-      maxItems~,
-      uniqueItems~,
-      description~
-    ) => {
-      let json : Map[String, Json] = { "type": "array" }
-      if items is Some(value) {
-        json["items"] = value.to_json()
-      }
-      if prefixItems is Some(values) {
-        json["prefixItems"] = values.map(fn(s) { s.to_json() }).to_json()
-      }
-      if contains is Some(value) {
-        json["contains"] = value.to_json()
-      }
-      if minContains is Some(value) {
-        json["minContains"] = value.to_json()
-      }
-      if maxContains is Some(value) {
-        json["maxContains"] = value.to_json()
-      }
-      if minItems is Some(value) {
-        json["minItems"] = value.to_json()
-      }
-      if maxItems is Some(value) {
-        json["maxItems"] = value.to_json()
-      }
-      if uniqueItems is Some(value) {
-        json["uniqueItems"] = value.to_json()
-      }
-      if description is Some(value) {
-        json["description"] = value.to_json()
-      }
-      json.to_json()
-    }
-    // let json : Map[String, Json] = { "type": "object" }
+    Array(constraints) => with_type_property(constraints.to_json(), "array")
     Object(c) => with_type_property(c.to_json(), "object")
     JsonSchema::AnyOf(schemas) =>
       { "anyOf": schemas.map(fn(s) { s.to_json() }) }
@@ -247,49 +98,8 @@ pub impl @json.FromJson for JsonSchema with from_json(
     }
     { "type": "object", .. } =>
       ObjectConstraints::from_json(json, json_path) |> JsonSchema::Object
-    { "type": "array", .. } => {
-      let items = match obj.get("items") {
-        Some(item_schema) =>
-          Some(JsonSchema::from_json(item_schema, json_path.add_key("items")))
-        None => None
-      }
-      let minItems = match obj.get("minItems") {
-        Some(@json.Number(n, ..)) => Some(n.to_int())
-        _ => None
-      }
-      let maxItems = match obj.get("maxItems") {
-        Some(@json.Number(n, ..)) => Some(n.to_int())
-        _ => None
-      }
-      let uniqueItems = match obj.get("uniqueItems") {
-        Some(@json.True) => Some(true)
-        Some(@json.False) => Some(false)
-        _ => None
-      }
-      let prefixItems = match obj.get("prefixItems") {
-        Some(@json.Array(arr)) =>
-          Some(
-            arr.mapi(fn(i, s) {
-              JsonSchema::from_json(
-                s,
-                json_path.add_key("prefixItems").add_index(i),
-              )
-            }),
-          )
-        _ => None
-      }
-      Array(
-        items~,
-        minItems~,
-        maxItems~,
-        uniqueItems~,
-        description~,
-        prefixItems~,
-        contains=None,
-        minContains=None,
-        maxContains=None,
-      )
-    }
+    { "type": "array", .. } =>
+      ArrayConstraint::from_json(json, json_path) |> JsonSchema::Array
     { "type": "null", .. } => JsonSchema::Null(description~)
     { "type": "boolean", .. } => JsonSchema::Boolean(description~)
     { "type": "string", .. } =>

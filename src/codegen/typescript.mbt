@@ -57,7 +57,7 @@ fn generate_typescript(
       } else {
         "any | null"
       }
-    JsonSchema::Array(items~, ..) =>
+    JsonSchema::Array({ items, .. }) =>
       "Array<" + generate_typescript(items.unwrap()) + ">"
     _ => "\"unsupported type\"".to_string()
   }

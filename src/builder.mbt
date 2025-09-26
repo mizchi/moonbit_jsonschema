@@ -29,23 +29,8 @@ pub fn Builder::string(
   minLength? : Int,
   maxLength? : Int,
   enum_? : Array[String],
-  // pattern? : String,
-  // format? : String,
-  // contentEncoding? : String,
-  // contentMediaType? : String,
-  // description? : String,
 ) -> JsonSchema {
-  JsonSchema::String({
-      // description,
-      minLength,
-      maxLength,
-      enum_,
-    },
-    // pattern,
-    // format,
-    // contentEncoding,
-    // contentMediaType,
-  )
+  JsonSchema::String({ minLength, maxLength, enum_ })
 }
 
 ///|
@@ -68,15 +53,10 @@ pub fn Builder::integer(
   _self : Builder,
   minimum? : Double,
   maximum? : Double,
-  exclusiveMinimum? : Double,
-  exclusiveMaximum? : Double,
+  exclusive_minimum? : Double,
+  exclusive_maximum? : Double,
 ) -> JsonSchema {
-  JsonSchema::Integer({
-    minimum,
-    maximum,
-    exclusive_minimum: exclusiveMinimum,
-    exclusive_maximum: exclusiveMaximum,
-  })
+  JsonSchema::Integer({ minimum, maximum, exclusive_minimum, exclusive_maximum })
 }
 
 ///|
@@ -91,19 +71,17 @@ pub fn Builder::array(
   minItems? : Int,
   maxItems? : Int,
   uniqueItems? : Bool,
-  description? : String,
 ) -> JsonSchema {
-  JsonSchema::Array(
-    description~,
-    items~,
-    prefixItems~,
-    contains~,
-    minContains~,
-    maxContains~,
-    minItems~,
-    maxItems~,
-    uniqueItems~,
-  )
+  JsonSchema::Array({
+    items,
+    prefixItems,
+    contains,
+    minContains,
+    maxContains,
+    minItems,
+    maxItems,
+    uniqueItems,
+  })
 }
 
 ///|

@@ -28,10 +28,12 @@ pub fn Enumerable::parse_enumerable(schema : JsonSchema) -> Array[Enumerable]? {
       Const(String(tag_value)) =>
         parsed.push(Enumerable::new(tag_value, None, None))
       // [{"const": "A"}, { "type": "array", .. }]
-      Array(prefixItems=Some([JsonSchema::Const(String(tag_value))]), ..) =>
+      Array({ prefixItems: Some([JsonSchema::Const(String(tag_value))]), .. }) =>
         parsed.push(Enumerable::new(tag_value, None, None))
       // [{"const": "A"}, ..]
-      Array(prefixItems=Some([Const(String(tag_value)), .. child_schemas]), ..) => {
+      Array(
+        { prefixItems: Some([Const(String(tag_value)), .. child_schemas]), .. }
+      ) => {
         let matched = match child_schemas.to_array() {
           [] => { tag: tag_value, positionals: None, params: None }
           // [.. positionals, Object(properties=Some(params), ..)] =>
@@ -92,9 +94,6 @@ test "parse enumerable" {
     enum_values,
     content=(
       #|[{tag: "Single", positionals: None, params: None}, {tag: "A", positionals: Some([Integer({minimum: None, maximum: None, exclusive_minimum: None, exclusive_maximum: None}), String({minLength: None, maxLength: None, enum_: None})]), params: None}, {tag: "B", positionals: Some([Number({minimum: None, maximum: None, exclusive_minimum: None, exclusive_maximum: None})]), params: None}, {tag: "C", positionals: Some([Integer({minimum: None, maximum: None, exclusive_minimum: None, exclusive_maximum: None})]), params: None}]
-
-
-
     ),
   )
 }
