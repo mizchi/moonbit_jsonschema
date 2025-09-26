@@ -42,9 +42,11 @@ impl Validatable for StringConstraint with from_json_schema(json) {
 impl Validatable for StringConstraint with validate(
   self,
   input,
+  resolver,
   json_path~,
   schema_path~,
 ) {
+  ignore(resolver)
   guard input is Json::String(input) else {
     return [
       ValidationError::new(
@@ -102,19 +104,27 @@ test "StringConstraint::validate" {
     max_length: Some(5),
     enum_: None,
   }
+  let resolver = build_resolver({})
   let err_with_min_err = schema.validate(
     "h",
+    resolver,
     json_path=JsonPointer::Root,
     schema_path=JsonPointer::Root,
   )
   assert_not_eq(err_with_min_err, [])
   schema.validate(
     "hell",
+    resolver,
     json_path=JsonPointer::Root,
     schema_path=JsonPointer::Root,
   )
   |> assert_eq([])
   // not string
-  schema.validate(1, json_path=JsonPointer::Root, schema_path=JsonPointer::Root)
+  schema.validate(
+    1,
+    resolver,
+    json_path=JsonPointer::Root,
+    schema_path=JsonPointer::Root,
+  )
   |> assert_not_eq([])
 }

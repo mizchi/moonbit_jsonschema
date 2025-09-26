@@ -38,11 +38,10 @@ pub impl ToJson for JsonSchema with to_json(self) -> Json {
     JsonSchema::Any(_) => { "type": "any" }
     JsonSchema::Null(_) => { "type": "null" }
     JsonSchema::Boolean(_) => { "type": "boolean" }
-    // JsonSchema::String(c) => with_type_property(c.to_json(), "string")
     JsonSchema::String(c) => c.to_json_schema()
-    Number(c) => with_type_property(c.to_json(), "number")
-    Integer(c) => with_type_property(c.to_json(), "integer")
-    Array(constraints) => with_type_property(constraints.to_json(), "array")
+    Number(c) => c.to_json_schema()
+    Integer(c) => c.to_json_schema()
+    Array(constraints) => constraints.to_json_schema()
     Object(c) => with_type_property(c.to_json(), "object")
     Ref(pointer) => { "$ref": pointer.to_string() }
     Const(value) => { "const": value }
@@ -72,10 +71,10 @@ pub impl @json.FromJson for JsonSchema with from_json(
   let b = Builder::new()
   match obj {
     { "const": value, .. } => Const(value)
-    { "$ref": @json.String(ref_expr), .. } =>
+    { "$ref": String(ref_expr), .. } =>
       // TODO: validate ref_expr
       JsonPointer::from_string(ref_expr).unwrap() |> Ref
-    { "type": @json.Array(["null", String(item_type)]), .. } => {
+    { "type": Array(["null", String(item_type)]), .. } => {
       let schema = match item_type {
         "string" => b.string()
         "number" => b.number()

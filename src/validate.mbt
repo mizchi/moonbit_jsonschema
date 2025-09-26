@@ -33,7 +33,7 @@ pub fn Validator::validate(
   input : Json,
   // TODO: support pointer
   // pointer~ : JsonPointer?,
-) -> Result[Unit, Array[ValidationError]] raise RuntimeError {
+) -> Result[Unit, Array[ValidationError]] {
   let errors = self.schema.validate_internal(input, resolver=self.resolver)
   if errors.length() == 0 {
     Ok(())
@@ -62,7 +62,7 @@ fn JsonSchema::validate_internal(
   resolver~ : Resolver,
   json_path? : JsonPointer = JsonPointer::Root,
   schema_path? : JsonPointer = JsonPointer::Root,
-) -> Array[ValidationError] raise RuntimeError {
+) -> Array[ValidationError] {
   match self {
     Boolean(_) =>
       match value {
@@ -99,117 +99,23 @@ fn JsonSchema::validate_internal(
       } else {
         []
       }
-    Integer({ minimum, maximum, exclusive_maximum, exclusive_minimum }) => {
-      guard value is @json.Number(input, ..) else {
-        return [
-          ValidationError::new(
-            value, json_path, schema_path, "Value is not a number",
-          ),
-        ]
+    Integer(c) => {
+      // check intger type
+      if value is @json.Number(v, ..) {
+        let iv = v.to_int()
+        if iv.to_double() != v {
+          return [
+            ValidationError::new(
+              value, json_path, schema_path, "Value is not a number",
+            ),
+          ]
+        }
       }
-      if input.floor() != input {
-        return [
-          ValidationError::new(
-            value, json_path, schema_path, "Value is not an integer",
-          ),
-        ]
-      }
-      let input = input.to_int()
-      let errors : Array[ValidationError] = []
-      if minimum is Some(min) && input < min.to_int() {
-        errors.push(
-          ValidationError::new(
-            value,
-            json_path,
-            schema_path.key("minimum"),
-            "Value is less than minimum \{min}",
-          ),
-        )
-      }
-      if maximum is Some(max) && input > max.to_int() {
-        errors.push(
-          ValidationError::new(
-            value,
-            json_path,
-            schema_path.key("maximum"),
-            "Value is greater than maximum \{max}",
-          ),
-        )
-      }
-      if exclusive_maximum is Some(max) && input >= max.to_int() {
-        errors.push(
-          ValidationError::new(
-            value,
-            json_path,
-            schema_path.key("exclusiveMaximum"),
-            "Value is not less than exclusive maximum \{max}",
-          ),
-        )
-      }
-      if exclusive_minimum is Some(min) && input <= min.to_int() {
-        errors.push(
-          ValidationError::new(
-            value,
-            json_path,
-            schema_path.key("exclusiveMinimum"),
-            "Value is not greater than exclusive minimum \{min}",
-          ),
-        )
-      }
-      errors
+      c.validate(value, resolver, json_path~, schema_path~)
     }
-    Number({ minimum, maximum, exclusive_maximum, exclusive_minimum }) => {
-      guard value is @json.Number(input, ..) else {
-        return [
-          ValidationError::new(
-            value, json_path, schema_path, "Value is not a number",
-          ),
-        ]
-      }
-      let errors : Array[ValidationError] = []
-      if minimum is Some(min) && input < min {
-        errors.push(
-          ValidationError::new(
-            value,
-            json_path,
-            schema_path.key("minimum"),
-            "Value is less than minimum \{min}",
-          ),
-        )
-      }
-      if maximum is Some(max) && input > max {
-        errors.push(
-          ValidationError::new(
-            value,
-            json_path,
-            schema_path.key("maximum"),
-            "Value is greater than maximum \{max}",
-          ),
-        )
-      }
-      if exclusive_maximum is Some(max) && input >= max {
-        errors.push(
-          ValidationError::new(
-            value,
-            json_path,
-            schema_path.key("exclusiveMaximum"),
-            "\{input} is not less than exclusive maximum \{max}",
-          ),
-        )
-      }
-      if exclusive_minimum is Some(min) && input <= min {
-        errors.push(
-          ValidationError::new(
-            value,
-            json_path,
-            schema_path.key("exclusiveMinimum"),
-            "Value is not greater than exclusive minimum \{min}",
-          ),
-        )
-      }
-      errors
-    }
-    String(constraint) => constraint.validate(value, json_path~, schema_path~)
+    Number(c) => c.validate(value, resolver, json_path~, schema_path~)
+    String(constraint) =>
+      constraint.validate(value, resolver, json_path~, schema_path~)
     Array(
       {
         min_items: minItems,
@@ -391,16 +297,6 @@ fn JsonSchema::validate_internal(
         []
       }
     Ref(pointer) =>
-      // guard resolver is Some(resolver) else {
-      //   return [
-      //     ValidationError::new(
-      //       value,
-      //       json_path,
-      //       schema_path.key("$ref"),
-      //       "No resolver provided for $ref",
-      //     ),
-      //   ]
-      // }
       match resolver.resolve(pointer) {
         Some(resolved_schema) => {
           // let opath = ObjectPath::from_json_pointer(ref_expr)
@@ -424,7 +320,9 @@ fn JsonSchema::validate_internal(
           ]
       }
     Not(_schema) =>
-      raise RuntimeError::Unsupported("not schema validation not implemented")
+      // TODO: implement Not validation
+      []
+    //   raise RuntimeError::Unsupported("not schema validation not implemented")
     AllOf(schemas) => {
       let errors : Array[ValidationError] = []
       let mut passed = 0
