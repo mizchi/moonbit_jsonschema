@@ -38,7 +38,8 @@ pub impl ToJson for JsonSchema with to_json(self) -> Json {
     JsonSchema::Any(_) => { "type": "any" }
     JsonSchema::Null(_) => { "type": "null" }
     JsonSchema::Boolean(_) => { "type": "boolean" }
-    JsonSchema::String(c) => with_type_property(c.to_json(), "string")
+    // JsonSchema::String(c) => with_type_property(c.to_json(), "string")
+    JsonSchema::String(c) => c.to_json_schema()
     Number(c) => with_type_property(c.to_json(), "number")
     Integer(c) => with_type_property(c.to_json(), "integer")
     Array(constraints) => with_type_property(constraints.to_json(), "array")

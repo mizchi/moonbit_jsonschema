@@ -30,7 +30,7 @@ pub fn Builder::string(
   maxLength? : Int,
   enum_? : Array[String],
 ) -> JsonSchema {
-  JsonSchema::String({ minLength, maxLength, enum_ })
+  JsonSchema::String({ min_length: minLength, max_length: maxLength, enum_ })
 }
 
 ///|

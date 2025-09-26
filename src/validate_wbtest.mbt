@@ -84,12 +84,16 @@ test "validate string type with minLength and maxLength" {
   |> inspect(
     content=(
       #|[{input: String("hi"), json_path: #, schema_path: #/minLength, message: "String length 2 is less than minimum 3", children: None}]
+
+
     ),
   )
   schema.validate("hellooo")
   |> inspect(
     content=(
       #|Err([{input: String("hellooo"), json_path: #, schema_path: #/maxLength, message: "String length 7 is greater than maximum 5", children: None}])
+
+
     ),
   )
 }

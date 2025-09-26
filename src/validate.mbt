@@ -209,57 +209,7 @@ fn JsonSchema::validate_internal(
       }
       errors
     }
-    String({ minLength, maxLength, enum_ }) =>
-      match value {
-        // TODO: validate string constraints
-        @json.String(_) => {
-          guard value is @json.String(input) else {
-            return [
-              ValidationError::new(
-                value, json_path, schema_path, "Value is not a string",
-              ),
-            ]
-          }
-          let len = input.length()
-          if minLength is Some(min) && len < min {
-            return [
-              ValidationError::new(
-                value,
-                json_path,
-                schema_path.key("minLength"),
-                "String length \{len} is less than minimum \{min}",
-              ),
-            ]
-          }
-          if maxLength is Some(max) && len > max {
-            return [
-              ValidationError::new(
-                value,
-                json_path,
-                schema_path.key("maxLength"),
-                "String length \{len} is greater than maximum \{max}",
-              ),
-            ]
-          }
-          if enum_ is Some(enum_values) && !enum_values.contains(input) {
-            return [
-              ValidationError::new(
-                value,
-                json_path,
-                schema_path.key("enum"),
-                "\{input} is not in \{enum_values}",
-              ),
-            ]
-          }
-          []
-        }
-        _ =>
-          [
-            ValidationError::new(
-              value, json_path, schema_path, "Value is not a string",
-            ),
-          ]
-      }
+    String(constraint) => constraint.validate(value, json_path~, schema_path~)
     Array(
       {
         min_items: minItems,

@@ -93,7 +93,8 @@ test "parse enumerable" {
   inspect(
     enum_values,
     content=(
-      #|[{tag: "Single", positionals: None, params: None}, {tag: "A", positionals: Some([Integer({minimum: None, maximum: None, exclusive_minimum: None, exclusive_maximum: None}), String({minLength: None, maxLength: None, enum_: None})]), params: None}, {tag: "B", positionals: Some([Number({minimum: None, maximum: None, exclusive_minimum: None, exclusive_maximum: None})]), params: None}, {tag: "C", positionals: Some([Integer({minimum: None, maximum: None, exclusive_minimum: None, exclusive_maximum: None})]), params: None}]
+      #|[{tag: "Single", positionals: None, params: None}, {tag: "A", positionals: Some([Integer({minimum: None, maximum: None, exclusive_minimum: None, exclusive_maximum: None}), String({min_length: None, max_length: None, enum_: None})]), params: None}, {tag: "B", positionals: Some([Number({minimum: None, maximum: None, exclusive_minimum: None, exclusive_maximum: None})]), params: None}, {tag: "C", positionals: Some([Integer({minimum: None, maximum: None, exclusive_minimum: None, exclusive_maximum: None})]), params: None}]
+
     ),
   )
 }
