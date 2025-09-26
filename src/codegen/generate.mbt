@@ -117,7 +117,7 @@ fn generate_stmt(
       ..write_string(outer.to_string())
       inner.to_string() |> Ok
     }
-    Integer(..) | Number(..) | String(..) | Boolean(..) | Ref(_) => {
+    Integer(_) | Number(_) | String(_) | Boolean(..) | Ref(_) => {
       let code = generate_type_expr(schema, resolver~, pointer~)
       "\{prefix}struct \{struct_name}(\{code}) derive(Eq, Show, FromJson, ToJson)"
       |> Ok
@@ -147,9 +147,9 @@ fn generate_type_expr(
       logger.write_string("]")
       return logger.to_string()
     }
-    String(..) => "String"
-    Number(..) => "Double"
-    Integer(..) => "Int"
+    String(_) => "String"
+    Number(_) => "Double"
+    Integer(_) => "Int"
     Boolean(..) => "Bool"
     OneOf(_) =>
       if parse_nullable(schema) is Some(other) {

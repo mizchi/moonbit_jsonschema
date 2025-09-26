@@ -91,7 +91,9 @@ test "parse enumerable" {
   inspect(
     enum_values,
     content=(
-      #|[{tag: "Single", positionals: None, params: None}, {tag: "A", positionals: Some([Integer(minimum=None, maximum=None, exclusiveMinimum=None, exclusiveMaximum=None, multipleOf=None, description=None), String(minLength=None, maxLength=None, pattern=None, format=None, enum_=None, contentEncoding=None, contentMediaType=None, description=None)]), params: None}, {tag: "B", positionals: Some([Number(minimum=None, maximum=None, exclusiveMinimum=None, exclusiveMaximum=None, multipleOf=None, description=None)]), params: None}, {tag: "C", positionals: Some([Integer(minimum=None, maximum=None, exclusiveMinimum=None, exclusiveMaximum=None, multipleOf=None, description=None)]), params: None}]
+      #|[{tag: "Single", positionals: None, params: None}, {tag: "A", positionals: Some([Integer({minimum: None, maximum: None, exclusiveMinimum: None, exclusiveMaximum: None, multipleOf: None}), String({minLength: None, maxLength: None, pattern: None, format: None, enum_: None, contentEncoding: None, contentMediaType: None})]), params: None}, {tag: "B", positionals: Some([Number({minimum: None, maximum: None, exclusiveMinimum: None, exclusiveMaximum: None, multipleOf: None})]), params: None}, {tag: "C", positionals: Some([Integer({minimum: None, maximum: None, exclusiveMinimum: None, exclusiveMaximum: None, multipleOf: None})]), params: None}]
+
+
     ),
   )
 }

@@ -33,60 +33,56 @@ pub fn Builder::string(
   enum_? : Array[String],
   contentEncoding? : String,
   contentMediaType? : String,
-  description? : String,
+  // description? : String,
 ) -> JsonSchema {
-  JsonSchema::String(
-    description~,
-    minLength~,
-    maxLength~,
-    pattern~,
-    format~,
-    enum_~,
-    contentEncoding~,
-    contentMediaType~,
-  )
+  JsonSchema::String({
+    // description,
+    minLength,
+    maxLength,
+    pattern,
+    format,
+    enum_,
+    contentEncoding,
+    contentMediaType,
+  })
 }
 
 ///|
 /// { "type": "number" }
 pub fn Builder::number(
   _self : Builder,
-  description? : String,
   minimum? : Double,
   maximum? : Double,
   exclusiveMinimum? : Double,
   exclusiveMaximum? : Double,
   multipleOf? : Double,
 ) -> JsonSchema {
-  JsonSchema::Number(
-    description~,
-    minimum~,
-    maximum~,
-    exclusiveMinimum~,
-    exclusiveMaximum~,
-    multipleOf~,
-  )
+  JsonSchema::Number({
+    minimum,
+    maximum,
+    exclusiveMinimum,
+    exclusiveMaximum,
+    multipleOf,
+  })
 }
 
 ///|
 /// { "type": "integer" }
 pub fn Builder::integer(
   _self : Builder,
-  description? : String,
-  minimum? : Int,
-  maximum? : Int,
-  exclusiveMinimum? : Int,
-  exclusiveMaximum? : Int,
-  multipleOf? : Int,
+  minimum? : Double,
+  maximum? : Double,
+  exclusiveMinimum? : Double,
+  exclusiveMaximum? : Double,
+  multipleOf? : Double,
 ) -> JsonSchema {
-  JsonSchema::Integer(
-    description~,
-    minimum~,
-    maximum~,
-    exclusiveMinimum~,
-    exclusiveMaximum~,
-    multipleOf~,
-  )
+  JsonSchema::Integer({
+    minimum,
+    maximum,
+    exclusiveMinimum,
+    exclusiveMaximum,
+    multipleOf,
+  })
 }
 
 ///|

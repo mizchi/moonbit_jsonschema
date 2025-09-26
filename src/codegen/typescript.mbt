@@ -43,9 +43,9 @@ fn generate_typescript(
       logger.write_string("\n\{prefix}};")
       return logger.to_string()
     }
-    JsonSchema::String(..) => "string"
-    JsonSchema::Number(..) => "number"
-    JsonSchema::Integer(..) => "number"
+    JsonSchema::String(_) => "string"
+    JsonSchema::Number(_) => "number"
+    JsonSchema::Integer(_) => "number"
     JsonSchema::Boolean(..) => "boolean"
     JsonSchema::OneOf(schemas) =>
       if schemas.length() == 2 {

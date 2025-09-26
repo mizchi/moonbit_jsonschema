@@ -99,7 +99,7 @@ fn JsonSchema::validate_internal(
       } else {
         []
       }
-    Integer(minimum~, maximum~, exclusiveMaximum~, exclusiveMinimum~, ..) => {
+    Integer({ minimum, maximum, exclusiveMaximum, exclusiveMinimum, .. }) => {
       guard value is @json.Number(input, ..) else {
         return [
           ValidationError::new(
@@ -116,7 +116,7 @@ fn JsonSchema::validate_internal(
       }
       let input = input.to_int()
       let errors : Array[ValidationError] = []
-      if minimum is Some(min) && input < min {
+      if minimum is Some(min) && input < min.to_int() {
         errors.push(
           ValidationError::new(
             value,
@@ -126,7 +126,7 @@ fn JsonSchema::validate_internal(
           ),
         )
       }
-      if maximum is Some(max) && input > max {
+      if maximum is Some(max) && input > max.to_int() {
         errors.push(
           ValidationError::new(
             value,
@@ -136,7 +136,7 @@ fn JsonSchema::validate_internal(
           ),
         )
       }
-      if exclusiveMaximum is Some(max) && input >= max {
+      if exclusiveMaximum is Some(max) && input >= max.to_int() {
         errors.push(
           ValidationError::new(
             value,
@@ -146,7 +146,7 @@ fn JsonSchema::validate_internal(
           ),
         )
       }
-      if exclusiveMinimum is Some(min) && input <= min {
+      if exclusiveMinimum is Some(min) && input <= min.to_int() {
         errors.push(
           ValidationError::new(
             value,
@@ -158,7 +158,7 @@ fn JsonSchema::validate_internal(
       }
       errors
     }
-    Number(minimum~, maximum~, exclusiveMaximum~, exclusiveMinimum~, ..) => {
+    Number({ minimum, maximum, exclusiveMaximum, exclusiveMinimum, .. }) => {
       guard value is @json.Number(input, ..) else {
         return [
           ValidationError::new(
@@ -209,7 +209,7 @@ fn JsonSchema::validate_internal(
       }
       errors
     }
-    String(minLength~, maxLength~, enum_~, ..) =>
+    String({ minLength, maxLength, enum_, .. }) =>
       match value {
         // TODO: validate string constraints
         @json.String(_) => {

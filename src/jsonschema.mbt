@@ -1,7 +1,7 @@
 // JSON Schema types and definitions
 
 ///|
-pub(all) struct ObjectConstraints {
+pub struct ObjectConstraints {
   properties : Map[String, JsonSchema]?
   required : Array[String]?
   additionalProperties : JsonSchema?
@@ -15,6 +15,27 @@ pub(all) struct ObjectConstraints {
 } derive(Show, Eq)
 
 ///|
+pub struct StringConstraint {
+  minLength : Int?
+  maxLength : Int?
+  pattern : String?
+  format : String?
+  enum_ : Array[String]?
+  contentEncoding : String?
+  contentMediaType : String?
+  // description : String?
+} derive(Show, Eq)
+
+///|
+pub struct NumberConstraint {
+  minimum : Double?
+  maximum : Double?
+  exclusiveMinimum : Double?
+  exclusiveMaximum : Double?
+  multipleOf : Double?
+} derive(Show, Eq)
+
+///|
 /// JsonSchema
 pub enum JsonSchema {
   /// { "type": "any" }
@@ -24,34 +45,17 @@ pub enum JsonSchema {
   /// { "type": "boolean" }
   Boolean(description~ : String?)
   /// { "type": "string" }
-  String(
-    minLength~ : Int?,
-    maxLength~ : Int?,
-    pattern~ : String?,
-    format~ : String?,
-    enum_~ : Array[String]?,
-    contentEncoding~ : String?,
-    contentMediaType~ : String?,
-    description~ : String?
-  )
+  String(StringConstraint)
   /// { "type": "number" }
-  Number(
-    minimum~ : Double?,
-    maximum~ : Double?,
-    exclusiveMinimum~ : Double?,
-    exclusiveMaximum~ : Double?,
-    multipleOf~ : Double?,
-    description~ : String?
-  )
+  Number(NumberConstraint)
+  //   minimum~ : Double?,
+  //   maximum~ : Double?,
+  //   exclusiveMinimum~ : Double?,
+  //   exclusiveMaximum~ : Double?,
+  //   multipleOf~ : Double?,
+  // )
   /// { "type": "integer" }
-  Integer(
-    minimum~ : Int?,
-    maximum~ : Int?,
-    exclusiveMinimum~ : Int?,
-    exclusiveMaximum~ : Int?,
-    multipleOf~ : Int?,
-    description~ : String?
-  )
+  Integer(NumberConstraint)
   /// { "type": "array" }
   Array(
     items~ : JsonSchema?,
@@ -65,19 +69,7 @@ pub enum JsonSchema {
     description~ : String?
   )
   /// { "type": "object" }
-  Object(
-    ObjectConstraints
-    // properties~ : Map[String, JsonSchema]?,
-    // required~ : Array[String]?,
-    // additionalProperties~ : JsonSchema?,
-    // patternProperties~ : Map[String, JsonSchema]?,
-    // propertyNames~ : JsonSchema?,
-    // dependentSchemas~ : Map[String, JsonSchema]?,
-    // dependentRequired~ : Map[String, Array[String]]?,
-    // minProperties~ : Int?,
-    // maxProperties~ : Int?,
-    // description~ : String?
-  )
+  Object(ObjectConstraints)
   /// { "enum": [...] }
   Enum(Array[Json])
   /// { "const": ... }
@@ -101,15 +93,17 @@ pub impl ToJson for JsonSchema with to_json(self) -> Json {
     JsonSchema::Any(_) => { "type": "any" }.to_json()
     JsonSchema::Null(_) => { "type": "null" }.to_json()
     JsonSchema::Boolean(_) => { "type": "boolean" }.to_json()
+    // description,
     JsonSchema::String(
-      minLength~,
-      maxLength~,
-      pattern~,
-      format~,
-      contentEncoding~,
-      contentMediaType~,
-      enum_~,
-      description~
+      {
+        minLength,
+        maxLength,
+        pattern,
+        format,
+        contentEncoding,
+        contentMediaType,
+        enum_,
+      }
     ) => {
       let json : Map[String, Json] = { "type": "string" }
       if minLength is Some(value) {
@@ -133,23 +127,14 @@ pub impl ToJson for JsonSchema with to_json(self) -> Json {
       if enum_ is Some(values) {
         json["enum"] = values.to_json()
       }
-      if description is Some(value) {
-        json["description"] = value.to_json()
-      }
       json.to_json()
     }
     Ref(pointer) => { "$ref": pointer.to_string() }.to_json()
     Const(value) => { "const": value }.to_json()
     // after string
     Enum(values) => { "enum": values.to_json() }.to_json()
-    Number(
-      minimum~,
-      maximum~,
-      exclusiveMinimum~,
-      exclusiveMaximum~,
-      multipleOf~,
-      description~
-    ) => {
+    // description~
+    Number({ minimum, maximum, exclusiveMinimum, exclusiveMaximum, multipleOf }) => {
       let json : Map[String, Json] = { "type": "number" }
       if minimum is Some(value) {
         json["minimum"] = value.to_json()
@@ -166,18 +151,10 @@ pub impl ToJson for JsonSchema with to_json(self) -> Json {
       if multipleOf is Some(value) {
         json["multipleOf"] = value.to_json()
       }
-      if description is Some(value) {
-        json["description"] = value.to_json()
-      }
       json.to_json()
     }
     Integer(
-      minimum~,
-      maximum~,
-      exclusiveMinimum~,
-      exclusiveMaximum~,
-      multipleOf~,
-      description~
+      { minimum, maximum, exclusiveMinimum, exclusiveMaximum, multipleOf }
     ) => {
       let json : Map[String, Json] = { "type": "integer" }
       if minimum is Some(value) {
@@ -194,9 +171,6 @@ pub impl ToJson for JsonSchema with to_json(self) -> Json {
       }
       if multipleOf is Some(value) {
         json["multipleOf"] = value.to_json()
-      }
-      if description is Some(value) {
-        json["description"] = value.to_json()
       }
       json.to_json()
     }
@@ -510,10 +484,10 @@ pub impl @json.FromJson for JsonSchema with from_json(
       JsonSchema::Boolean(description~)
     }
     { "type": "string", .. } => {
-      let description = match obj.get("description") {
-        Some(@json.String(desc)) => Some(desc)
-        _ => None
-      }
+      // let description = match obj.get("description") {
+      //   Some(@json.String(desc)) => Some(desc)
+      //   _ => None
+      // }
       let minLength = match obj.get("minLength") {
         Some(@json.Number(n, ..)) => Some(n.to_int())
         _ => None
@@ -543,16 +517,16 @@ pub impl @json.FromJson for JsonSchema with from_json(
         }
         _ => None
       }
-      JsonSchema::String(
-        minLength~,
-        maxLength~,
-        pattern~,
-        enum_~,
-        format~,
-        contentEncoding=None,
-        contentMediaType=None,
-        description~,
-      )
+      JsonSchema::String(StringConstraint::{
+        minLength,
+        maxLength,
+        pattern,
+        enum_,
+        format,
+        contentEncoding: None,
+        contentMediaType: None,
+        // description~,
+      })
     }
     { "type": "number", .. } => {
       let minimum = match obj.get("minimum") {
@@ -575,44 +549,42 @@ pub impl @json.FromJson for JsonSchema with from_json(
         Some(@json.Number(n, ..)) => Some(n)
         _ => None
       }
-      JsonSchema::Number(
-        minimum~,
-        maximum~,
-        exclusiveMinimum~,
-        exclusiveMaximum~,
-        description~,
-        multipleOf~,
-      )
+      JsonSchema::Number({
+        minimum,
+        maximum,
+        exclusiveMinimum,
+        exclusiveMaximum,
+        multipleOf,
+      })
     }
     { "type": "integer", .. } => {
       let minimum = match obj.get("minimum") {
-        Some(@json.Number(n, ..)) => n.to_int() |> Some
+        Some(@json.Number(n, ..)) => n |> Some
         _ => None
       }
       let maximum = match obj.get("maximum") {
-        Some(@json.Number(n, ..)) => n.to_int() |> Some
+        Some(@json.Number(n, ..)) => n |> Some
         _ => None
       }
       let exclusiveMinimum = match obj.get("exclusiveMinimum") {
-        Some(@json.Number(n, ..)) => n.to_int() |> Some
+        Some(@json.Number(n, ..)) => n |> Some
         _ => None
       }
       let exclusiveMaximum = match obj.get("exclusiveMaximum") {
-        Some(@json.Number(n, ..)) => n.to_int() |> Some
+        Some(@json.Number(n, ..)) => n |> Some
         _ => None
       }
       let multipleOf = match obj.get("multipleOf") {
-        Some(@json.Number(n, ..)) => n.to_int() |> Some
+        Some(@json.Number(n, ..)) => n |> Some
         _ => None
       }
-      JsonSchema::Integer(
-        description~,
-        minimum~,
-        maximum~,
-        exclusiveMinimum~,
-        exclusiveMaximum~,
-        multipleOf~,
-      )
+      JsonSchema::Integer({
+        minimum,
+        maximum,
+        exclusiveMinimum,
+        exclusiveMaximum,
+        multipleOf,
+      })
     }
     { "anyOf": Array(schemas), .. } =>
       JsonSchema::AnyOf(
