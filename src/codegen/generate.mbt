@@ -58,8 +58,8 @@ fn generate_stmt(
   pointer? : JsonPointer = JsonPointer::Root.key(struct_name),
 ) -> Result[String, String] {
   match schema {
-    OneOf(_) => {
-      guard Enumerable::parse_enumerable(schema) is Some(enumerable) else {
+    OneOf(s) => {
+      guard Enumerable::parse_enumerable(s) is Some(enumerable) else {
         return Err("OneOf without prefixItems is not supported")
       }
       render_enumerable(struct_name, enumerable, prefix~, resolver~, pointer~)
