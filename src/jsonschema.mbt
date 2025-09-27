@@ -27,7 +27,7 @@ pub enum JsonSchema {
   Enum(Array[Json])
   Const(Json)
   AnyOf(AnyOfSchema)
-  AllOf(Array[JsonSchema])
+  AllOf(AllOfSchema)
   OneOf(OneOfSchema)
   Not(JsonSchema)
   Ref(JsonPointer)
@@ -61,7 +61,7 @@ pub impl ToJson for JsonSchema with to_json(self) -> Json {
     Enum(values) => { "enum": values.to_json() }
     JsonSchema::AnyOf({ schemas }) =>
       { "anyOf": schemas.map(fn(s) { s.to_json() }) }
-    JsonSchema::AllOf(schemas) =>
+    JsonSchema::AllOf({ schemas }) =>
       { "allOf": schemas.map(fn(s) { s.to_json() }) }
     JsonSchema::OneOf(schemas) =>
       { "oneOf": schemas.schemas.map(fn(s) { s.to_json() }) }
@@ -130,11 +130,11 @@ pub impl @json.FromJson for JsonSchema with from_json(
         }),
       })
     { "allOf": Array(schemas), .. } =>
-      JsonSchema::AllOf(
-        schemas.map(fn(s) {
+      JsonSchema::AllOf({
+        schemas: schemas.map(fn(s) {
           @json.from_json(s, path=json_path.add_key("allOf"))
         }),
-      )
+      })
     { "oneOf": Array(schemas), .. } =>
       JsonSchema::OneOf({
         schemas: schemas.mapi(fn(i, s) {

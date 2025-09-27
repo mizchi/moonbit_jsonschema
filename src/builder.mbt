@@ -194,7 +194,7 @@ pub fn Builder::allOf(
   _self : Builder,
   schemas : Array[JsonSchema],
 ) -> JsonSchema {
-  JsonSchema::AllOf(schemas)
+  JsonSchema::AllOf({ schemas, })
 }
 
 ///|

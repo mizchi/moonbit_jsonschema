@@ -156,36 +156,7 @@ fn JsonSchema::validate_internal(
       // TODO: implement Not validation
       []
     //   raise RuntimeError::Unsupported("not schema validation not implemented")
-    AllOf(schemas) => {
-      let errors : Array[ValidationError] = []
-      let mut passed = 0
-      for idx, schema in schemas {
-        let sub_errors = schema.validate_internal(
-          value,
-          json_path~,
-          schema_path=schema_path.key("oneOf").index(idx),
-          resolver~,
-        )
-        if sub_errors.length() == 0 {
-          passed += 1
-        } else {
-          errors.append(sub_errors)
-        }
-      }
-      if passed == schemas.length() {
-        []
-      } else {
-        errors.push(
-          ValidationError::new(
-            value,
-            json_path,
-            schema_path.key("allOf"),
-            "Value does not match exactly one schema in allOf",
-          ),
-        )
-        errors
-      }
-    }
+    AllOf(s) => s.validate(value, resolver, json_path~, schema_path~)
     OneOf(s) => s.validate(value, resolver, json_path~, schema_path~)
     AnyOf(s) => s.validate(value, resolver, json_path~, schema_path~)
   }
