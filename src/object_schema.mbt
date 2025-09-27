@@ -28,14 +28,12 @@ impl Validatable for ObjectSchema with to_json_schema(self) {
 
 ///|
 impl Validatable for ObjectSchema with from_json_schema(json) {
-  ...
-  // try {
-  //   let v : StringConstraint = @json.from_json(json)
-  //   v |> JsonSchema::String |> Ok
-  // } catch {
-  //   _ => Err("Failed to parse StringConstraint".to_string())
-  // }
-  // parsed |> Ok
+  try {
+    let v : ObjectSchema = @json.from_json(json)
+    v |> JsonSchema::Object |> Ok
+  } catch {
+    _ => Err("Failed to parse StringConstraint".to_string())
+  }
 }
 
 ///|

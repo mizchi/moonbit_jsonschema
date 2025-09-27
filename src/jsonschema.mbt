@@ -13,37 +13,6 @@ trait Validatable {
   ) -> Array[ValidationError]
 }
 
-///|
-pub struct AnySchema {} derive(Show, Eq, FromJson, ToJson)
-
-///|
-impl Validatable for AnySchema with to_json_schema(self) {
-  with_type_property({}, "any")
-  // { "type": "any" }
-}
-
-///|
-impl Validatable for AnySchema with from_json_schema(json) {
-  try {
-    let v : AnySchema = @json.from_json(json)
-    v |> JsonSchema::Any |> Ok
-  } catch {
-    _ => Err("Failed to parse AnySchema".to_string())
-  }
-}
-
-///|
-impl Validatable for AnySchema with validate(
-  _self,
-  _value,
-  _resolver,
-  json_path~,
-  schema_path~,
-) {
-  ignore((json_path, schema_path))
-  []
-}
-
 ///|any
 
 ///|
@@ -81,14 +50,14 @@ fn with_type_property(json : Json, type_name : String) -> Json {
 ///|
 pub impl ToJson for JsonSchema with to_json(self) -> Json {
   match self {
-    Any(c) => c.to_json_schema()
+    Any(schema) => schema.to_json_schema()
     Null(_) => { "type": "null" }
     Boolean(_) => { "type": "boolean" }
-    String(c) => c.to_json_schema()
-    Number(c) => c.to_json_schema()
-    Integer(c) => c.to_json_schema()
-    Array(constraints) => constraints.to_json_schema()
-    Object(c) => with_type_property(c.to_json(), "object")
+    String(schema) => schema.to_json_schema()
+    Number(schema) => schema.to_json_schema()
+    Integer(schema) => schema.to_json_schema()
+    Array(schema) => schema.to_json_schema()
+    Object(schema) => schema.to_json_schema()
     Ref(pointer) => { "$ref": pointer.to_string() }
     Const(value) => { "const": value }
     Enum(values) => { "enum": values.to_json() }
@@ -116,6 +85,8 @@ pub impl @json.FromJson for JsonSchema with from_json(
   }
   let b = Builder::new()
   match obj {
+    { "type": "any", .. } =>
+      AnySchema::from_json(json, json_path) |> JsonSchema::Any
     { "const": value, .. } => Const(value)
     { "$ref": String(ref_expr), .. } =>
       // TODO: validate ref_expr
@@ -177,4 +148,39 @@ pub impl @json.FromJson for JsonSchema with from_json(
     { "enum": Array(values), .. } => JsonSchema::Enum(values)
     _ => JsonSchema::Any(AnySchema::{  })
   }
+}
+
+///| Primitive types
+
+///|
+pub struct AnySchema {} derive(Show, Eq, FromJson, ToJson)
+
+///|
+impl Validatable for AnySchema with to_json_schema(_self) {
+  with_type_property({}, "any")
+}
+
+///|
+impl Validatable for AnySchema with from_json_schema(json) {
+  if not(json is { "type": "any", .. }) {
+    return Err("Expected an object for AnySchema".to_string())
+  }
+  try {
+    let v : AnySchema = @json.from_json(json)
+    v |> JsonSchema::Any |> Ok
+  } catch {
+    _ => Err("Failed to parse AnySchema".to_string())
+  }
+}
+
+///|
+impl Validatable for AnySchema with validate(
+  _self,
+  _value,
+  _resolver,
+  json_path~,
+  schema_path~,
+) {
+  ignore((json_path, schema_path))
+  []
 }
