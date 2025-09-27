@@ -26,9 +26,9 @@ impl Validatable for AllOfSchema with validate(
   for idx, schema in self.schemas {
     let sub_errors = schema.validate_internal(
       value,
+      resolver~,
       json_path~,
       schema_path=schema_path.key("oneOf").index(idx),
-      resolver~,
     )
     if sub_errors.length() == 0 {
       passed += 1
