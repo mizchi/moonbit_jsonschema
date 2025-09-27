@@ -22,12 +22,12 @@ pub struct ObjectSchema {
 )
 
 ///|
-impl Validatable for ObjectSchema with to_json_schema(self) {
+impl JsonSchemaSerializable for ObjectSchema with to_json_schema(self) {
   with_type_property(self.to_json(), "object")
 }
 
 ///|
-impl Validatable for ObjectSchema with parse(json) {
+impl JsonSchemaSerializable for ObjectSchema with parse(json) {
   try {
     let v : ObjectSchema = @json.from_json(json)
     v |> JsonSchema::Object |> Ok

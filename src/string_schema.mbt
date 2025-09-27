@@ -23,12 +23,12 @@ pub struct StringSchema {
 )
 
 ///|
-impl Validatable for StringSchema with to_json_schema(self) {
+impl JsonSchemaSerializable for StringSchema with to_json_schema(self) {
   with_type_property(self.to_json(), "string")
 }
 
 ///|
-impl Validatable for StringSchema with parse(json) {
+impl JsonSchemaSerializable for StringSchema with parse(json) {
   try {
     let v : StringSchema = @json.from_json(json)
     v |> JsonSchema::String |> Ok

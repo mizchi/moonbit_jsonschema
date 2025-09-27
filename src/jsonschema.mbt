@@ -1,9 +1,13 @@
 // JSON Schema types and definitions
 
 ///|
-priv trait Validatable {
+priv trait JsonSchemaSerializable {
   parse(Json) -> Result[JsonSchema, String]
   to_json_schema(Self) -> Json
+}
+
+///|
+priv trait Validatable {
   validate(
     Self,
     Json,
@@ -180,7 +184,6 @@ pub impl @json.FromJson for JsonSchema with from_json(
           @json.from_json(s, path=json_path.add_key("oneOf").add_index(i))
         }),
       })
-    // { "not": schema, .. } =>
     //   JsonSchema::Not(@json.from_json(schema, path=json_path.add_key("not")))
     { "enum": Array(values), .. } => JsonSchema::Enum(EnumSchema::{ values, })
     _ => JsonSchema::Any(AnySchema::{  })
@@ -193,12 +196,12 @@ pub impl @json.FromJson for JsonSchema with from_json(
 pub struct AnySchema {} derive(Show, Eq, FromJson, ToJson)
 
 ///|
-impl Validatable for AnySchema with to_json_schema(_self) {
+impl JsonSchemaSerializable for AnySchema with to_json_schema(_self) {
   with_type_property({}, "any")
 }
 
 ///|
-impl Validatable for AnySchema with parse(json) {
+impl JsonSchemaSerializable for AnySchema with parse(json) {
   if not(json is { "type": "any", .. }) {
     return Err("Expected an object for AnySchema".to_string())
   }
@@ -226,12 +229,12 @@ impl Validatable for AnySchema with validate(
 pub struct NullSchema {} derive(Show, Eq, FromJson, ToJson)
 
 ///|
-impl Validatable for NullSchema with to_json_schema(_self) {
+impl JsonSchemaSerializable for NullSchema with to_json_schema(_self) {
   with_type_property({}, "null")
 }
 
 ///|
-impl Validatable for NullSchema with parse(json) {
+impl JsonSchemaSerializable for NullSchema with parse(json) {
   if not(json is { "type": "null", .. }) {
     return Err("Expected an object for NullSchema".to_string())
   }
@@ -264,12 +267,12 @@ impl Validatable for NullSchema with validate(
 pub struct BooleanSchema {} derive(Show, Eq, FromJson, ToJson)
 
 ///|
-impl Validatable for BooleanSchema with to_json_schema(_self) {
+impl JsonSchemaSerializable for BooleanSchema with to_json_schema(_self) {
   with_type_property({}, "boolean")
 }
 
 ///|
-impl Validatable for BooleanSchema with parse(json) {
+impl JsonSchemaSerializable for BooleanSchema with parse(json) {
   if not(json is { "type": "boolean", .. }) {
     return Err("Expected an object for NullSchema".to_string())
   }

@@ -31,12 +31,12 @@ pub struct ArraySchema {
 )
 
 ///|
-impl Validatable for ArraySchema with to_json_schema(self) {
+impl JsonSchemaSerializable for ArraySchema with to_json_schema(self) {
   with_type_property(self.to_json(), "array")
 }
 
 ///|
-impl Validatable for ArraySchema with parse(json) {
+impl JsonSchemaSerializable for ArraySchema with parse(json) {
   try {
     let v : StringSchema = @json.from_json(json)
     v |> JsonSchema::String |> Ok

@@ -5,12 +5,12 @@ pub struct OneOfSchema {
 } derive(Show, Eq)
 
 ///|
-impl Validatable for OneOfSchema with to_json_schema(self) {
+impl JsonSchemaSerializable for OneOfSchema with to_json_schema(self) {
   { "oneOf": self.schemas.map(fn(s) { s.to_json() }) }
 }
 
 ///|
-impl Validatable for OneOfSchema with parse(json) {
+impl JsonSchemaSerializable for OneOfSchema with parse(json) {
   ...
 }
 

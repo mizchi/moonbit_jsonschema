@@ -4,12 +4,12 @@ pub struct ConstSchema {
 } derive(Show, Eq, FromJson, ToJson)
 
 ///|
-impl Validatable for ConstSchema with to_json_schema(self) {
+impl JsonSchemaSerializable for ConstSchema with to_json_schema(self) {
   { "const": self.value.to_json() }
 }
 
 ///|
-impl Validatable for ConstSchema with parse(json) {
+impl JsonSchemaSerializable for ConstSchema with parse(json) {
   ...
 }
 
@@ -42,12 +42,12 @@ pub struct EnumSchema {
 } derive(Show, Eq, FromJson, ToJson)
 
 ///|
-impl Validatable for EnumSchema with to_json_schema(self) {
+impl JsonSchemaSerializable for EnumSchema with to_json_schema(self) {
   { "enum": self.values.to_json() }
 }
 
 ///|
-impl Validatable for EnumSchema with parse(json) {
+impl JsonSchemaSerializable for EnumSchema with parse(json) {
   ...
 }
 

@@ -4,12 +4,12 @@ pub struct AnyOfSchema {
 } derive(Show, Eq)
 
 ///|
-impl Validatable for AnyOfSchema with to_json_schema(self) {
+impl JsonSchemaSerializable for AnyOfSchema with to_json_schema(self) {
   { "anyOf": self.schemas.map(fn(s) { s.to_json() }) }
 }
 
 ///|
-impl Validatable for AnyOfSchema with parse(json) {
+impl JsonSchemaSerializable for AnyOfSchema with parse(json) {
   ...
 }
 
