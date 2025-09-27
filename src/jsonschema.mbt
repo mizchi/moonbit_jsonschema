@@ -28,10 +28,9 @@ pub enum JsonSchema {
   AllOf(AllOfSchema)
   OneOf(OneOfSchema)
   Ref(RefSchema)
-  //wip
   Enum(EnumSchema)
   Const(ConstSchema)
-  Not(JsonSchema)
+  // Not(JsonSchema)
   // If(Schema, Schema?, Schema?) // if, then, else
 } derive(Show, Eq)
 
@@ -61,9 +60,9 @@ pub impl ToJson for JsonSchema with to_json(self) -> Json {
     JsonSchema::AllOf(s) => s.to_json_schema()
     JsonSchema::OneOf(s) => s.to_json_schema()
     Ref(s) => s.to_json_schema()
-    Const({ value }) => { "const": value }
-    Enum(values) => { "enum": values.to_json() }
-    JsonSchema::Not(schema) => { "not": schema }
+    Const(s) => s.to_json_schema()
+    Enum(s) => s.to_json_schema()
+    // JsonSchema::Not(schema) => { "not": schema }
   }
 }
 
@@ -138,8 +137,8 @@ pub impl @json.FromJson for JsonSchema with from_json(
           @json.from_json(s, path=json_path.add_key("oneOf").add_index(i))
         }),
       })
-    { "not": schema, .. } =>
-      JsonSchema::Not(@json.from_json(schema, path=json_path.add_key("not")))
+    // { "not": schema, .. } =>
+    //   JsonSchema::Not(@json.from_json(schema, path=json_path.add_key("not")))
     { "enum": Array(values), .. } => JsonSchema::Enum(EnumSchema::{ values, })
     _ => JsonSchema::Any(AnySchema::{  })
   }

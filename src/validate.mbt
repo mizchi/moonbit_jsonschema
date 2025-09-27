@@ -62,19 +62,7 @@ fn JsonSchema::validate_internal(
   schema_path? : JsonPointer = JsonPointer::Root,
 ) -> Array[ValidationError] {
   match self {
-    Const(s) =>
-      if value != s.value {
-        [
-          ValidationError::new(
-            value,
-            json_path,
-            schema_path,
-            "Value does not match constant value \{s.value}",
-          ),
-        ]
-      } else {
-        []
-      }
+    Const(s) => s.validate(value, resolver, json_path~, schema_path~)
     Integer(c) => {
       // TODO: Move to NumberConstraint
       // check intger type
@@ -90,19 +78,7 @@ fn JsonSchema::validate_internal(
       }
       c.validate(value, resolver, json_path~, schema_path~)
     }
-    Enum({ values }) =>
-      if !values.contains(value) {
-        [
-          ValidationError::new(
-            value,
-            json_path,
-            schema_path,
-            "\{value} is not in \{values}",
-          ),
-        ]
-      } else {
-        []
-      }
+    Enum(s) => s.validate(value, resolver, json_path~, schema_path~)
     Boolean(s) => s.validate(value, resolver, json_path~, schema_path~)
     Ref(s) => s.validate(value, resolver, json_path~, schema_path~)
     Null(s) => s.validate(value, resolver, json_path~, schema_path~)
@@ -115,8 +91,8 @@ fn JsonSchema::validate_internal(
     OneOf(s) => s.validate(value, resolver, json_path~, schema_path~)
     AnyOf(s) => s.validate(value, resolver, json_path~, schema_path~)
     // WIP
-    Not(_schema) =>
-      // TODO: implement Not validation
-      []
+    // Not(_schema) =>
+    //   // TODO: implement Not validation
+    //   []
   }
 }
