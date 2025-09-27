@@ -9,7 +9,7 @@ impl JsonSchemaSerializable for AllOfSchema with to_json_schema(self) {
 }
 
 ///|
-impl JsonSchemaSerializable for AllOfSchema with parse(json) {
+impl JsonSchemaSerializable for AllOfSchema with parse(_json) {
   ...
 }
 

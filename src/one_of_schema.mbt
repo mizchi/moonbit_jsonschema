@@ -186,6 +186,27 @@ test "validate enum" {
     schema_path=JsonPointer::Root,
   )
   |> assert_not_eq([])
+  reschema.validate(
+    "D",
+    resolver~,
+    json_path=JsonPointer::Root,
+    schema_path=JsonPointer::Root,
+  )
+  |> assert_eq([])
+  reschema.validate(
+    ["A", 1, "str"],
+    resolver~,
+    json_path=JsonPointer::Root,
+    schema_path=JsonPointer::Root,
+  )
+  |> assert_eq([])
+  reschema.validate(
+    ["B", 3.14],
+    resolver~,
+    json_path=JsonPointer::Root,
+    schema_path=JsonPointer::Root,
+  )
+  |> assert_eq([])
   // reschema.validate(["A", 1, "str"]) |> assert_ok
   // reschema.validate(["B", 3.14]) |> assert_ok
   // reschema.validate(["B", "err"]) |> assert_err

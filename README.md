@@ -65,7 +65,7 @@ $ moon add mizchi/jsonschema
   - [x] index `#/defs/items/0/bar`
 - [ ] if
 - [x] const
-- [x] `{ "type": ["string", "null"] }`
+- [ ] `{ "type": ["string", "null"] }`
 
 ## LICENSE
 

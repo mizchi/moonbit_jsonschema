@@ -281,7 +281,6 @@ test "parse array" {
   |> inspect(
     content=(
       #|[{input: Number(1), json_path: #/1, schema_path: #/items, message: "Value is not a string", children: None}]
-
     ),
   )
 }
@@ -331,19 +330,6 @@ test "parse nested" {
   |> inspect(
     content=(
       #|[{input: Number(1), json_path: #/friends/0, schema_path: #/properties/friends/items, message: "Value is not a string", children: None}]
-
     ),
   )
-}
-
-///|
-test "convert type: [string, null] to anyOf" {
-  let b = Builder::new()
-  let input =
-    #|{
-    #|  "type": ["string", "null"]
-    #|}
-  let jsonschema : Json = @json.parse(input)
-  let schema : JsonSchema = @json.from_json(jsonschema)
-  assert_eq(schema, b.any_of([b.string(), b.null()]))
 }

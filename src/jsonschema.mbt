@@ -101,47 +101,6 @@ pub impl Validatable for JsonSchema with validate(
 }
 
 ///|
-// fn _validate(
-//   validator : &Validatable,
-//   value : Json,
-//   resolver~ : Resolver,
-//   json_path? : JsonPointer = JsonPointer::Root,
-//   schema_path? : JsonPointer = JsonPointer::Root,
-// ) -> Array[ValidationError] {
-//   validator.validate(value, resolver~, json_path~, schema_path~)
-// }
-
-///|
-// fn JsonSchema::validate_internal(
-//   self : JsonSchema,
-//   value : Json,
-//   resolver~ : Resolver,
-//   json_path? : JsonPointer = JsonPointer::Root,
-//   schema_path? : JsonPointer = JsonPointer::Root,
-// ) -> Array[ValidationError] {
-//   match self {
-//     Const(s) => s.validate(value, resolver~, json_path~, schema_path~)
-//     Integer(s) => s.validate(value, resolver~, json_path~, schema_path~)
-//     Enum(s) => s.validate(value, resolver~, json_path~, schema_path~)
-//     Boolean(s) => s.validate(value, resolver~, json_path~, schema_path~)
-//     Ref(s) => s.validate(value, resolver~, json_path~, schema_path~)
-//     Null(s) => s.validate(value, resolver~, json_path~, schema_path~)
-//     Any(s) => s.validate(value, resolver~, json_path~, schema_path~)
-//     Number(c) => c.validate(value, resolver~, json_path~, schema_path~)
-//     String(c) => c.validate(value, resolver~, json_path~, schema_path~)
-//     Array(c) => c.validate(value, resolver~, json_path~, schema_path~)
-//     Object(v) => v.validate(value, resolver~, json_path~, schema_path~)
-//     AllOf(s) => s.validate(value, resolver~, json_path~, schema_path~)
-//     OneOf(s) => s.validate(value, resolver~, json_path~, schema_path~)
-//     AnyOf(s) => s.validate(value, resolver~, json_path~, schema_path~)
-//     // WIP
-//     // Not(_schema) =>
-//     //   // TODO: implement Not validation
-//     //   []
-//   }
-// }
-
-///|
 pub impl @json.FromJson for JsonSchema with from_json(
   json : Json,
   json_path : @json.JsonPath,
@@ -149,39 +108,11 @@ pub impl @json.FromJson for JsonSchema with from_json(
   guard json is Json::Object(obj) else {
     raise @json.JsonDecodeError((json_path, "Expected an object"))
   }
-  let b = Builder::new()
   match obj {
     { "type": "any", .. } =>
       AnySchema::from_json(json, json_path) |> JsonSchema::Any
     { "const": value, .. } => Const({ value, })
-    { "$ref": String(ref_expr), .. } => {
-      // TODO: validate ref_expr
-      let p = JsonPointer::from_string(ref_expr).unwrap()
-      RefSchema::{ pointer: p } |> JsonSchema::Ref
-    }
-    { "type": Array(["null", String(item_type)]), .. } => {
-      let schema = match item_type {
-        "string" => b.string()
-        "number" => b.number()
-        "integer" => b.integer()
-        "boolean" => b.boolean()
-        // TODO: raise error if unsupported type
-        _ => b.any()
-      }
-      b.any_of([schema, JsonSchema::Null(NullSchema::{  })])
-    }
-    // like a ["null", "string"]
-    { "type": @json.Array([String(item_type), "null"]), .. } => {
-      let schema = match item_type {
-        "string" => b.string()
-        "number" => b.number()
-        "integer" => b.integer()
-        "boolean" => b.boolean()
-        // TODO: raise error if unsupported type
-        _ => b.any()
-      }
-      b.any_of([schema, b.null()])
-    }
+    { "$ref": String(_), .. } => RefSchema::parse(json).unwrap()
     { "type": "object", .. } =>
       ObjectSchema::from_json(json, json_path) |> JsonSchema::Object
     { "type": "array", .. } =>
@@ -225,7 +156,7 @@ pub struct AnySchema {} derive(Show, Eq, FromJson, ToJson)
 
 ///|
 impl JsonSchemaSerializable for AnySchema with to_json_schema(_self) {
-  with_type_property({}, "any")
+  { "type": "any" }
 }
 
 ///|
