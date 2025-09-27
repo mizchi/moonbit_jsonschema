@@ -1,9 +1,9 @@
 ///|
-pub struct NumberSchema {
-  minimum : Double?
-  maximum : Double?
-  exclusive_minimum : Double?
-  exclusive_maximum : Double?
+pub struct IntegerSchema {
+  minimum : Int?
+  maximum : Int?
+  exclusive_minimum : Int?
+  exclusive_maximum : Int?
   // multipleOf : Double?
 } derive (
   Show,
@@ -25,23 +25,23 @@ pub struct NumberSchema {
 )
 
 ///|
-impl Validatable for NumberSchema with to_json_schema(self) {
-  with_type_property(self.to_json(), "number")
+impl Validatable for IntegerSchema with to_json_schema(self) {
+  with_type_property(self.to_json(), "integer")
 }
 
 ///|
-impl Validatable for NumberSchema with parse(json) {
+impl Validatable for IntegerSchema with parse(json) {
   try {
-    let v : NumberSchema = @json.from_json(json)
-    v |> JsonSchema::Number |> Ok
+    let v : IntegerSchema = @json.from_json(json)
+    v |> JsonSchema::Integer |> Ok
   } catch {
-    _ => Err("Failed to parse StringConstraint".to_string())
+    _ => Err("Failed to parse IntegerSchema".to_string())
   }
   // parsed |> Ok
 }
 
 ///|
-impl Validatable for NumberSchema with validate(
+impl Validatable for IntegerSchema with validate(
   self,
   value,
   resolver,
@@ -49,7 +49,7 @@ impl Validatable for NumberSchema with validate(
   schema_path~,
 ) {
   ignore(resolver)
-  guard value is @json.Number(input, ..) else {
+  guard value is @json.Number(input, ..) && input == input.to_int().to_double() else {
     return [
       ValidationError::new(
         value, json_path, schema_path, "Value is not a number",
@@ -58,6 +58,7 @@ impl Validatable for NumberSchema with validate(
   }
   let { minimum, maximum, exclusive_minimum, exclusive_maximum } = self
   let errors : Array[ValidationError] = []
+  let input : Int = input.to_int()
   if minimum is Some(min) && input < min {
     errors.push(
       ValidationError::new(

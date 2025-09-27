@@ -51,10 +51,10 @@ pub fn Builder::number(
 /// { "type": "integer" }
 pub fn Builder::integer(
   _self : Builder,
-  minimum? : Double,
-  maximum? : Double,
-  exclusive_minimum? : Double,
-  exclusive_maximum? : Double,
+  minimum? : Int,
+  maximum? : Int,
+  exclusive_minimum? : Int,
+  exclusive_maximum? : Int,
 ) -> JsonSchema {
   JsonSchema::Integer({ minimum, maximum, exclusive_minimum, exclusive_maximum })
 }

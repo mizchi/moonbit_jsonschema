@@ -20,8 +20,8 @@ pub enum JsonSchema {
   Null(NullSchema)
   Boolean(BooleanSchema)
   String(StringSchema)
-  Number(NumberConstraint)
-  Integer(NumberConstraint)
+  Number(NumberSchema)
+  Integer(IntegerSchema)
   Array(ArraySchema)
   Object(ObjectSchema)
   AnyOf(AnyOfSchema)
@@ -63,6 +63,49 @@ pub impl ToJson for JsonSchema with to_json(self) -> Json {
     Const(s) => s.to_json_schema()
     Enum(s) => s.to_json_schema()
     // JsonSchema::Not(schema) => { "not": schema }
+  }
+}
+
+///|
+/// internal validator for schema
+pub fn JsonSchema::validate(
+  self : JsonSchema,
+  value : Json,
+) -> Result[Unit, Array[ValidationError]] raise Error {
+  let resolver = Resolver::new({}) // dummy resolver
+  match self.validate_internal(value, resolver~) {
+    [] => Ok(())
+    errors => Err(errors)
+  }
+}
+
+///|
+fn JsonSchema::validate_internal(
+  self : JsonSchema,
+  value : Json,
+  resolver~ : Resolver,
+  json_path? : JsonPointer = JsonPointer::Root,
+  schema_path? : JsonPointer = JsonPointer::Root,
+) -> Array[ValidationError] {
+  match self {
+    Const(s) => s.validate(value, resolver, json_path~, schema_path~)
+    Integer(s) => s.validate(value, resolver, json_path~, schema_path~)
+    Enum(s) => s.validate(value, resolver, json_path~, schema_path~)
+    Boolean(s) => s.validate(value, resolver, json_path~, schema_path~)
+    Ref(s) => s.validate(value, resolver, json_path~, schema_path~)
+    Null(s) => s.validate(value, resolver, json_path~, schema_path~)
+    Any(s) => s.validate(value, resolver, json_path~, schema_path~)
+    Number(c) => c.validate(value, resolver, json_path~, schema_path~)
+    String(c) => c.validate(value, resolver, json_path~, schema_path~)
+    Array(c) => c.validate(value, resolver, json_path~, schema_path~)
+    Object(v) => v.validate(value, resolver, json_path~, schema_path~)
+    AllOf(s) => s.validate(value, resolver, json_path~, schema_path~)
+    OneOf(s) => s.validate(value, resolver, json_path~, schema_path~)
+    AnyOf(s) => s.validate(value, resolver, json_path~, schema_path~)
+    // WIP
+    // Not(_schema) =>
+    //   // TODO: implement Not validation
+    //   []
   }
 }
 
@@ -116,9 +159,9 @@ pub impl @json.FromJson for JsonSchema with from_json(
     { "type": "string", .. } =>
       StringSchema::from_json(json, json_path) |> JsonSchema::String
     { "type": "number", .. } =>
-      NumberConstraint::from_json(json, json_path) |> JsonSchema::Number
+      NumberSchema::from_json(json, json_path) |> JsonSchema::Number
     { "type": "integer", .. } =>
-      NumberConstraint::from_json(json, json_path) |> JsonSchema::Integer
+      IntegerSchema::from_json(json, json_path) |> JsonSchema::Integer
     { "anyOf": Array(schemas), .. } =>
       JsonSchema::AnyOf({
         schemas: schemas.map(fn(s) {
