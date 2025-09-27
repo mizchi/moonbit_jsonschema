@@ -98,6 +98,7 @@ fn JsonSchema::validate_internal(
         []
       }
     Integer(c) => {
+      // TODO: Move to NumberConstraint
       // check intger type
       if value is @json.Number(v, ..) {
         let iv = v.to_int()
@@ -185,65 +186,7 @@ fn JsonSchema::validate_internal(
         errors
       }
     }
-    OneOf(schemas) => {
-      let errors : Array[ValidationError] = []
-      let mut passed = 0
-      for idx, schema in schemas {
-        let sub_errors = schema.validate_internal(
-          value,
-          json_path~,
-          schema_path=schema_path.key("oneOf").index(idx),
-          resolver~,
-        )
-        if sub_errors.length() == 0 {
-          passed += 1
-        } else {
-          errors.append(sub_errors)
-        }
-      }
-      if passed == 1 {
-        []
-      } else {
-        errors.push(
-          ValidationError::new(
-            value,
-            json_path,
-            schema_path.key("oneOf"),
-            "Value does not match exactly one schema in oneOf",
-          ),
-        )
-        errors
-      }
-    }
-    AnyOf(schemas) => {
-      let errors : Array[ValidationError] = []
-      let mut passed = 0
-      for idx, schema in schemas {
-        let sub_errors = schema.validate_internal(
-          value,
-          json_path~,
-          schema_path=schema_path.key("anyOf").index(idx),
-          resolver~,
-        )
-        if sub_errors.length() == 0 {
-          passed += 1
-        } else {
-          errors.append(sub_errors)
-        }
-      }
-      if passed > 0 {
-        []
-      } else {
-        errors.push(
-          ValidationError::new(
-            value,
-            json_path,
-            schema_path.key("anyOf"),
-            "Value does not match any schema in anyOf",
-          ),
-        )
-        errors
-      }
-    }
+    OneOf(s) => s.validate(value, resolver, json_path~, schema_path~)
+    AnyOf(s) => s.validate(value, resolver, json_path~, schema_path~)
   }
 }

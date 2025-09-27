@@ -167,7 +167,7 @@ fn generate_type_expr(
 ///|
 fn parse_nullable(schema : JsonSchema) -> JsonSchema? {
   match schema {
-    OneOf(schemas) if schemas.length() == 2 =>
+    OneOf({ schemas }) if schemas.length() == 2 =>
       match schemas {
         [JsonSchema::Null(_), other] | [other, JsonSchema::Null(_)] =>
           Some(other)

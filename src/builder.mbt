@@ -152,7 +152,7 @@ pub fn Builder::one_of(
   _self : Builder,
   schemas : Array[JsonSchema],
 ) -> JsonSchema {
-  JsonSchema::OneOf(schemas)
+  JsonSchema::OneOf({ schemas, })
 }
 
 ///|
@@ -165,16 +165,17 @@ pub fn Builder::enumerable_one_of(
 ) -> JsonSchema {
   // TODO: validate schemas
   if params is Some(params) {
-    JsonSchema::OneOf([
-      self.const_(tag.to_json()),
-      self.array(prefix_items=schemas),
-      params,
-    ])
+    JsonSchema::OneOf({
+      schemas: [
+        self.const_(tag.to_json()),
+        self.array(prefix_items=schemas),
+        params,
+      ],
+    })
   } else {
-    JsonSchema::OneOf([
-      self.const_(tag.to_json()),
-      self.array(prefix_items=schemas),
-    ])
+    JsonSchema::OneOf({
+      schemas: [self.const_(tag.to_json()), self.array(prefix_items=schemas)],
+    })
   }
 }
 
@@ -184,7 +185,7 @@ pub fn Builder::anyOf(
   _self : Builder,
   schemas : Array[JsonSchema],
 ) -> JsonSchema {
-  JsonSchema::AnyOf(schemas)
+  JsonSchema::AnyOf({ schemas, })
 }
 
 ///|

@@ -13,8 +13,6 @@ trait Validatable {
   ) -> Array[ValidationError]
 }
 
-///|any
-
 ///|
 /// JsonSchema
 pub enum JsonSchema {
@@ -28,9 +26,9 @@ pub enum JsonSchema {
   Object(ObjectSchema)
   Enum(Array[Json])
   Const(Json)
-  AnyOf(Array[JsonSchema])
+  AnyOf(AnyOfSchema)
   AllOf(Array[JsonSchema])
-  OneOf(Array[JsonSchema])
+  OneOf(OneOfSchema)
   Not(JsonSchema)
   Ref(JsonPointer)
   // If(Schema, Schema?, Schema?) // if, then, else
@@ -61,12 +59,12 @@ pub impl ToJson for JsonSchema with to_json(self) -> Json {
     Ref(pointer) => { "$ref": pointer.to_string() }
     Const(value) => { "const": value }
     Enum(values) => { "enum": values.to_json() }
-    JsonSchema::AnyOf(schemas) =>
+    JsonSchema::AnyOf({ schemas }) =>
       { "anyOf": schemas.map(fn(s) { s.to_json() }) }
     JsonSchema::AllOf(schemas) =>
       { "allOf": schemas.map(fn(s) { s.to_json() }) }
     JsonSchema::OneOf(schemas) =>
-      { "oneOf": schemas.map(fn(s) { s.to_json() }) }
+      { "oneOf": schemas.schemas.map(fn(s) { s.to_json() }) }
     JsonSchema::Not(schema) => { "not": schema }
   }
 }
@@ -126,11 +124,11 @@ pub impl @json.FromJson for JsonSchema with from_json(
     { "type": "integer", .. } =>
       NumberConstraint::from_json(json, json_path) |> JsonSchema::Integer
     { "anyOf": Array(schemas), .. } =>
-      JsonSchema::AnyOf(
-        schemas.map(fn(s) {
+      JsonSchema::AnyOf({
+        schemas: schemas.map(fn(s) {
           @json.from_json(s, path=json_path.add_key("anyOf"))
         }),
-      )
+      })
     { "allOf": Array(schemas), .. } =>
       JsonSchema::AllOf(
         schemas.map(fn(s) {
@@ -138,11 +136,11 @@ pub impl @json.FromJson for JsonSchema with from_json(
         }),
       )
     { "oneOf": Array(schemas), .. } =>
-      JsonSchema::OneOf(
-        schemas.mapi(fn(i, s) {
+      JsonSchema::OneOf({
+        schemas: schemas.mapi(fn(i, s) {
           @json.from_json(s, path=json_path.add_key("oneOf").add_index(i))
         }),
-      )
+      })
     { "not": schema, .. } =>
       JsonSchema::Not(@json.from_json(schema, path=json_path.add_key("not")))
     { "enum": Array(values), .. } => JsonSchema::Enum(values)
@@ -183,4 +181,64 @@ impl Validatable for AnySchema with validate(
 ) {
   ignore((json_path, schema_path))
   []
+}
+
+///|
+/// OneOf schema
+pub struct OneOfSchema {
+  schemas : Array[JsonSchema]
+} derive(Show, Eq)
+
+///|
+impl Validatable for OneOfSchema with to_json_schema(self) {
+  ...
+  // let mut arr = [JsonSchema::Const(self.tag.to_json())]
+  // arr.append(self.schemas)
+  // if self.params is Some(params) {
+  //   arr.push(params)
+  // }
+  // { "oneOf": arr.map(fn(s) { s.to_json() }) }
+}
+
+///|
+impl Validatable for OneOfSchema with parse(json) {
+  ...
+}
+
+///|
+impl Validatable for OneOfSchema with validate(
+  self,
+  value,
+  resolver,
+  json_path~,
+  schema_path~,
+) {
+  let errors : Array[ValidationError] = []
+  let mut passed = 0
+  for idx, schema in self.schemas {
+    let sub_errors = schema.validate_internal(
+      value,
+      json_path~,
+      schema_path=schema_path.key("oneOf").index(idx),
+      resolver~,
+    )
+    if sub_errors.length() == 0 {
+      passed += 1
+    } else {
+      errors.append(sub_errors)
+    }
+  }
+  if passed == 1 {
+    []
+  } else {
+    errors.push(
+      ValidationError::new(
+        value,
+        json_path,
+        schema_path.key("oneOf"),
+        "Value does not match exactly one schema in oneOf",
+      ),
+    )
+    errors
+  }
 }

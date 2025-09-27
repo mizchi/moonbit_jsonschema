@@ -1,0 +1,58 @@
+///|
+pub struct AnyOfSchema {
+  schemas : Array[JsonSchema]
+} derive(Show, Eq)
+
+///|
+impl Validatable for AnyOfSchema with to_json_schema(self) {
+  ...
+  // let mut arr = [JsonSchema::Const(self.tag.to_json())]
+  // arr.append(self.schemas)
+  // if self.params is Some(params) {
+  //   arr.push(params)
+  // }
+  // { "oneOf": arr.map(fn(s) { s.to_json() }) }
+}
+
+///|
+impl Validatable for AnyOfSchema with parse(json) {
+  ...
+}
+
+///|
+impl Validatable for AnyOfSchema with validate(
+  self,
+  value,
+  resolver,
+  json_path~,
+  schema_path~,
+) {
+  let errors : Array[ValidationError] = []
+  let mut passed = 0
+  for idx, schema in self.schemas {
+    let sub_errors = schema.validate_internal(
+      value,
+      json_path~,
+      schema_path=schema_path.key("anyOf").index(idx),
+      resolver~,
+    )
+    if sub_errors.length() == 0 {
+      passed += 1
+    } else {
+      errors.append(sub_errors)
+    }
+  }
+  if passed > 0 {
+    []
+  } else {
+    errors.push(
+      ValidationError::new(
+        value,
+        json_path,
+        schema_path.key("anyOf"),
+        "Value does not match any schema in anyOf",
+      ),
+    )
+    errors
+  }
+}
