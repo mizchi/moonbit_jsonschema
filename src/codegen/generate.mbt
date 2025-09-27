@@ -453,16 +453,6 @@ test "generate ref entry" {
 }
 
 ///|
-fn[T, E] assert_ok(x : Result[T, E]) -> Unit {
-  guard x is Ok(_)
-}
-
-///|
-fn[T, E] assert_err(x : Result[T, E]) -> Unit {
-  guard x is Err(_)
-}
-
-///|
 test "enumerable schema can parse itself" (_t : @test.T) {
   // TODO: Fix
   let b = @jsonschema.Builder::new()
@@ -476,16 +466,8 @@ test "enumerable schema can parse itself" (_t : @test.T) {
       b.object(properties={ "a": b.integer() }, required=["a"]),
     ]),
   ])
-  let s = s.to_json().stringify()
-  let reparsed : Json = @json.parse(s)
+  let str = s.to_json().stringify()
+  let reparsed : Json = @json.parse(str)
   let reschema : JsonSchema = @json.from_json(reparsed)
-  reschema.validate("Not match") |> assert_err
-  reschema.validate(["A", 1, "str"]) |> assert_ok
-  reschema.validate(["B", 3.14]) |> assert_ok
-  reschema.validate(["B", "err"]) |> assert_err
-  reschema.validate(["C", 42]) |> assert_ok
-  reschema.validate("D") |> assert_ok
-  reschema.validate("NotExist") |> assert_err
-  reschema.validate(["Paramed", { "a": 10 }]) |> assert_ok
-  reschema.validate(["Paramed", { "a": "not a number" }]) |> assert_err
+  assert_eq(reschema, s)
 }

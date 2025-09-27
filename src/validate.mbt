@@ -19,12 +19,22 @@ struct Validator {
   resolver : Resolver
 }
 
+// fn test_validateor(schema: Schema, value: Json, ) {
+//   let jsonschema : Json = { "type": "string" }
+//   let validator = build_validator(jsonschema)
+// }
+
 ///|
 pub fn Validator::validate(
   self : Validator,
   input : Json,
 ) -> Result[Unit, Array[ValidationError]] {
-  let errors = self.schema.validate_internal(input, resolver=self.resolver)
+  let errors = self.schema.validate(
+    input,
+    resolver=self.resolver,
+    json_path=JsonPointer::Root,
+    schema_path=JsonPointer::Root,
+  )
   // let errors = self.schema.validate(input, self.resolver)
   if errors.length() == 0 {
     Ok(())

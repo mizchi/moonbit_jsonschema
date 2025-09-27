@@ -31,7 +31,7 @@ impl Validatable for RefSchema with validate(
   match resolver.resolve(self.pointer) {
     Some(resolved_schema) => {
       // let opath = ObjectPath::from_json_pointer(ref_expr)
-      let errors = resolved_schema.validate_internal(
+      let errors = resolved_schema.validate(
         value,
         json_path~,
         // TODO: fix schema_path to reference path

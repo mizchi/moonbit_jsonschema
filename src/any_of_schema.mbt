@@ -24,7 +24,7 @@ impl Validatable for AnyOfSchema with validate(
   let errors : Array[ValidationError] = []
   let mut passed = 0
   for idx, schema in self.schemas {
-    let sub_errors = schema.validate_internal(
+    let sub_errors = schema.validate(
       value,
       json_path~,
       schema_path=schema_path.key("anyOf").index(idx),

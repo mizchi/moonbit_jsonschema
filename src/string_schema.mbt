@@ -93,7 +93,14 @@ impl Validatable for StringSchema with validate(
 test "StringConstraint::from_json validate and to_json" {
   let json : Json = { "type": "string" }
   let s = StringSchema::parse(json).unwrap()
-  s.validate("hell") |> expect_ok
+  let resolver = build_resolver({})
+  s.validate(
+    "hell",
+    resolver~,
+    json_path=JsonPointer::Root,
+    schema_path=JsonPointer::Root,
+  )
+  |> assert_eq([])
   s.to_json() |> assert_eq(json)
 }
 

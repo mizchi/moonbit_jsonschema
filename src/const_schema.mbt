@@ -21,6 +21,7 @@ impl Validatable for ConstSchema with validate(
   json_path~,
   schema_path~,
 ) {
+  ignore(resolver)
   // ...
   if value != self.value {
     [
@@ -59,6 +60,7 @@ impl Validatable for EnumSchema with validate(
   json_path~,
   schema_path~,
 ) {
+  ignore(resolver)
   if !self.values.contains(value) {
     [
       ValidationError::new(

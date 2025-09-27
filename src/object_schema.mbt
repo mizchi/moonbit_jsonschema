@@ -89,7 +89,7 @@ impl Validatable for ObjectSchema with validate(
   if self.additional_properties is Some(schema) {
     for key in additional_props {
       guard obj.get(key) is Some(child_value) else { continue }
-      let child_errors = schema.validate_internal(
+      let child_errors = schema.validate(
         child_value,
         json_path=json_path.key(key),
         schema_path=schema_path.key("additionalProperties"),
@@ -113,7 +113,7 @@ impl Validatable for ObjectSchema with validate(
   if self.properties is Some(props) {
     props.each(fn(prop_name, child_schema) {
       guard obj.get(prop_name) is Some(child_value) else { return }
-      let child_errors = child_schema.validate_internal(
+      let child_errors = child_schema.validate(
         child_value,
         json_path=json_path.key(prop_name),
         schema_path=schema_path.key("properties").key(prop_name),

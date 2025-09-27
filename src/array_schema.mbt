@@ -91,7 +91,7 @@ impl Validatable for ArraySchema with validate(
   if self.items is Some(item_schema) {
     for i, item in array {
       errors.append(
-        item_schema.validate_internal(
+        item_schema.validate(
           item,
           resolver~,
           json_path=json_path.index(i),
@@ -106,7 +106,7 @@ impl Validatable for ArraySchema with validate(
       match array.get(idx) {
         Some(item_value) =>
           errors.append(
-            item_schema.validate_internal(
+            item_schema.validate(
               item_value,
               resolver~,
               json_path=json_path.index(idx),

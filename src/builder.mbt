@@ -227,9 +227,20 @@ test "parse object" {
     #|}
   let jsonschema : Json = @json.parse(input)
   let schema : JsonSchema = @json.from_json(jsonschema)
-  schema.validate({ "name": "Alice", "age": 30.0 }).unwrap()
-  |> inspect(content="()")
-  schema.validate({ "name": 42, "age": 30.0 }).unwrap_err()
+  let resolver = build_resolver({})
+  schema.validate(
+    { "name": "Alice", "age": 30.0 },
+    resolver~,
+    json_path=JsonPointer::Root,
+    schema_path=JsonPointer::Root,
+  )
+  |> inspect(content="[]")
+  schema.validate(
+    { "name": 42, "age": 30.0 },
+    resolver~,
+    json_path=JsonPointer::Root,
+    schema_path=JsonPointer::Root,
+  )
   |> inspect(
     content=(
       #|[{input: Number(42), json_path: #/name, schema_path: #/properties/name, message: "Value is not a string", children: None}]
@@ -253,11 +264,24 @@ test "parse array" {
     #|}
   let jsonschema : Json = @json.parse(input)
   let schema : JsonSchema = @json.from_json(jsonschema)
-  schema.validate(["a", "b"]).unwrap() |> inspect(content="()")
-  schema.validate(["a", 1])
+  let resolver = build_resolver({})
+  schema.validate(
+    ["a", "b"],
+    resolver~,
+    json_path=JsonPointer::Root,
+    schema_path=JsonPointer::Root,
+  )
+  |> inspect(content="[]")
+  schema.validate(
+    ["a", 1],
+    resolver~,
+    json_path=JsonPointer::Root,
+    schema_path=JsonPointer::Root,
+  )
   |> inspect(
     content=(
-      #|Err([{input: Number(1), json_path: #/1, schema_path: #/items, message: "Value is not a string", children: None}])
+      #|[{input: Number(1), json_path: #/1, schema_path: #/items, message: "Value is not a string", children: None}]
+
     ),
   )
 }
@@ -278,26 +302,36 @@ test "parse nested" {
     #|}
   let jsonschema : Json = @json.parse(input)
   let schema : JsonSchema = @json.from_json(jsonschema)
-  schema
-  .validate({
-    "name": "Alice",
-    "age": 30,
-    "friends": ["Bob"],
-    "nullValue": null,
-    "anyValue": "anything",
-  })
-  .unwrap()
-  |> inspect(content="()")
-  schema.validate({
-    "name": "Alice",
-    "age": 30,
-    "friends": [1],
-    "nullValue": null,
-    "anyValue": "anything",
-  })
+  let resolver = build_resolver({})
+  schema.validate(
+    {
+      "name": "Alice",
+      "age": 30,
+      "friends": ["Bob"],
+      "nullValue": null,
+      "anyValue": "anything",
+    },
+    resolver~,
+    json_path=JsonPointer::Root,
+    schema_path=JsonPointer::Root,
+  )
+  |> inspect(content="[]")
+  schema.validate(
+    {
+      "name": "Alice",
+      "age": 30,
+      "friends": [1],
+      "nullValue": null,
+      "anyValue": "anything",
+    },
+    resolver~,
+    json_path=JsonPointer::Root,
+    schema_path=JsonPointer::Root,
+  )
   |> inspect(
     content=(
-      #|Err([{input: Number(1), json_path: #/friends/0, schema_path: #/properties/friends/items, message: "Value is not a string", children: None}])
+      #|[{input: Number(1), json_path: #/friends/0, schema_path: #/properties/friends/items, message: "Value is not a string", children: None}]
+
     ),
   )
 }

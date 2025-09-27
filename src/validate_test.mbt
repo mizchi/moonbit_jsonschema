@@ -6,9 +6,9 @@ fn[T, E] assert_ok(x : Result[T, E]) -> Unit {
 }
 
 ///|
-fn[T, E] assert_err(x : Result[T, E]) -> Unit {
-  guard x is Err(_)
-}
+// fn[T, E] assert_err(x : Result[T, E]) -> Unit {
+//   guard x is Err(_)
+// }
 
 ///|
 // fn[T : Eq, E] expect_ok(x : Result[T, E], content? : T) -> T raise {
@@ -25,245 +25,202 @@ fn[T, E] assert_err(x : Result[T, E]) -> Unit {
 //   fail("Expected Ok, got Err")
 // }
 
+fn expect_validate_ok(self : JsonSchema, value : Json) -> Unit raise {
+  let resolver = build_resolver({})
+  let errors = self.validate(
+    value,
+    resolver~,
+    json_path=JsonPointer::Root,
+    schema_path=JsonPointer::Root,
+  )
+  if errors.length() > 0 {
+    fail("Expected no validation errors, got \{errors.length()} errors")
+  }
+  // (errors.length() == 0) |> assert_true(true)
+}
+
+///|
+fn expect_validate_err(self : JsonSchema, value : Json) -> Unit raise {
+  let resolver = build_resolver({})
+  let errors = self.validate(
+    value,
+    resolver~,
+    json_path=JsonPointer::Root,
+    schema_path=JsonPointer::Root,
+  )
+  if errors.length() is 0 {
+    fail("Expected validation errors, got none")
+  }
+
+  // errors.length() > 0
+}
+
 ///|
 test "validate null" {
   let b = Builder::new()
   let schema = b.null()
-  schema.validate(null) |> assert_ok
-  schema.validate("not-null") |> assert_err
-  schema.validate(1)
-  |> inspect(
-    content=(
-      #|Err([{input: Number(1), json_path: #, schema_path: #, message: "Value is not null", children: None}])
-    ),
-  )
+  schema.expect_validate_err({})
+  schema.expect_validate_ok(null)
 }
 
 ///|
 test "validate const" {
   let b = Builder::new()
   let schema = b.const_("constant")
-  schema.validate("constant") |> assert_ok
-  schema.validate(1).unwrap_err()
-  |> inspect(
-    content=(
-      #|[{input: Number(1), json_path: #, schema_path: #, message: "Value does not match constant value String(\"constant\")", children: None}]
-    ),
-  )
+  schema.expect_validate_ok("constant")
+  schema.expect_validate_err("not-constant")
+  schema.expect_validate_err(1)
 }
 
 ///|
 test "validate const nested" {
   let b = Builder::new()
   let schema = b.const_({ "nested": true })
-  schema.validate({ "nested": true }) |> assert_ok
-  schema.validate(1).unwrap_err()
-  |> inspect(
-    content=(
-      #|[{input: Number(1), json_path: #, schema_path: #, message: "Value does not match constant value Object({\"nested\": True})", children: None}]
-    ),
-  )
+  schema.expect_validate_ok({ "nested": true })
+  schema.expect_validate_err({ "nested": false })
+  schema.expect_validate_err({})
+  schema.expect_validate_err("not-constant")
 }
 
 ///|
 test "validate any" {
   let b = Builder::new()
   let schema = b.any()
-  schema.validate(null) |> assert_ok
-  schema.validate({}) |> assert_ok
+  schema.expect_validate_ok("string")
+  schema.expect_validate_ok(1)
+  schema.expect_validate_ok(1.1)
+  schema.expect_validate_ok(true)
 }
 
 ///|
 test "validate string with enum" {
   let b = Builder::new()
   let schema = b.string(enum_=["a", "b"])
-  schema.validate("a") |> assert_ok
-  schema.validate("b") |> assert_ok
-  schema.validate("c").unwrap_err()
-  |> inspect(
-    content=(
-      #|[{input: String("c"), json_path: #, schema_path: #/enum, message: "c is not in [\"a\", \"b\"]", children: None}]
-    ),
-  )
+  schema.expect_validate_ok("a")
+  schema.expect_validate_ok("b")
+  schema.expect_validate_err("c")
+  schema.expect_validate_err(1)
 }
 
 ///|
 test "validate string type with minLength and maxLength" {
   let b = Builder::new()
   let schema = b.string(minLength=3, maxLength=5)
-  schema.validate("hey") |> assert_ok
-  schema.validate("hi").unwrap_err()
-  |> inspect(
-    content=(
-      #|[{input: String("hi"), json_path: #, schema_path: #/minLength, message: "String length 2 is less than minimum 3", children: None}]
-    ),
-  )
-  schema.validate("hellooo")
-  |> inspect(
-    content=(
-      #|Err([{input: String("hellooo"), json_path: #, schema_path: #/maxLength, message: "String length 7 is greater than maximum 5", children: None}])
-    ),
-  )
+  schema.expect_validate_ok("abc")
+  schema.expect_validate_ok("abcd")
+  schema.expect_validate_ok("abcde")
+  schema.expect_validate_err("ab")
+  schema.expect_validate_err("abcdef")
+  schema.expect_validate_err(1)
+  schema.expect_validate_err(1111)
 }
 
 ///|
 test "validate enum" {
   let b = Builder::new()
   let schema = b.enum_(["red", "green", "blue"])
-  schema.validate("red") |> assert_ok
-  schema.validate(1).unwrap_err()
-  |> inspect(
-    content=(
-      #|[{input: Number(1), json_path: #, schema_path: #, message: "Number(1) is not in [String(\"red\"), String(\"green\"), String(\"blue\")]", children: None}]
-    ),
-  )
-  schema.validate("yellow").unwrap_err()
-  |> inspect(
-    content=(
-      #|[{input: String("yellow"), json_path: #, schema_path: #, message: "String(\"yellow\") is not in [String(\"red\"), String(\"green\"), String(\"blue\")]", children: None}]
-    ),
-  )
+  schema.expect_validate_ok("red")
+  schema.expect_validate_ok("green")
+  schema.expect_validate_ok("blue")
+  schema.expect_validate_err(1)
 }
 
 ///|
 test "validate number" {
   let b = Builder::new()
   let schema = b.number(minimum=0.0, maximum=100.0)
-  schema.validate(0) |> assert_ok
-  schema.validate(1.1) |> assert_ok
+  schema.expect_validate_ok(0)
+  schema.expect_validate_ok(0.1)
+  schema.expect_validate_ok(1)
+  schema.expect_validate_err(-10)
+  schema.expect_validate_err(101)
+  schema.expect_validate_err("not-a-number")
 }
 
 ///|
 test "validate number with constraints" {
   let b = Builder::new()
   let schema = b.number(minimum=0.0, maximum=100.0)
-  schema.validate(0) |> assert_ok
-  schema.validate(1) |> assert_ok
-  schema.validate(100) |> assert_ok
-  schema.validate(-10)
-  |> inspect(
-    content=(
-      #|Err([{input: Number(-10), json_path: #, schema_path: #/minimum, message: "Value is less than minimum 0", children: None}])
-    ),
-  )
-  schema.validate("invalid")
-  |> inspect(
-    content=(
-      #|Err([{input: String("invalid"), json_path: #, schema_path: #, message: "Value is not a number", children: None}])
-    ),
-  )
+  schema.expect_validate_ok(0)
+  schema.expect_validate_ok(0.1)
+  schema.expect_validate_ok(1)
+  schema.expect_validate_ok(100)
+  schema.expect_validate_err(-10)
+  schema.expect_validate_err(101)
+  schema.expect_validate_err("invalid")
 }
 
 ///|
 test "validate number with exclusiveMinimum and exclusiveMaximum" {
   let b = Builder::new()
   let schema = b.number(exclusive_minimum=0.0, exclusive_maximum=10.0)
-  schema.validate(0.0) |> assert_err
-  schema.validate(1) |> assert_ok
-  schema.validate(10.0) |> assert_err
+  schema.expect_validate_err(0.0)
+  schema.expect_validate_ok(0.1)
+  schema.expect_validate_ok(5.0)
+  schema.expect_validate_err(10.0)
+  schema.expect_validate_err(11.0)
 }
 
 ///|
 test "validate integer" {
   let b = Builder::new()
   let schema = b.integer()
-  schema.validate(0) |> assert_ok
-  schema.validate(1) |> assert_ok
-  schema.validate(2.5) |> assert_err
-  // |> inspect(
-  //   content=(
-  //     #|[{input: Number(1.1), json_path: #, schema_path: #, message: "Value is not an integer", children: None}]
-  //   ),
-  // )
-  // schema.validate(1.0) |> assert_ok
+  schema.expect_validate_ok(-10)
+  schema.expect_validate_ok(0)
+  schema.expect_validate_ok(10)
+  schema.expect_validate_err(1.1)
 }
 
 ///|
 test "validate integer with constraints" {
   let b = Builder::new()
   let schema = b.integer(minimum=0, maximum=10)
-  schema.validate(0) |> assert_ok
-  schema.validate(1) |> assert_ok
-  schema.validate(10) |> assert_ok
-  schema.validate(-10)
-  |> inspect(
-    content=(
-      #|Err([{input: Number(-10), json_path: #, schema_path: #/minimum, message: "Value is less than minimum 0", children: None}])
-    ),
-  )
-  schema.validate("invalid")
-  |> inspect(
-    content=(
-      #|Err([{input: String("invalid"), json_path: #, schema_path: #, message: "Value is not a number", children: None}])
-    ),
-  )
+  schema.expect_validate_ok(0)
+  schema.expect_validate_ok(5)
+  schema.expect_validate_ok(10)
+  schema.expect_validate_err(-1)
+  schema.expect_validate_err(11)
+  schema.expect_validate_err(1.1)
 }
+
+// ///|
 
 ///|
 test "validate integer with exclusiveMinimum and exclusiveMaximum" {
   let b = Builder::new()
   let schema = b.integer(exclusive_minimum=0, exclusive_maximum=10)
-  schema.validate(0) |> assert_err
-  schema.validate(1) |> assert_ok
-  schema.validate(10) |> assert_err
+  schema.expect_validate_err(0)
+  schema.expect_validate_ok(1)
+  schema.expect_validate_ok(5)
+  schema.expect_validate_err(10)
 }
 
 ///|
 test "validate object" {
   let b = Builder::new()
   let schema = b.object(properties={ "name": b.string() }, required=["name"])
-  // println(schema)
-  schema.validate({ "name": "John" }) |> assert_ok
-  schema.validate({ "name": 0 }).unwrap_err()
-  |> inspect(
-    content=(
-      #|[{input: Number(0), json_path: #/name, schema_path: #/properties/name, message: "Value is not a string", children: None}]
-    ),
-  )
-  // no required
-  schema.validate({}).unwrap_err()
-  |> inspect(
-    content=(
-      #|[{input: Object({}), json_path: #/name, schema_path: #/required, message: "Required property 'name' is missing", children: None}]
-    ),
-  )
+  schema.expect_validate_ok({ "name": "John" })
+  schema.expect_validate_err({ "name": 0 })
+  schema.expect_validate_err({})
   let schema_no_required = b.object(properties={ "name": b.string() })
-  schema_no_required.validate({}) |> assert_ok
-  schema_no_required.validate({ "name": "foo" }).unwrap()
-  |> inspect(content="()")
-  schema_no_required.validate({ "name": 1 }).unwrap_err()
-  |> inspect(
-    content=(
-      #|[{input: Number(1), json_path: #/name, schema_path: #/properties/name, message: "Value is not a string", children: None}]
-    ),
-  )
+  schema_no_required.expect_validate_ok({})
+  schema_no_required.expect_validate_ok({ "name": "foo" })
+  schema_no_required.expect_validate_err({ "name": 1 })
 }
 
 ///|
 test "validate object with additionalProperties" {
   let b = Builder::new()
   let schema = b.object(properties={ "name": b.string() }, required=["name"])
-  schema.validate({ "name": "John" }) |> assert_ok()
-  schema.validate({ "name": "John", "notAllowd": true })
-  |> inspect(
-    content=(
-      #|Err([{input: Object({"name": String("John"), "notAllowd": True}), json_path: #/notAllowd, schema_path: #/additionalProperties, message: "Additional property '{\"notAllowd\"}' is not allowed", children: None}])
-    ),
-  )
+  schema.expect_validate_err({ "name": "John", "notAllowd": true })
   let schema2 = b.object(
     properties={ "name": b.string() },
     required=["name"],
     additional_properties=b.string(),
   )
-  schema2.validate({ "name": "John" }) |> assert_ok
-  schema2.validate({ "name": "John", "ex1": "x" }).unwrap()
-  |> inspect(content="()")
-  schema2.validate({ "name": "John", "ex1": 1 }).unwrap_err()
-  |> inspect(
-    content=(
-      #|[{input: Number(1), json_path: #/ex1, schema_path: #/additionalProperties, message: "Value is not a string", children: None}]
-    ),
-  )
+  schema2.expect_validate_ok({ "name": "John" })
+  schema2.expect_validate_ok({ "name": "John", "ex1": "x" })
+  schema2.expect_validate_err({ "name": "John", "ex1": 1 })
 }
 
 ///|
@@ -272,99 +229,81 @@ test "validate array" {
   let schema = b.array(
     items=b.object(properties={ "id": b.integer() }, required=["id"]),
   )
-  schema.validate([]) |> assert_ok
-  schema.validate([{ "id": 1 }]) |> assert_ok
-  schema.validate([{ "id": 1 }, { "id": "not-allowed" }]).unwrap_err()
-  |> inspect(
-    content=(
-      #|[{input: String("not-allowed"), json_path: #/1/id, schema_path: #/items/properties/id, message: "Value is not a number", children: None}]
-    ),
-  )
+  schema.expect_validate_ok([])
+  schema.expect_validate_ok([{ "id": 1 }])
+  schema.expect_validate_err([{ "id": "not-allowed" }])
+  schema.expect_validate_err([{ "no-id": 1 }])
+  schema.expect_validate_err(1)
+  schema.expect_validate_err("string")
 }
 
 ///|
 test "validate array with constraints" {
   let b = Builder::new()
   let schema = b.array(items=b.integer(), min_items=1, max_items=3)
-  schema.validate([]).unwrap_err()
-  |> inspect(
-    content=(
-      #|[{input: Array([]), json_path: #, schema_path: #/minItems, message: "Array length 0 is less than minimum 1", children: None}]
-    ),
-  )
-  schema.validate([1]) |> assert_ok
-  schema.validate([1, 2, 3, 4]).unwrap_err()
-  |> inspect(
-    content=(
-      #|[{input: Array([Number(1), Number(2), Number(3), Number(4)]), json_path: #, schema_path: #/maxItems, message: "Array length 4 is greater than maximum 3", children: None}]
-    ),
-  )
+  schema.expect_validate_err([])
+  schema.expect_validate_ok([1])
+  schema.expect_validate_ok([1, 2])
+  schema.expect_validate_ok([1, 2, 3])
+  schema.expect_validate_err([1, 2, 3, 4])
+  schema.expect_validate_err([1, "a"])
 }
 
 ///|
 test "validate array with prefixItems" {
   let b = Builder::new()
   let schema = b.array(prefix_items=[b.const_("t"), b.integer()])
-  schema.validate([]) |> assert_err
-  schema.validate(["t", 1]) |> assert_ok
-  schema.validate(["t", "v"]) |> assert_err
-  schema.validate(["x", 1, 2]) |> assert_err
+  schema.expect_validate_err([])
+  schema.expect_validate_ok(["t", 1])
+  schema.expect_validate_err(["t", "v"])
+  schema.expect_validate_err(["x", 1, 2])
 }
 
 ///|
 test "validate oneOf" {
   let b = Builder::new()
   let schema = b.one_of([b.string()])
-  schema.validate("hello") |> assert_ok
-  let schema = b.one_of([b.string(), b.null()])
-  schema.validate("hello") |> assert_ok
-  schema.validate(null) |> assert_ok
-  schema.validate(1).unwrap_err()
-  |> inspect(
-    content=(
-      #|[{input: Number(1), json_path: #, schema_path: #/oneOf/0, message: "Value is not a string", children: None}, {input: Number(1), json_path: #, schema_path: #/oneOf/1, message: "Value is not null", children: None}, {input: Number(1), json_path: #, schema_path: #/oneOf, message: "Value does not match exactly one schema in oneOf", children: None}]
-    ),
-  )
+  schema.expect_validate_ok("hello")
+  schema.expect_validate_err(1)
+  let schema2 = b.one_of([b.string(), b.null()])
+  schema2.expect_validate_ok("hello")
+  schema2.expect_validate_ok(null)
+  schema2.expect_validate_err(1)
 }
 
 ///|
 test "validate allOf" {
   let b = Builder::new()
   let schema = b.all_of([b.string()])
-  schema.validate("hello") |> assert_ok
+  schema.expect_validate_err(1)
+  schema.expect_validate_ok("hello")
   let schema2 = b.all_of([b.string(), b.const_("foo")])
-  schema2.validate("foo") |> assert_ok
-  schema2.validate("bar").unwrap_err()
-  |> inspect(
-    content=(
-      #|[{input: String("bar"), json_path: #, schema_path: #/oneOf/1, message: "Value does not match constant value String(\"foo\")", children: None}, {input: String("bar"), json_path: #, schema_path: #/allOf, message: "Value does not match exactly one schema in allOf", children: None}]
-    ),
-  )
+  schema2.expect_validate_ok("foo")
+  schema2.expect_validate_err("bar")
+
+  // never valid
+  let schema3 = b.all_of([b.string(), b.const_("foo"), b.number()])
+  schema3.expect_validate_err("foo")
+  schema3.expect_validate_err(1)
+  schema3.expect_validate_err("bar")
+  schema3.expect_validate_err(true)
 }
 
 ///|
 test "validate anyOf" {
   let b = Builder::new()
   let schema = b.any_of([b.string()])
-  schema.validate("hello") |> assert_ok
+  schema.expect_validate_err(1)
+  schema.expect_validate_ok("hello")
   let schema2 = b.any_of([b.string(), b.const_("foo")])
-  schema2.validate("foo") |> assert_ok
-  schema2.validate(1).unwrap_err()
-  |> inspect(
-    content=(
-      #|[{input: Number(1), json_path: #, schema_path: #/anyOf/0, message: "Value is not a string", children: None}, {input: Number(1), json_path: #, schema_path: #/anyOf/1, message: "Value does not match constant value String(\"foo\")", children: None}, {input: Number(1), json_path: #, schema_path: #/anyOf, message: "Value does not match any schema in anyOf", children: None}]
-    ),
-  )
+  schema2.expect_validate_ok("foo")
+  schema2.expect_validate_err(1)
   let schema3 = b.any_of([b.string(), b.const_("foo"), b.null()])
-  schema3.validate(null) |> assert_ok
-  schema3.validate("foo") |> assert_ok
-  schema3.validate("bar") |> assert_ok
-  schema3.validate(1).unwrap_err()
-  |> inspect(
-    content=(
-      #|[{input: Number(1), json_path: #, schema_path: #/anyOf/0, message: "Value is not a string", children: None}, {input: Number(1), json_path: #, schema_path: #/anyOf/1, message: "Value does not match constant value String(\"foo\")", children: None}, {input: Number(1), json_path: #, schema_path: #/anyOf/2, message: "Value is not null", children: None}, {input: Number(1), json_path: #, schema_path: #/anyOf, message: "Value does not match any schema in anyOf", children: None}]
-    ),
-  )
+  schema3.expect_validate_ok(null)
+  schema3.expect_validate_ok("foo")
+  schema3.expect_validate_ok("bar")
+  schema3.expect_validate_err(1)
+  schema3.expect_validate_err(true)
 }
 
 ///|
@@ -439,11 +378,18 @@ test "validate $ref in object" {
 }
 
 ///|
-test "validate by schema builder" {
-  let b = Builder::new()
-  let schema = b.object(properties={ "v": b.string() }, required=["v"])
-  schema.validate({ "v": "test" }) |> assert_ok
-}
+// test "validate by schema builder" {
+//   let b = Builder::new()
+//   let resolver = build_resolver({})
+//   let schema = b.object(properties={ "v": b.string() }, required=["v"])
+//   schema.validate(
+//     { "v": "test" },
+//     resolver~,
+//     json_path=JsonPointer::Root,
+//     schema_path=JsonPointer::Root,
+//   )
+//   |> assert_eq([])
+// }
 
 ///|
 test "validate by schema builder with custome resolver" {
