@@ -1,11 +1,11 @@
 ///|
-pub(all) struct Resolver {
-  priv resolver_map : Map[JsonPointer, JsonSchema]
+pub fn build_resolver(root_json : Json) -> Resolver raise ParseError {
+  Resolver::new(root_json)
 }
 
 ///|
-pub fn build_resolver(root_json : Json) -> Resolver raise ParseError {
-  Resolver::new(root_json)
+pub struct Resolver {
+  priv resolver_map : Map[JsonPointer, JsonSchema]
 }
 
 ///|
@@ -22,8 +22,10 @@ pub fn Resolver::new(root_json : Json) -> Resolver raise ParseError {
           let schema : JsonSchema = @json.from_json(json)
           resolver_map.set(pointer, schema)
         } catch {
-          // TODO: log error
-          _ => ()
+          _ =>
+            raise ParseError::InvalidSchema(
+              "Failed to parse schema at reference '\{ref_expr}'",
+            )
         }
       None => ()
     }

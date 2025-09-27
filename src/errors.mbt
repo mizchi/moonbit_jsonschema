@@ -3,6 +3,7 @@
 pub suberror ParseError {
   JsonDecodeError(@json.JsonDecodeError)
   PointerParseError(String)
+  InvalidSchema(String)
 }
 
 ///|

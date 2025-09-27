@@ -106,12 +106,7 @@ fn Enumerable::parse_enumerable(OneOfSchema) -> Array[Self]?
 impl Eq for Enumerable
 impl Show for Enumerable
 
-pub struct IntegerSchema {
-  minimum : Int?
-  maximum : Int?
-  exclusive_minimum : Int?
-  exclusive_maximum : Int?
-}
+type IntegerSchema
 impl Eq for IntegerSchema
 impl Show for IntegerSchema
 impl ToJson for IntegerSchema
@@ -196,7 +191,7 @@ impl Show for RefSchema
 impl ToJson for RefSchema
 impl @json.FromJson for RefSchema
 
-pub(all) struct Resolver {
+pub struct Resolver {
   // private fields
 }
 fn Resolver::get_refs(Self) -> Array[JsonPointer]

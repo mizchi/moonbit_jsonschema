@@ -142,6 +142,8 @@ pub impl @json.FromJson for JsonSchema with from_json(
         schemas: schemas.mapi(fn(i, s) {
           @json.from_json(s, path=json_path.add_key("oneOf").add_index(i))
         }),
+        parsed_enumerable: None,
+        parsed_nullable: None,
       })
     //   JsonSchema::Not(@json.from_json(schema, path=json_path.add_key("not")))
     { "enum": Array(values), .. } => JsonSchema::Enum(EnumSchema::{ values, })

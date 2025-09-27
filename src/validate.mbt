@@ -19,11 +19,6 @@ struct Validator {
   resolver : Resolver
 }
 
-// fn test_validateor(schema: Schema, value: Json, ) {
-//   let jsonschema : Json = { "type": "string" }
-//   let validator = build_validator(jsonschema)
-// }
-
 ///|
 pub fn Validator::validate(
   self : Validator,

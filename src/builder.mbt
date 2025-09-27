@@ -14,12 +14,36 @@
 /// )
 /// let _result = schema.validate({ "name": "Alice", "age": 30.0 }).unwrap()
 /// ```
-pub struct Builder {}
+pub struct Builder {
+  priv internal_state : Map[JsonPointer, JsonSchema]
+}
 
 ///|
 pub fn Builder::new() -> Builder {
   // TODO: use with resolver later
-  Builder::{  }
+  Builder::{ internal_state: Map::new() }
+}
+
+///|
+pub fn define_schema(
+  self : Builder,
+  pointer : JsonPointer,
+  schema : JsonSchema,
+) -> RefSchema {
+  self.internal_state.set(pointer, schema)
+  RefSchema::{ pointer, }
+  // Builder::{ internal_state: Map::new().set(name, schema) }
+}
+
+///|
+pub fn emit_json_schema(_self : Builder) -> Json {
+  let raw : Json = {}
+  // set json[...] = Schema.to_json() for each schema
+  // for pointer, schema in self.internal_state {
+  //   // wip
+  // }
+  raw
+  // self.internal_state
 }
 
 ///|
@@ -153,7 +177,7 @@ pub fn Builder::one_of(
   _self : Builder,
   schemas : Array[JsonSchema],
 ) -> JsonSchema {
-  JsonSchema::OneOf({ schemas, })
+  JsonSchema::OneOf({ schemas, parsed_enumerable: None, parsed_nullable: None })
 }
 
 ///|
@@ -172,10 +196,14 @@ pub fn Builder::enumerable_one_of(
         self.array(prefix_items=schemas),
         params,
       ],
+      parsed_enumerable: None,
+      parsed_nullable: None,
     })
   } else {
     JsonSchema::OneOf({
       schemas: [self.const_(tag.to_json()), self.array(prefix_items=schemas)],
+      parsed_enumerable: None,
+      parsed_nullable: None,
     })
   }
 }

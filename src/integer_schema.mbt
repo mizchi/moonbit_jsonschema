@@ -1,5 +1,5 @@
 ///|
-pub struct IntegerSchema {
+struct IntegerSchema {
   minimum : Int?
   maximum : Int?
   exclusive_minimum : Int?

@@ -2,6 +2,8 @@
 /// OneOf schema
 pub struct OneOfSchema {
   schemas : Array[JsonSchema]
+  parsed_nullable : JsonSchema?
+  parsed_enumerable : Array[Enumerable]?
 } derive(Show, Eq)
 
 ///|
@@ -121,6 +123,15 @@ pub fn Enumerable::parse_enumerable(schema : OneOfSchema) -> Array[Enumerable]? 
   return Some(parsed)
   // }
   // None
+}
+
+///|
+/// detect nullable enumerable by [ <Schema>, {"type": "null"}]
+pub fn OneOfSchema::parse_nullable(schema : OneOfSchema) -> JsonSchema? {
+  match schema.schemas {
+    [s, JsonSchema::Null(_)] | [JsonSchema::Null(_), s] => return Some(s)
+    _ => return None
+  }
 }
 
 ///|
