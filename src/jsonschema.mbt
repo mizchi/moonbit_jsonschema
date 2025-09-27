@@ -1,33 +1,46 @@
 // JSON Schema types and definitions
 
 ///|
-pub struct AnyConstraint {} derive(Show, Eq, FromJson, ToJson)
+trait Validatable {
+  from_json_schema(Json) -> Result[JsonSchema, String]
+  to_json_schema(Self) -> Json
+  validate(
+    Self,
+    Json,
+    Resolver,
+    json_path~ : JsonPointer,
+    schema_path~ : JsonPointer,
+  ) -> Array[ValidationError]
+}
 
 ///|
-impl Validatable for AnyConstraint with to_json_schema(self) {
+pub struct AnySchema {} derive(Show, Eq, FromJson, ToJson)
+
+///|
+impl Validatable for AnySchema with to_json_schema(self) {
   with_type_property({}, "any")
   // { "type": "any" }
 }
 
 ///|
-impl Validatable for AnyConstraint with from_json_schema(json) {
+impl Validatable for AnySchema with from_json_schema(json) {
   try {
-    let v : AnyConstraint = @json.from_json(json)
+    let v : AnySchema = @json.from_json(json)
     v |> JsonSchema::Any |> Ok
   } catch {
-    _ => Err("Failed to parse AnyConstraint".to_string())
+    _ => Err("Failed to parse AnySchema".to_string())
   }
 }
 
 ///|
-impl Validatable for AnyConstraint with validate(
-  self,
-  value,
-  resolver,
+impl Validatable for AnySchema with validate(
+  _self,
+  _value,
+  _resolver,
   json_path~,
   schema_path~,
 ) {
-  // ignore(self, value, resolver, json_path~, schema_path~)
+  ignore((json_path, schema_path))
   []
 }
 
@@ -36,14 +49,14 @@ impl Validatable for AnyConstraint with validate(
 ///|
 /// JsonSchema
 pub enum JsonSchema {
-  Any(AnyConstraint)
+  Any(AnySchema)
   Null(description~ : String?)
   Boolean(description~ : String?)
-  String(StringConstraint)
+  String(StringSchema)
   Number(NumberConstraint)
   Integer(NumberConstraint)
-  Array(ArrayConstraint)
-  Object(ObjectConstraint)
+  Array(ArraySchema)
+  Object(ObjectSchema)
   Enum(Array[Json])
   Const(Json)
   AnyOf(Array[JsonSchema])
@@ -130,13 +143,13 @@ pub impl @json.FromJson for JsonSchema with from_json(
       b.anyOf([schema, b.null()])
     }
     { "type": "object", .. } =>
-      ObjectConstraint::from_json(json, json_path) |> JsonSchema::Object
+      ObjectSchema::from_json(json, json_path) |> JsonSchema::Object
     { "type": "array", .. } =>
-      ArrayConstraint::from_json(json, json_path) |> JsonSchema::Array
+      ArraySchema::from_json(json, json_path) |> JsonSchema::Array
     { "type": "null", .. } => JsonSchema::Null(description~)
     { "type": "boolean", .. } => JsonSchema::Boolean(description~)
     { "type": "string", .. } =>
-      StringConstraint::from_json(json, json_path) |> JsonSchema::String
+      StringSchema::from_json(json, json_path) |> JsonSchema::String
     { "type": "number", .. } =>
       NumberConstraint::from_json(json, json_path) |> JsonSchema::Number
     { "type": "integer", .. } =>
@@ -162,6 +175,6 @@ pub impl @json.FromJson for JsonSchema with from_json(
     { "not": schema, .. } =>
       JsonSchema::Not(@json.from_json(schema, path=json_path.add_key("not")))
     { "enum": Array(values), .. } => JsonSchema::Enum(values)
-    _ => JsonSchema::Any(AnyConstraint::{  })
+    _ => JsonSchema::Any(AnySchema::{  })
   }
 }

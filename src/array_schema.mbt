@@ -1,5 +1,5 @@
 ///|
-pub struct ArrayConstraint {
+pub struct ArraySchema {
   items : JsonSchema?
   prefix_items : Array[JsonSchema]?
   contains : JsonSchema?
@@ -31,14 +31,14 @@ pub struct ArrayConstraint {
 )
 
 ///|
-impl Validatable for ArrayConstraint with to_json_schema(self) {
+impl Validatable for ArraySchema with to_json_schema(self) {
   with_type_property(self.to_json(), "array")
 }
 
 ///|
-impl Validatable for ArrayConstraint with from_json_schema(json) {
+impl Validatable for ArraySchema with from_json_schema(json) {
   try {
-    let v : StringConstraint = @json.from_json(json)
+    let v : StringSchema = @json.from_json(json)
     v |> JsonSchema::String |> Ok
   } catch {
     _ => Err("Failed to parse StringConstraint".to_string())
@@ -47,7 +47,7 @@ impl Validatable for ArrayConstraint with from_json_schema(json) {
 }
 
 ///|
-impl Validatable for ArrayConstraint with validate(
+impl Validatable for ArraySchema with validate(
   self,
   value,
   resolver,

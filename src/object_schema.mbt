@@ -1,5 +1,5 @@
 ///|
-pub struct ObjectConstraint {
+pub struct ObjectSchema {
   properties : Map[String, JsonSchema]?
   required : Array[String]?
   additional_properties : JsonSchema?
@@ -22,12 +22,12 @@ pub struct ObjectConstraint {
 )
 
 ///|
-impl Validatable for ObjectConstraint with to_json_schema(self) {
+impl Validatable for ObjectSchema with to_json_schema(self) {
   with_type_property(self.to_json(), "object")
 }
 
 ///|
-impl Validatable for ObjectConstraint with from_json_schema(json) {
+impl Validatable for ObjectSchema with from_json_schema(json) {
   ...
   // try {
   //   let v : StringConstraint = @json.from_json(json)
@@ -39,7 +39,7 @@ impl Validatable for ObjectConstraint with from_json_schema(json) {
 }
 
 ///|
-impl Validatable for ObjectConstraint with validate(
+impl Validatable for ObjectSchema with validate(
   self,
   value,
   resolver,

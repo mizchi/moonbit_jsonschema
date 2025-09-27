@@ -97,7 +97,7 @@ pub fn Builder::boolean(_self : Builder, description? : String) -> JsonSchema {
 ///|
 /// { "type": "any" }
 pub fn Builder::any(_self : Builder) -> JsonSchema {
-  JsonSchema::Any(AnyConstraint::{  })
+  JsonSchema::Any(AnySchema::{  })
 }
 
 ///|
@@ -116,7 +116,7 @@ pub fn Builder::object(
   // over
   required_all? : Bool = false,
 ) -> JsonSchema {
-  JsonSchema::Object(ObjectConstraint::{
+  JsonSchema::Object(ObjectSchema::{
     // description,
     properties,
     required: if required_all && properties is Some(props) {

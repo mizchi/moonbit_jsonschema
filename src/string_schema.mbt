@@ -1,5 +1,5 @@
 ///|
-pub struct StringConstraint {
+pub struct StringSchema {
   min_length : Int?
   max_length : Int?
   enum_ : Array[String]?
@@ -23,14 +23,14 @@ pub struct StringConstraint {
 )
 
 ///|
-impl Validatable for StringConstraint with to_json_schema(self) {
+impl Validatable for StringSchema with to_json_schema(self) {
   with_type_property(self.to_json(), "string")
 }
 
 ///|
-impl Validatable for StringConstraint with from_json_schema(json) {
+impl Validatable for StringSchema with from_json_schema(json) {
   try {
-    let v : StringConstraint = @json.from_json(json)
+    let v : StringSchema = @json.from_json(json)
     v |> JsonSchema::String |> Ok
   } catch {
     _ => Err("Failed to parse StringConstraint".to_string())
@@ -39,7 +39,7 @@ impl Validatable for StringConstraint with from_json_schema(json) {
 }
 
 ///|
-impl Validatable for StringConstraint with validate(
+impl Validatable for StringSchema with validate(
   self,
   input,
   resolver,
@@ -92,14 +92,14 @@ impl Validatable for StringConstraint with validate(
 ///|
 test "StringConstraint::from_json validate and to_json" {
   let json : Json = { "type": "string" }
-  let s = StringConstraint::from_json_schema(json).unwrap()
+  let s = StringSchema::from_json_schema(json).unwrap()
   s.validate("hell") |> expect_ok
   s.to_json() |> assert_eq(json)
 }
 
 ///|
 test "StringConstraint::validate" {
-  let schema = StringConstraint::{
+  let schema = StringSchema::{
     min_length: Some(3),
     max_length: Some(5),
     enum_: None,
