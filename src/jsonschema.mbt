@@ -1,16 +1,49 @@
 // JSON Schema types and definitions
 
 ///|
+pub struct AnyConstraint {} derive(Show, Eq, FromJson, ToJson)
+
+///|
+impl Validatable for AnyConstraint with to_json_schema(self) {
+  with_type_property({}, "any")
+  // { "type": "any" }
+}
+
+///|
+impl Validatable for AnyConstraint with from_json_schema(json) {
+  try {
+    let v : AnyConstraint = @json.from_json(json)
+    v |> JsonSchema::Any |> Ok
+  } catch {
+    _ => Err("Failed to parse AnyConstraint".to_string())
+  }
+}
+
+///|
+impl Validatable for AnyConstraint with validate(
+  self,
+  value,
+  resolver,
+  json_path~,
+  schema_path~,
+) {
+  // ignore(self, value, resolver, json_path~, schema_path~)
+  []
+}
+
+///|any
+
+///|
 /// JsonSchema
 pub enum JsonSchema {
-  Any(description~ : String?)
+  Any(AnyConstraint)
   Null(description~ : String?)
   Boolean(description~ : String?)
   String(StringConstraint)
   Number(NumberConstraint)
   Integer(NumberConstraint)
   Array(ArrayConstraint)
-  Object(ObjectConstraints)
+  Object(ObjectConstraint)
   Enum(Array[Json])
   Const(Json)
   AnyOf(Array[JsonSchema])
@@ -35,10 +68,10 @@ fn with_type_property(json : Json, type_name : String) -> Json {
 ///|
 pub impl ToJson for JsonSchema with to_json(self) -> Json {
   match self {
-    JsonSchema::Any(_) => { "type": "any" }
-    JsonSchema::Null(_) => { "type": "null" }
-    JsonSchema::Boolean(_) => { "type": "boolean" }
-    JsonSchema::String(c) => c.to_json_schema()
+    Any(c) => c.to_json_schema()
+    Null(_) => { "type": "null" }
+    Boolean(_) => { "type": "boolean" }
+    String(c) => c.to_json_schema()
     Number(c) => c.to_json_schema()
     Integer(c) => c.to_json_schema()
     Array(constraints) => constraints.to_json_schema()
@@ -97,7 +130,7 @@ pub impl @json.FromJson for JsonSchema with from_json(
       b.anyOf([schema, b.null()])
     }
     { "type": "object", .. } =>
-      ObjectConstraints::from_json(json, json_path) |> JsonSchema::Object
+      ObjectConstraint::from_json(json, json_path) |> JsonSchema::Object
     { "type": "array", .. } =>
       ArrayConstraint::from_json(json, json_path) |> JsonSchema::Array
     { "type": "null", .. } => JsonSchema::Null(description~)
@@ -129,6 +162,6 @@ pub impl @json.FromJson for JsonSchema with from_json(
     { "not": schema, .. } =>
       JsonSchema::Not(@json.from_json(schema, path=json_path.add_key("not")))
     { "enum": Array(values), .. } => JsonSchema::Enum(values)
-    _ => JsonSchema::Any(description~)
+    _ => JsonSchema::Any(AnyConstraint::{  })
   }
 }
