@@ -27,7 +27,7 @@ impl Validatable for ObjectSchema with to_json_schema(self) {
 }
 
 ///|
-impl Validatable for ObjectSchema with from_json_schema(json) {
+impl Validatable for ObjectSchema with parse(json) {
   try {
     let v : ObjectSchema = @json.from_json(json)
     v |> JsonSchema::Object |> Ok

@@ -28,7 +28,7 @@ impl Validatable for StringSchema with to_json_schema(self) {
 }
 
 ///|
-impl Validatable for StringSchema with from_json_schema(json) {
+impl Validatable for StringSchema with parse(json) {
   try {
     let v : StringSchema = @json.from_json(json)
     v |> JsonSchema::String |> Ok
@@ -92,7 +92,7 @@ impl Validatable for StringSchema with validate(
 ///|
 test "StringConstraint::from_json validate and to_json" {
   let json : Json = { "type": "string" }
-  let s = StringSchema::from_json_schema(json).unwrap()
+  let s = StringSchema::parse(json).unwrap()
   s.validate("hell") |> expect_ok
   s.to_json() |> assert_eq(json)
 }

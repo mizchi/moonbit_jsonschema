@@ -36,7 +36,7 @@ impl Validatable for ArraySchema with to_json_schema(self) {
 }
 
 ///|
-impl Validatable for ArraySchema with from_json_schema(json) {
+impl Validatable for ArraySchema with parse(json) {
   try {
     let v : StringSchema = @json.from_json(json)
     v |> JsonSchema::String |> Ok

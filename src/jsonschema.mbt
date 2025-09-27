@@ -2,7 +2,7 @@
 
 ///|
 trait Validatable {
-  from_json_schema(Json) -> Result[JsonSchema, String]
+  parse(Json) -> Result[JsonSchema, String]
   to_json_schema(Self) -> Json
   validate(
     Self,
@@ -161,7 +161,7 @@ impl Validatable for AnySchema with to_json_schema(_self) {
 }
 
 ///|
-impl Validatable for AnySchema with from_json_schema(json) {
+impl Validatable for AnySchema with parse(json) {
   if not(json is { "type": "any", .. }) {
     return Err("Expected an object for AnySchema".to_string())
   }
