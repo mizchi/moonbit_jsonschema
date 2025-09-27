@@ -138,13 +138,13 @@ pub fn Builder::object(
 ///|
 /// { "enum": [...] }
 pub fn Builder::enum_(_self : Builder, values : Array[Json]) -> JsonSchema {
-  JsonSchema::Enum(values)
+  JsonSchema::Enum({ values, })
 }
 
 ///|
 /// { "const": value }
 pub fn Builder::const_(_self : Builder, value : Json) -> JsonSchema {
-  JsonSchema::Const(value)
+  JsonSchema::Const({ value, })
 }
 
 ///|

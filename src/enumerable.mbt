@@ -25,14 +25,23 @@ pub fn Enumerable::parse_enumerable(schema : JsonSchema) -> Array[Enumerable]? {
   for schema in schemas.schemas {
     match schema {
       // {"const": "A"}
-      Const(String(tag_value)) =>
+      Const(s) if s.value is String(tag_value) =>
         parsed.push(Enumerable::new(tag_value, None, None))
       // [{"const": "A"}, { "type": "array", .. }]
-      Array({ prefix_items: Some([JsonSchema::Const(String(tag_value))]), .. }) =>
-        parsed.push(Enumerable::new(tag_value, None, None))
+      Array(
+        {
+          prefix_items: Some([JsonSchema::Const({ value: String(tag_value) })]),
+          ..,
+        }
+      ) => parsed.push(Enumerable::new(tag_value, None, None))
       // [{"const": "A"}, ..]
       Array(
-        { prefix_items: Some([Const(String(tag_value)), .. child_schemas]), .. }
+        {
+          prefix_items: Some(
+            [Const({ value: String(tag_value) }), .. child_schemas]
+          ),
+          ..,
+        }
       ) => {
         let matched = match child_schemas.to_array() {
           [] => { tag: tag_value, positionals: None, params: None }

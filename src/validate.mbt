@@ -62,14 +62,14 @@ fn JsonSchema::validate_internal(
   schema_path? : JsonPointer = JsonPointer::Root,
 ) -> Array[ValidationError] {
   match self {
-    Const(expected) =>
-      if value != expected {
+    Const(s) =>
+      if value != s.value {
         [
           ValidationError::new(
             value,
             json_path,
             schema_path,
-            "Value does not match constant value \{expected}",
+            "Value does not match constant value \{s.value}",
           ),
         ]
       } else {
@@ -90,14 +90,14 @@ fn JsonSchema::validate_internal(
       }
       c.validate(value, resolver, json_path~, schema_path~)
     }
-    Enum(enum_values) =>
-      if !enum_values.contains(value) {
+    Enum({ values }) =>
+      if !values.contains(value) {
         [
           ValidationError::new(
             value,
             json_path,
             schema_path,
-            "\{value} is not in \{enum_values}",
+            "\{value} is not in \{values}",
           ),
         ]
       } else {

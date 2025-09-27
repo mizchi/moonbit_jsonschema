@@ -27,11 +27,11 @@ pub enum JsonSchema {
   AnyOf(AnyOfSchema)
   AllOf(AllOfSchema)
   OneOf(OneOfSchema)
-  //wip
-  Enum(Array[Json])
-  Const(Json)
-  Not(JsonSchema)
   Ref(RefSchema)
+  //wip
+  Enum(EnumSchema)
+  Const(ConstSchema)
+  Not(JsonSchema)
   // If(Schema, Schema?, Schema?) // if, then, else
 } derive(Show, Eq)
 
@@ -60,10 +60,8 @@ pub impl ToJson for JsonSchema with to_json(self) -> Json {
     JsonSchema::AnyOf(s) => s.to_json_schema()
     JsonSchema::AllOf(s) => s.to_json_schema()
     JsonSchema::OneOf(s) => s.to_json_schema()
-    // wip
-    // Ref(pointer) => { "$ref": pointer.to_string() }
-    Ref(pointer) => { "$ref": pointer.to_string() }
-    Const(value) => { "const": value }
+    Ref(s) => s.to_json_schema()
+    Const({ value }) => { "const": value }
     Enum(values) => { "enum": values.to_json() }
     JsonSchema::Not(schema) => { "not": schema }
   }
@@ -81,7 +79,7 @@ pub impl @json.FromJson for JsonSchema with from_json(
   match obj {
     { "type": "any", .. } =>
       AnySchema::from_json(json, json_path) |> JsonSchema::Any
-    { "const": value, .. } => Const(value)
+    { "const": value, .. } => Const({ value, })
     { "$ref": String(ref_expr), .. } => {
       // TODO: validate ref_expr
       let p = JsonPointer::from_string(ref_expr).unwrap()
@@ -142,7 +140,7 @@ pub impl @json.FromJson for JsonSchema with from_json(
       })
     { "not": schema, .. } =>
       JsonSchema::Not(@json.from_json(schema, path=json_path.add_key("not")))
-    { "enum": Array(values), .. } => JsonSchema::Enum(values)
+    { "enum": Array(values), .. } => JsonSchema::Enum(EnumSchema::{ values, })
     _ => JsonSchema::Any(AnySchema::{  })
   }
 }
