@@ -148,7 +148,7 @@ pub enum JsonSchema {
   Enum(EnumSchema)
   Const(ConstSchema)
 }
-fn JsonSchema::validate(Self, Json) -> Result[Unit, Array[ValidationError]] raise
+impl Validatable for JsonSchema
 impl Eq for JsonSchema
 impl Show for JsonSchema
 impl ToJson for JsonSchema
@@ -227,9 +227,11 @@ impl Show for ValidationError
 
 type Validator
 fn Validator::validate(Self, Json) -> Result[Unit, Array[ValidationError]]
-fn Validator::with_resolver(JsonSchema, Resolver) -> Self
 
 // Type aliases
 
 // Traits
+pub trait Validatable {
+  validate(Self, Json, resolver~ : Resolver, json_path~ : JsonPointer, schema_path~ : JsonPointer) -> Array[ValidationError]
+}
 
