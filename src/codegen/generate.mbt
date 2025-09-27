@@ -464,6 +464,7 @@ fn[T, E] assert_err(x : Result[T, E]) -> Unit {
 
 ///|
 test "enumerable schema can parse itself" (_t : @test.T) {
+  // TODO: Fix
   let b = @jsonschema.Builder::new()
   let s = b.one_of([
     b.array(prefix_items=[b.const_("A"), b.integer(), b.string()]),

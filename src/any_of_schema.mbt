@@ -5,13 +5,7 @@ pub struct AnyOfSchema {
 
 ///|
 impl Validatable for AnyOfSchema with to_json_schema(self) {
-  ...
-  // let mut arr = [JsonSchema::Const(self.tag.to_json())]
-  // arr.append(self.schemas)
-  // if self.params is Some(params) {
-  //   arr.push(params)
-  // }
-  // { "oneOf": arr.map(fn(s) { s.to_json() }) }
+  { "anyOf": self.schemas.map(fn(s) { s.to_json() }) }
 }
 
 ///|

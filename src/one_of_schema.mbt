@@ -1,20 +1,21 @@
 ///|
-pub struct AllOfSchema {
+/// OneOf schema
+pub struct OneOfSchema {
   schemas : Array[JsonSchema]
 } derive(Show, Eq)
 
 ///|
-impl Validatable for AllOfSchema with to_json_schema(self) {
-  { "allOf": self.schemas.map(fn(s) { s.to_json() }) }
+impl Validatable for OneOfSchema with to_json_schema(self) {
+  { "oneOf": self.schemas.map(fn(s) { s.to_json() }) }
 }
 
 ///|
-impl Validatable for AllOfSchema with parse(json) {
+impl Validatable for OneOfSchema with parse(json) {
   ...
 }
 
 ///|
-impl Validatable for AllOfSchema with validate(
+impl Validatable for OneOfSchema with validate(
   self,
   value,
   resolver,
@@ -36,15 +37,15 @@ impl Validatable for AllOfSchema with validate(
       errors.append(sub_errors)
     }
   }
-  if passed == self.schemas.length() {
+  if passed == 1 {
     []
   } else {
     errors.push(
       ValidationError::new(
         value,
         json_path,
-        schema_path.key("allOf"),
-        "Value does not match exactly one schema in allOf",
+        schema_path.key("oneOf"),
+        "Value does not match exactly one schema in oneOf",
       ),
     )
     errors

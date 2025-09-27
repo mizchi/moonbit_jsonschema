@@ -59,12 +59,9 @@ pub impl ToJson for JsonSchema with to_json(self) -> Json {
     Ref(pointer) => { "$ref": pointer.to_string() }
     Const(value) => { "const": value }
     Enum(values) => { "enum": values.to_json() }
-    JsonSchema::AnyOf({ schemas }) =>
-      { "anyOf": schemas.map(fn(s) { s.to_json() }) }
-    JsonSchema::AllOf({ schemas }) =>
-      { "allOf": schemas.map(fn(s) { s.to_json() }) }
-    JsonSchema::OneOf(schemas) =>
-      { "oneOf": schemas.schemas.map(fn(s) { s.to_json() }) }
+    JsonSchema::AnyOf(s) => s.to_json_schema()
+    JsonSchema::AllOf(s) => s.to_json_schema()
+    JsonSchema::OneOf(s) => s.to_json_schema()
     JsonSchema::Not(schema) => { "not": schema }
   }
 }
@@ -100,6 +97,7 @@ pub impl @json.FromJson for JsonSchema with from_json(
       }
       b.anyOf([schema, JsonSchema::Null(description=None)])
     }
+    // like a ["null", "string"]
     { "type": @json.Array([String(item_type), "null"]), .. } => {
       let schema = match item_type {
         "string" => b.string()
@@ -181,64 +179,4 @@ impl Validatable for AnySchema with validate(
 ) {
   ignore((json_path, schema_path))
   []
-}
-
-///|
-/// OneOf schema
-pub struct OneOfSchema {
-  schemas : Array[JsonSchema]
-} derive(Show, Eq)
-
-///|
-impl Validatable for OneOfSchema with to_json_schema(self) {
-  ...
-  // let mut arr = [JsonSchema::Const(self.tag.to_json())]
-  // arr.append(self.schemas)
-  // if self.params is Some(params) {
-  //   arr.push(params)
-  // }
-  // { "oneOf": arr.map(fn(s) { s.to_json() }) }
-}
-
-///|
-impl Validatable for OneOfSchema with parse(json) {
-  ...
-}
-
-///|
-impl Validatable for OneOfSchema with validate(
-  self,
-  value,
-  resolver,
-  json_path~,
-  schema_path~,
-) {
-  let errors : Array[ValidationError] = []
-  let mut passed = 0
-  for idx, schema in self.schemas {
-    let sub_errors = schema.validate_internal(
-      value,
-      json_path~,
-      schema_path=schema_path.key("oneOf").index(idx),
-      resolver~,
-    )
-    if sub_errors.length() == 0 {
-      passed += 1
-    } else {
-      errors.append(sub_errors)
-    }
-  }
-  if passed == 1 {
-    []
-  } else {
-    errors.push(
-      ValidationError::new(
-        value,
-        json_path,
-        schema_path.key("oneOf"),
-        "Value does not match exactly one schema in oneOf",
-      ),
-    )
-    errors
-  }
 }
