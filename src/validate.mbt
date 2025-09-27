@@ -20,14 +20,6 @@ struct Validator {
 }
 
 ///|
-pub fn Validator::with_resolver(
-  schema : JsonSchema,
-  resolver : Resolver,
-) -> Validator {
-  Validator::{ schema, resolver }
-}
-
-///|
 pub fn Validator::validate(
   self : Validator,
   input : Json,

@@ -22,7 +22,7 @@ impl JsonSchemaSerializable for RefSchema with parse(json) {
 impl Validatable for RefSchema with validate(
   self,
   value,
-  resolver,
+  resolver~,
   json_path~,
   schema_path~,
 ) {

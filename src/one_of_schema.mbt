@@ -18,7 +18,7 @@ impl JsonSchemaSerializable for OneOfSchema with parse(_json) {
 impl Validatable for OneOfSchema with validate(
   self,
   value,
-  resolver,
+  resolver~,
   json_path~,
   schema_path~,
 ) {

@@ -17,7 +17,7 @@ impl JsonSchemaSerializable for ConstSchema with parse(_json) {
 impl Validatable for ConstSchema with validate(
   self,
   value,
-  _resolver,
+  resolver~,
   json_path~,
   schema_path~,
 ) {
@@ -55,7 +55,7 @@ impl JsonSchemaSerializable for EnumSchema with parse(_json) {
 impl Validatable for EnumSchema with validate(
   self,
   value,
-  _resolver,
+  resolver~,
   json_path~,
   schema_path~,
 ) {

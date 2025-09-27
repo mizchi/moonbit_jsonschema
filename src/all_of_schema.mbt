@@ -17,7 +17,7 @@ impl JsonSchemaSerializable for AllOfSchema with parse(json) {
 impl Validatable for AllOfSchema with validate(
   self,
   value,
-  resolver,
+  resolver~,
   json_path~,
   schema_path~,
 ) {

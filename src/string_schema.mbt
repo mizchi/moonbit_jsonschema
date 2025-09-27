@@ -42,7 +42,7 @@ impl JsonSchemaSerializable for StringSchema with parse(json) {
 impl Validatable for StringSchema with validate(
   self,
   input,
-  resolver,
+  resolver~,
   json_path~,
   schema_path~,
 ) {
@@ -107,14 +107,14 @@ test "StringConstraint::validate" {
   let resolver = build_resolver({})
   let err_with_min_err = schema.validate(
     "h",
-    resolver,
+    resolver~,
     json_path=JsonPointer::Root,
     schema_path=JsonPointer::Root,
   )
   assert_not_eq(err_with_min_err, [])
   schema.validate(
     "hell",
-    resolver,
+    resolver~,
     json_path=JsonPointer::Root,
     schema_path=JsonPointer::Root,
   )
@@ -122,7 +122,7 @@ test "StringConstraint::validate" {
   // not string
   schema.validate(
     1,
-    resolver,
+    resolver~,
     json_path=JsonPointer::Root,
     schema_path=JsonPointer::Root,
   )

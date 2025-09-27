@@ -40,7 +40,7 @@ impl JsonSchemaSerializable for ObjectSchema with parse(json) {
 impl Validatable for ObjectSchema with validate(
   self,
   value,
-  resolver,
+  resolver~,
   json_path~,
   schema_path~,
 ) {

@@ -44,7 +44,7 @@ impl JsonSchemaSerializable for NumberSchema with parse(json) {
 impl Validatable for NumberSchema with validate(
   self,
   value,
-  resolver,
+  resolver~,
   json_path~,
   schema_path~,
 ) {

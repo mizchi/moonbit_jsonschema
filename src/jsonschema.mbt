@@ -11,7 +11,7 @@ priv trait Validatable {
   validate(
     Self,
     Json,
-    Resolver,
+    resolver~ : Resolver,
     json_path~ : JsonPointer,
     schema_path~ : JsonPointer,
   ) -> Array[ValidationError]
@@ -74,25 +74,25 @@ pub impl ToJson for JsonSchema with to_json(self) -> Json {
 impl Validatable for JsonSchema with validate(
   self,
   value,
-  resolver,
+  resolver~,
   json_path~,
   schema_path~,
 ) {
   match self {
-    Const(s) => s.validate(value, resolver, json_path~, schema_path~)
-    Integer(s) => s.validate(value, resolver, json_path~, schema_path~)
-    Enum(s) => s.validate(value, resolver, json_path~, schema_path~)
-    Boolean(s) => s.validate(value, resolver, json_path~, schema_path~)
-    Ref(s) => s.validate(value, resolver, json_path~, schema_path~)
-    Null(s) => s.validate(value, resolver, json_path~, schema_path~)
-    Any(s) => s.validate(value, resolver, json_path~, schema_path~)
-    Number(c) => c.validate(value, resolver, json_path~, schema_path~)
-    String(c) => c.validate(value, resolver, json_path~, schema_path~)
-    Array(c) => c.validate(value, resolver, json_path~, schema_path~)
-    Object(v) => v.validate(value, resolver, json_path~, schema_path~)
-    AllOf(s) => s.validate(value, resolver, json_path~, schema_path~)
-    OneOf(s) => s.validate(value, resolver, json_path~, schema_path~)
-    AnyOf(s) => s.validate(value, resolver, json_path~, schema_path~)
+    Const(s) => s.validate(value, resolver~, json_path~, schema_path~)
+    Integer(s) => s.validate(value, resolver~, json_path~, schema_path~)
+    Enum(s) => s.validate(value, resolver~, json_path~, schema_path~)
+    Boolean(s) => s.validate(value, resolver~, json_path~, schema_path~)
+    Ref(s) => s.validate(value, resolver~, json_path~, schema_path~)
+    Null(s) => s.validate(value, resolver~, json_path~, schema_path~)
+    Any(s) => s.validate(value, resolver~, json_path~, schema_path~)
+    Number(c) => c.validate(value, resolver~, json_path~, schema_path~)
+    String(c) => c.validate(value, resolver~, json_path~, schema_path~)
+    Array(c) => c.validate(value, resolver~, json_path~, schema_path~)
+    Object(v) => v.validate(value, resolver~, json_path~, schema_path~)
+    AllOf(s) => s.validate(value, resolver~, json_path~, schema_path~)
+    OneOf(s) => s.validate(value, resolver~, json_path~, schema_path~)
+    AnyOf(s) => s.validate(value, resolver~, json_path~, schema_path~)
     // WIP
     // Not(_schema) =>
     //   // TODO: implement Not validation
@@ -121,7 +121,7 @@ fn _validate(
   json_path? : JsonPointer = JsonPointer::Root,
   schema_path? : JsonPointer = JsonPointer::Root,
 ) -> Array[ValidationError] {
-  validator.validate(value, resolver, json_path~, schema_path~)
+  validator.validate(value, resolver~, json_path~, schema_path~)
 }
 
 ///|
@@ -133,20 +133,20 @@ fn JsonSchema::validate_internal(
   schema_path? : JsonPointer = JsonPointer::Root,
 ) -> Array[ValidationError] {
   match self {
-    Const(s) => s.validate(value, resolver, json_path~, schema_path~)
-    Integer(s) => s.validate(value, resolver, json_path~, schema_path~)
-    Enum(s) => s.validate(value, resolver, json_path~, schema_path~)
-    Boolean(s) => s.validate(value, resolver, json_path~, schema_path~)
-    Ref(s) => s.validate(value, resolver, json_path~, schema_path~)
-    Null(s) => s.validate(value, resolver, json_path~, schema_path~)
-    Any(s) => s.validate(value, resolver, json_path~, schema_path~)
-    Number(c) => c.validate(value, resolver, json_path~, schema_path~)
-    String(c) => c.validate(value, resolver, json_path~, schema_path~)
-    Array(c) => c.validate(value, resolver, json_path~, schema_path~)
-    Object(v) => v.validate(value, resolver, json_path~, schema_path~)
-    AllOf(s) => s.validate(value, resolver, json_path~, schema_path~)
-    OneOf(s) => s.validate(value, resolver, json_path~, schema_path~)
-    AnyOf(s) => s.validate(value, resolver, json_path~, schema_path~)
+    Const(s) => s.validate(value, resolver~, json_path~, schema_path~)
+    Integer(s) => s.validate(value, resolver~, json_path~, schema_path~)
+    Enum(s) => s.validate(value, resolver~, json_path~, schema_path~)
+    Boolean(s) => s.validate(value, resolver~, json_path~, schema_path~)
+    Ref(s) => s.validate(value, resolver~, json_path~, schema_path~)
+    Null(s) => s.validate(value, resolver~, json_path~, schema_path~)
+    Any(s) => s.validate(value, resolver~, json_path~, schema_path~)
+    Number(c) => c.validate(value, resolver~, json_path~, schema_path~)
+    String(c) => c.validate(value, resolver~, json_path~, schema_path~)
+    Array(c) => c.validate(value, resolver~, json_path~, schema_path~)
+    Object(v) => v.validate(value, resolver~, json_path~, schema_path~)
+    AllOf(s) => s.validate(value, resolver~, json_path~, schema_path~)
+    OneOf(s) => s.validate(value, resolver~, json_path~, schema_path~)
+    AnyOf(s) => s.validate(value, resolver~, json_path~, schema_path~)
     // WIP
     // Not(_schema) =>
     //   // TODO: implement Not validation
@@ -258,11 +258,11 @@ impl JsonSchemaSerializable for AnySchema with parse(json) {
 impl Validatable for AnySchema with validate(
   _self,
   _value,
-  _resolver,
+  resolver~,
   json_path~,
   schema_path~,
 ) {
-  ignore((json_path, schema_path))
+  ignore((json_path, schema_path, resolver))
   []
 }
 
@@ -291,11 +291,11 @@ impl JsonSchemaSerializable for NullSchema with parse(json) {
 impl Validatable for NullSchema with validate(
   _self,
   value,
-  _resolver,
+  resolver~,
   json_path~,
   schema_path~,
 ) {
-  ignore((json_path, schema_path))
+  ignore((json_path, schema_path, resolver))
   match value {
     @json.Null => []
     _ =>
@@ -329,11 +329,11 @@ impl JsonSchemaSerializable for BooleanSchema with parse(json) {
 impl Validatable for BooleanSchema with validate(
   _self,
   value,
-  _resolver,
+  resolver~,
   json_path~,
   schema_path~,
 ) {
-  ignore((json_path, schema_path))
+  ignore((json_path, schema_path, resolver))
   match value {
     @json.True => []
     @json.False => []
