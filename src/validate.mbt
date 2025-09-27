@@ -62,17 +62,6 @@ fn JsonSchema::validate_internal(
   schema_path? : JsonPointer = JsonPointer::Root,
 ) -> Array[ValidationError] {
   match self {
-    Boolean(_) =>
-      match value {
-        @json.True => []
-        @json.False => []
-        _ =>
-          [
-            ValidationError::new(
-              value, json_path, schema_path, "Value is not a boolean",
-            ),
-          ]
-      }
     Const(expected) =>
       if value != expected {
         [
@@ -114,31 +103,8 @@ fn JsonSchema::validate_internal(
       } else {
         []
       }
-    Ref({ pointer }) =>
-      match resolver.resolve(pointer) {
-        Some(resolved_schema) => {
-          // let opath = ObjectPath::from_json_pointer(ref_expr)
-          let errors = resolved_schema.validate_internal(
-            value,
-            json_path~,
-            // TODO: fix schema_path to reference path
-            schema_path=schema_path.key("$ref"),
-            resolver~,
-          )
-          errors
-        }
-        None =>
-          [
-            ValidationError::new(
-              value,
-              json_path,
-              schema_path.key("$ref"),
-              "Failed to resolve reference '\{pointer}'",
-            ),
-          ]
-      }
-    //   raise RuntimeError::Unsupported("not schema validation not implemented")
-
+    Boolean(s) => s.validate(value, resolver, json_path~, schema_path~)
+    Ref(s) => s.validate(value, resolver, json_path~, schema_path~)
     Null(s) => s.validate(value, resolver, json_path~, schema_path~)
     Any(s) => s.validate(value, resolver, json_path~, schema_path~)
     Number(c) => c.validate(value, resolver, json_path~, schema_path~)

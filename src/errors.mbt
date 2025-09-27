@@ -6,12 +6,6 @@ pub suberror ParseError {
 }
 
 ///|
-/// Runtime errors during validation
-pub suberror RuntimeError {
-  Unsupported(String)
-}
-
-///|
 pub struct ValidationError {
   input : Json
   json_path : JsonPointer
