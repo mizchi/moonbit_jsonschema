@@ -158,7 +158,7 @@ fn generate_type_expr(
         "Json?"
       }
     JsonSchema::Const(_) | JsonSchema::Enum(_) => "Json"
-    JsonSchema::Ref(pointer) =>
+    JsonSchema::Ref({ pointer }) =>
       ref_to_identifier(pointer).unwrap_or("UnresolvedRef")
     _ => "\"unsupported type\""
   }

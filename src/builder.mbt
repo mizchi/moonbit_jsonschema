@@ -205,12 +205,13 @@ pub fn Builder::ref_from_string(
   pointer : String,
 ) -> JsonSchema {
   // TODO: validate pointer
-  JsonPointer::from_string(pointer).unwrap() |> JsonSchema::Ref
+  let p = JsonPointer::from_string(pointer).unwrap()
+  JsonSchema::Ref({ pointer: p })
 }
 
 ///|
 pub fn Builder::ref_(_self : Builder, pointer : JsonPointer) -> JsonSchema {
-  pointer |> JsonSchema::Ref
+  JsonSchema::Ref({ pointer, })
 }
 
 ///|

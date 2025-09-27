@@ -31,7 +31,7 @@ pub enum JsonSchema {
   Enum(Array[Json])
   Const(Json)
   Not(JsonSchema)
-  Ref(JsonPointer)
+  Ref(RefSchema)
   // If(Schema, Schema?, Schema?) // if, then, else
 } derive(Show, Eq)
 
@@ -61,6 +61,7 @@ pub impl ToJson for JsonSchema with to_json(self) -> Json {
     JsonSchema::AllOf(s) => s.to_json_schema()
     JsonSchema::OneOf(s) => s.to_json_schema()
     // wip
+    // Ref(pointer) => { "$ref": pointer.to_string() }
     Ref(pointer) => { "$ref": pointer.to_string() }
     Const(value) => { "const": value }
     Enum(values) => { "enum": values.to_json() }
@@ -81,9 +82,11 @@ pub impl @json.FromJson for JsonSchema with from_json(
     { "type": "any", .. } =>
       AnySchema::from_json(json, json_path) |> JsonSchema::Any
     { "const": value, .. } => Const(value)
-    { "$ref": String(ref_expr), .. } =>
+    { "$ref": String(ref_expr), .. } => {
       // TODO: validate ref_expr
-      JsonPointer::from_string(ref_expr).unwrap() |> Ref
+      let p = JsonPointer::from_string(ref_expr).unwrap()
+      RefSchema::{ pointer: p } |> JsonSchema::Ref
+    }
     { "type": Array(["null", String(item_type)]), .. } => {
       let schema = match item_type {
         "string" => b.string()

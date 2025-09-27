@@ -114,7 +114,7 @@ fn JsonSchema::validate_internal(
       } else {
         []
       }
-    Ref(pointer) =>
+    Ref({ pointer }) =>
       match resolver.resolve(pointer) {
         Some(resolved_schema) => {
           // let opath = ObjectPath::from_json_pointer(ref_expr)
