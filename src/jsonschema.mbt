@@ -114,6 +114,17 @@ pub fn JsonSchema::validate(
 }
 
 ///|
+fn _validate(
+  validator : &Validatable,
+  value : Json,
+  resolver~ : Resolver,
+  json_path? : JsonPointer = JsonPointer::Root,
+  schema_path? : JsonPointer = JsonPointer::Root,
+) -> Array[ValidationError] {
+  validator.validate(value, resolver, json_path~, schema_path~)
+}
+
+///|
 fn JsonSchema::validate_internal(
   self : JsonSchema,
   value : Json,
@@ -170,7 +181,7 @@ pub impl @json.FromJson for JsonSchema with from_json(
         // TODO: raise error if unsupported type
         _ => b.any()
       }
-      b.anyOf([schema, JsonSchema::Null(NullSchema::{  })])
+      b.any_of([schema, JsonSchema::Null(NullSchema::{  })])
     }
     // like a ["null", "string"]
     { "type": @json.Array([String(item_type), "null"]), .. } => {
@@ -182,7 +193,7 @@ pub impl @json.FromJson for JsonSchema with from_json(
         // TODO: raise error if unsupported type
         _ => b.any()
       }
-      b.anyOf([schema, b.null()])
+      b.any_of([schema, b.null()])
     }
     { "type": "object", .. } =>
       ObjectSchema::from_json(json, json_path) |> JsonSchema::Object

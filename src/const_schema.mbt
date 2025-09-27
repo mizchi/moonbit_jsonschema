@@ -9,7 +9,7 @@ impl JsonSchemaSerializable for ConstSchema with to_json_schema(self) {
 }
 
 ///|
-impl JsonSchemaSerializable for ConstSchema with parse(json) {
+impl JsonSchemaSerializable for ConstSchema with parse(_json) {
   ...
 }
 
@@ -47,7 +47,7 @@ impl JsonSchemaSerializable for EnumSchema with to_json_schema(self) {
 }
 
 ///|
-impl JsonSchemaSerializable for EnumSchema with parse(json) {
+impl JsonSchemaSerializable for EnumSchema with parse(_json) {
   ...
 }
 

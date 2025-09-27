@@ -1,6 +1,31 @@
 // JSON Schema Validator tests
 
 ///|
+fn[T, E] assert_ok(x : Result[T, E]) -> Unit {
+  guard x is Ok(_)
+}
+
+///|
+fn[T, E] assert_err(x : Result[T, E]) -> Unit {
+  guard x is Err(_)
+}
+
+///|
+// fn[T : Eq, E] expect_ok(x : Result[T, E], content? : T) -> T raise {
+//   if x is Ok(v) {
+//     if content is Some(content) {
+//       if v == content {
+//         return v
+//       } else {
+//         fail("Ok but content mismatch")
+//       }
+//     }
+//     return x.unwrap()
+//   }
+//   fail("Expected Ok, got Err")
+// }
+
+///|
 test "validate null" {
   let b = Builder::new()
   let schema = b.null()
@@ -305,9 +330,9 @@ test "validate oneOf" {
 ///|
 test "validate allOf" {
   let b = Builder::new()
-  let schema = b.allOf([b.string()])
+  let schema = b.all_of([b.string()])
   schema.validate("hello") |> assert_ok
-  let schema2 = b.allOf([b.string(), b.const_("foo")])
+  let schema2 = b.all_of([b.string(), b.const_("foo")])
   schema2.validate("foo") |> assert_ok
   schema2.validate("bar").unwrap_err()
   |> inspect(
@@ -320,9 +345,9 @@ test "validate allOf" {
 ///|
 test "validate anyOf" {
   let b = Builder::new()
-  let schema = b.anyOf([b.string()])
+  let schema = b.any_of([b.string()])
   schema.validate("hello") |> assert_ok
-  let schema2 = b.anyOf([b.string(), b.const_("foo")])
+  let schema2 = b.any_of([b.string(), b.const_("foo")])
   schema2.validate("foo") |> assert_ok
   schema2.validate(1).unwrap_err()
   |> inspect(
@@ -330,7 +355,7 @@ test "validate anyOf" {
       #|[{input: Number(1), json_path: #, schema_path: #/anyOf/0, message: "Value is not a string", children: None}, {input: Number(1), json_path: #, schema_path: #/anyOf/1, message: "Value does not match constant value String(\"foo\")", children: None}, {input: Number(1), json_path: #, schema_path: #/anyOf, message: "Value does not match any schema in anyOf", children: None}]
     ),
   )
-  let schema3 = b.anyOf([b.string(), b.const_("foo"), b.null()])
+  let schema3 = b.any_of([b.string(), b.const_("foo"), b.null()])
   schema3.validate(null) |> assert_ok
   schema3.validate("foo") |> assert_ok
   schema3.validate("bar") |> assert_ok

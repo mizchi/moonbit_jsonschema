@@ -10,7 +10,7 @@ impl JsonSchemaSerializable for OneOfSchema with to_json_schema(self) {
 }
 
 ///|
-impl JsonSchemaSerializable for OneOfSchema with parse(json) {
+impl JsonSchemaSerializable for OneOfSchema with parse(_json) {
   ...
 }
 
@@ -177,6 +177,7 @@ test "validate enum" {
       b.object(properties={ "a": b.integer() }, required=["a"]),
     ]),
   ])
+  // @test_utils::expect_ok(reschema.validate("D"), "D")
   reschema.validate("Not match") |> assert_err
   reschema.validate(["A", 1, "str"]) |> assert_ok
   reschema.validate(["B", 3.14]) |> assert_ok

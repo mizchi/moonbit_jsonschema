@@ -33,6 +33,7 @@ pub fn Validator::validate(
   input : Json,
 ) -> Result[Unit, Array[ValidationError]] {
   let errors = self.schema.validate_internal(input, resolver=self.resolver)
+  // let errors = self.schema.validate(input, self.resolver)
   if errors.length() == 0 {
     Ok(())
   } else {

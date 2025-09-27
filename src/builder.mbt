@@ -182,7 +182,7 @@ pub fn Builder::enumerable_one_of(
 
 ///|
 /// { "anyOf": [...] }
-pub fn Builder::anyOf(
+pub fn Builder::any_of(
   _self : Builder,
   schemas : Array[JsonSchema],
 ) -> JsonSchema {
@@ -191,7 +191,7 @@ pub fn Builder::anyOf(
 
 ///|
 /// { "allOf": [...] }
-pub fn Builder::allOf(
+pub fn Builder::all_of(
   _self : Builder,
   schemas : Array[JsonSchema],
 ) -> JsonSchema {
@@ -311,5 +311,5 @@ test "convert type: [string, null] to anyOf" {
     #|}
   let jsonschema : Json = @json.parse(input)
   let schema : JsonSchema = @json.from_json(jsonschema)
-  assert_eq(schema, b.anyOf([b.string(), b.null()]))
+  assert_eq(schema, b.any_of([b.string(), b.null()]))
 }

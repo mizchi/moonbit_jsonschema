@@ -22,13 +22,3 @@ fn[T : Eq, E] expect_ok(x : Result[T, E], content? : T) -> T raise {
   }
   fail("Expected Ok, got Err")
 }
-
-///|
-test "validate null" {
-  let t : Result[Int, String] = Ok(42)
-  t |> expect_ok |> inspect(content="42")
-  t |> expect_ok(content=42) |> ignore
-  t |> assert_ok
-  let e : Result[Int, String] = Err("error")
-  e |> assert_err
-}
