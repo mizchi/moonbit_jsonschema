@@ -84,20 +84,20 @@ pub fn Builder::array(
 
 ///|
 /// { "type": "null" }
-pub fn Builder::null(_self : Builder, description? : String) -> JsonSchema {
-  JsonSchema::Null(description~)
+pub fn Builder::null(_self : Builder) -> JsonSchema {
+  Null(NullSchema::{  })
 }
 
 ///|
 /// { "type": "boolean" }
-pub fn Builder::boolean(_self : Builder, description? : String) -> JsonSchema {
-  JsonSchema::Boolean(description~)
+pub fn Builder::boolean(_self : Builder) -> JsonSchema {
+  Boolean(BooleanSchema::{  })
 }
 
 ///|
 /// { "type": "any" }
 pub fn Builder::any(_self : Builder) -> JsonSchema {
-  JsonSchema::Any(AnySchema::{  })
+  Any(AnySchema::{  })
 }
 
 ///|
@@ -106,7 +106,7 @@ pub fn Builder::object(
   _self : Builder,
   properties? : Map[String, JsonSchema],
   required? : Array[String],
-  additionalProperties? : JsonSchema,
+  additional_properties? : JsonSchema,
   // patternProperties? : Map[String, JsonSchema],
   // propertyNames? : JsonSchema,
   // dependentSchemas? : Map[String, JsonSchema],
@@ -117,21 +117,22 @@ pub fn Builder::object(
   required_all? : Bool = false,
 ) -> JsonSchema {
   JsonSchema::Object(ObjectSchema::{
-    // description,
-    properties,
-    required: if required_all && properties is Some(props) {
-      props.keys().to_array() |> Some
-    } else {
-      required
+      // description,
+      properties,
+      required: if required_all && properties is Some(props) {
+        props.keys().to_array() |> Some
+      } else {
+        required
+      },
+      additional_properties,
     },
-    additional_properties: additionalProperties,
     // pattern_properties: patternProperties,
     // property_names: propertyNames,
     // dependent_schemas: dependentSchemas,
     // dependent_required: dependentRequired,
     // min_properties: minProperties,
     // max_properties: maxProperties,
-  })
+  )
 }
 
 ///|

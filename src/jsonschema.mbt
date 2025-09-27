@@ -1,7 +1,7 @@
 // JSON Schema types and definitions
 
 ///|
-trait Validatable {
+priv trait Validatable {
   parse(Json) -> Result[JsonSchema, String]
   to_json_schema(Self) -> Json
   validate(
@@ -17,18 +17,19 @@ trait Validatable {
 /// JsonSchema
 pub enum JsonSchema {
   Any(AnySchema)
-  Null(description~ : String?)
-  Boolean(description~ : String?)
+  Null(NullSchema)
+  Boolean(BooleanSchema)
   String(StringSchema)
   Number(NumberConstraint)
   Integer(NumberConstraint)
   Array(ArraySchema)
   Object(ObjectSchema)
-  Enum(Array[Json])
-  Const(Json)
   AnyOf(AnyOfSchema)
   AllOf(AllOfSchema)
   OneOf(OneOfSchema)
+  //wip
+  Enum(Array[Json])
+  Const(Json)
   Not(JsonSchema)
   Ref(JsonPointer)
   // If(Schema, Schema?, Schema?) // if, then, else
@@ -48,20 +49,21 @@ fn with_type_property(json : Json, type_name : String) -> Json {
 ///|
 pub impl ToJson for JsonSchema with to_json(self) -> Json {
   match self {
-    Any(schema) => schema.to_json_schema()
-    Null(_) => { "type": "null" }
-    Boolean(_) => { "type": "boolean" }
-    String(schema) => schema.to_json_schema()
-    Number(schema) => schema.to_json_schema()
-    Integer(schema) => schema.to_json_schema()
-    Array(schema) => schema.to_json_schema()
-    Object(schema) => schema.to_json_schema()
-    Ref(pointer) => { "$ref": pointer.to_string() }
-    Const(value) => { "const": value }
-    Enum(values) => { "enum": values.to_json() }
+    Any(s) => s.to_json_schema()
+    Null(s) => s.to_json_schema()
+    Boolean(s) => s.to_json_schema()
+    String(s) => s.to_json_schema()
+    Number(s) => s.to_json_schema()
+    Integer(s) => s.to_json_schema()
+    Array(s) => s.to_json_schema()
+    Object(s) => s.to_json_schema()
     JsonSchema::AnyOf(s) => s.to_json_schema()
     JsonSchema::AllOf(s) => s.to_json_schema()
     JsonSchema::OneOf(s) => s.to_json_schema()
+    // wip
+    Ref(pointer) => { "$ref": pointer.to_string() }
+    Const(value) => { "const": value }
+    Enum(values) => { "enum": values.to_json() }
     JsonSchema::Not(schema) => { "not": schema }
   }
 }
@@ -73,10 +75,6 @@ pub impl @json.FromJson for JsonSchema with from_json(
 ) -> JsonSchema raise {
   guard json is Json::Object(obj) else {
     raise @json.JsonDecodeError((json_path, "Expected an object"))
-  }
-  let description = match obj.get("description") {
-    Some(String(desc)) => Some(desc)
-    _ => None
   }
   let b = Builder::new()
   match obj {
@@ -95,7 +93,7 @@ pub impl @json.FromJson for JsonSchema with from_json(
         // TODO: raise error if unsupported type
         _ => b.any()
       }
-      b.anyOf([schema, JsonSchema::Null(description=None)])
+      b.anyOf([schema, JsonSchema::Null(NullSchema::{  })])
     }
     // like a ["null", "string"]
     { "type": @json.Array([String(item_type), "null"]), .. } => {
@@ -113,8 +111,8 @@ pub impl @json.FromJson for JsonSchema with from_json(
       ObjectSchema::from_json(json, json_path) |> JsonSchema::Object
     { "type": "array", .. } =>
       ArraySchema::from_json(json, json_path) |> JsonSchema::Array
-    { "type": "null", .. } => JsonSchema::Null(description~)
-    { "type": "boolean", .. } => JsonSchema::Boolean(description~)
+    { "type": "null", .. } => JsonSchema::Null(NullSchema::{  })
+    { "type": "boolean", .. } => JsonSchema::Boolean(BooleanSchema::{  })
     { "type": "string", .. } =>
       StringSchema::from_json(json, json_path) |> JsonSchema::String
     { "type": "number", .. } =>
@@ -179,4 +177,84 @@ impl Validatable for AnySchema with validate(
 ) {
   ignore((json_path, schema_path))
   []
+}
+
+///|
+pub struct NullSchema {} derive(Show, Eq, FromJson, ToJson)
+
+///|
+impl Validatable for NullSchema with to_json_schema(_self) {
+  with_type_property({}, "null")
+}
+
+///|
+impl Validatable for NullSchema with parse(json) {
+  if not(json is { "type": "null", .. }) {
+    return Err("Expected an object for NullSchema".to_string())
+  }
+  try {
+    let v : NullSchema = @json.from_json(json)
+    v |> JsonSchema::Null |> Ok
+  } catch {
+    _ => Err("Failed to parse NullSchema".to_string())
+  }
+}
+
+///|
+impl Validatable for NullSchema with validate(
+  _self,
+  value,
+  _resolver,
+  json_path~,
+  schema_path~,
+) {
+  ignore((json_path, schema_path))
+  match value {
+    @json.Null => []
+    _ =>
+      [ValidationError::new(value, json_path, schema_path, "Value is not null")]
+  }
+  // []
+}
+
+///|
+pub struct BooleanSchema {} derive(Show, Eq, FromJson, ToJson)
+
+///|
+impl Validatable for BooleanSchema with to_json_schema(_self) {
+  with_type_property({}, "boolean")
+}
+
+///|
+impl Validatable for BooleanSchema with parse(json) {
+  if not(json is { "type": "boolean", .. }) {
+    return Err("Expected an object for NullSchema".to_string())
+  }
+  try {
+    let v : BooleanSchema = @json.from_json(json)
+    v |> JsonSchema::Boolean |> Ok
+  } catch {
+    _ => Err("Failed to parse NullSchema".to_string())
+  }
+}
+
+///|
+impl Validatable for BooleanSchema with validate(
+  _self,
+  value,
+  _resolver,
+  json_path~,
+  schema_path~,
+) {
+  ignore((json_path, schema_path))
+  match value {
+    @json.True => []
+    @json.False => []
+    _ =>
+      [
+        ValidationError::new(
+          value, json_path, schema_path, "Value is not a boolean",
+        ),
+      ]
+  }
 }

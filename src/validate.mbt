@@ -73,17 +73,6 @@ fn JsonSchema::validate_internal(
             ),
           ]
       }
-    Null(_) =>
-      match value {
-        @json.Null => []
-        _ =>
-          [
-            ValidationError::new(
-              value, json_path, schema_path, "Value is not null",
-            ),
-          ]
-      }
-    Any(_) => []
     Const(expected) =>
       if value != expected {
         [
@@ -112,10 +101,6 @@ fn JsonSchema::validate_internal(
       }
       c.validate(value, resolver, json_path~, schema_path~)
     }
-    Number(c) => c.validate(value, resolver, json_path~, schema_path~)
-    String(c) => c.validate(value, resolver, json_path~, schema_path~)
-    Array(c) => c.validate(value, resolver, json_path~, schema_path~)
-    Object(v) => v.validate(value, resolver, json_path~, schema_path~)
     Enum(enum_values) =>
       if !enum_values.contains(value) {
         [
@@ -152,12 +137,20 @@ fn JsonSchema::validate_internal(
             ),
           ]
       }
-    Not(_schema) =>
-      // TODO: implement Not validation
-      []
     //   raise RuntimeError::Unsupported("not schema validation not implemented")
+
+    Null(s) => s.validate(value, resolver, json_path~, schema_path~)
+    Any(s) => s.validate(value, resolver, json_path~, schema_path~)
+    Number(c) => c.validate(value, resolver, json_path~, schema_path~)
+    String(c) => c.validate(value, resolver, json_path~, schema_path~)
+    Array(c) => c.validate(value, resolver, json_path~, schema_path~)
+    Object(v) => v.validate(value, resolver, json_path~, schema_path~)
     AllOf(s) => s.validate(value, resolver, json_path~, schema_path~)
     OneOf(s) => s.validate(value, resolver, json_path~, schema_path~)
     AnyOf(s) => s.validate(value, resolver, json_path~, schema_path~)
+    // WIP
+    Not(_schema) =>
+      // TODO: implement Not validation
+      []
   }
 }

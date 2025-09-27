@@ -228,7 +228,7 @@ test "validate object with additionalProperties" {
   let schema2 = b.object(
     properties={ "name": b.string() },
     required=["name"],
-    additionalProperties=b.string(),
+    additional_properties=b.string(),
   )
   schema2.validate({ "name": "John" }) |> assert_ok
   schema2.validate({ "name": "John", "ex1": "x" }).unwrap()

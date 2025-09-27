@@ -46,7 +46,7 @@ fn generate_typescript(
     JsonSchema::String(_) => "string"
     JsonSchema::Number(_) => "number"
     JsonSchema::Integer(_) => "number"
-    JsonSchema::Boolean(..) => "boolean"
+    JsonSchema::Boolean(_) => "boolean"
     JsonSchema::OneOf({ schemas }) =>
       if schemas.length() == 2 {
         match schemas {
