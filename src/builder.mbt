@@ -25,7 +25,7 @@ pub fn Builder::new() -> Builder {
 }
 
 ///|
-pub fn define_schema(
+pub fn Builder::define_schema(
   self : Builder,
   pointer : JsonPointer,
   schema : JsonSchema,

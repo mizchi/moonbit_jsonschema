@@ -9,7 +9,7 @@ fn render_enumerable(
   pointer~ : JsonPointer,
 ) -> String {
   let logger = StringBuilder::new()
-  logger..write_string(prefix)..write_string("enum \{enum_name} {")
+  logger..write_string(prefix).write_string("enum \{enum_name} {")
   for subschema in enumerable {
     // Tag
     let has_args = subschema.positionals is Some(_) ||
@@ -106,7 +106,6 @@ test "Parse [tagKey, {...}] for moonbit enum" {
       #|
       #|// #/definitions/Num
       #|pub struct Num(Int) derive(Eq, Show, FromJson, ToJson)
-
     ),
   )
 }
@@ -158,7 +157,6 @@ test "all refs in oneOf to enum union types" {
       #|  b: String?
       #|} derive(Eq, Show, FromJson, ToJson)
       #|
-
     ),
   )
 }

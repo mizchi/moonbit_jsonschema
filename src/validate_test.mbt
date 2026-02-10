@@ -25,7 +25,10 @@ fn[T, E] assert_ok(x : Result[T, E]) -> Unit {
 //   fail("Expected Ok, got Err")
 // }
 
-fn expect_validate_ok(self : JsonSchema, value : Json) -> Unit raise {
+fn JsonSchema::expect_validate_ok(
+  self : JsonSchema,
+  value : Json,
+) -> Unit raise {
   let resolver = build_resolver({})
   let errors = self.validate(
     value,
@@ -40,7 +43,10 @@ fn expect_validate_ok(self : JsonSchema, value : Json) -> Unit raise {
 }
 
 ///|
-fn expect_validate_err(self : JsonSchema, value : Json) -> Unit raise {
+fn JsonSchema::expect_validate_err(
+  self : JsonSchema,
+  value : Json,
+) -> Unit raise {
   let resolver = build_resolver({})
   let errors = self.validate(
     value,

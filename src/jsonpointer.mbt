@@ -10,12 +10,12 @@ pub(all) enum JsonPointer {
 } derive(Eq, Hash, FromJson, ToJson)
 
 ///|
-pub fn index(self : JsonPointer, index : Int) -> JsonPointer {
+pub fn JsonPointer::index(self : JsonPointer, index : Int) -> JsonPointer {
   Index(self, index~)
 }
 
 ///|
-pub fn key(self : JsonPointer, key : String) -> JsonPointer {
+pub fn JsonPointer::key(self : JsonPointer, key : String) -> JsonPointer {
   Key(self, key~)
 }
 
@@ -23,15 +23,14 @@ pub fn key(self : JsonPointer, key : String) -> JsonPointer {
 pub impl Show for JsonPointer with output(self, logger) {
   match self {
     Root => logger.write_string("#")
-    Key(p, key~) =>
-      logger..write_object(p)..write_string("/")..write_string(key)
+    Key(p, key~) => logger..write_object(p)..write_string("/").write_string(key)
     Index(p, index~) =>
-      logger..write_object(p)..write_string("/")..write_object(index)
+      logger..write_object(p)..write_string("/").write_object(index)
   }
 }
 
 ///|
-pub fn access(self : JsonPointer, json : Json) -> Json? {
+pub fn JsonPointer::access(self : JsonPointer, json : Json) -> Json? {
   match self {
     Root => Some(json)
     Key(parent, key~) =>

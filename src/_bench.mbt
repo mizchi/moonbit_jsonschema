@@ -13,8 +13,5 @@ test (b : @bench.T) {
     ),
   )
   let validator = build_validator(jsonschema)
-  b.bench(fn() {
-    let _ = validator.validate({ "name": "Alice", "age": 30.0 })
-
-  })
+  b.bench(fn() { let _ = validator.validate({ "name": "Alice", "age": 30.0 }) })
 }

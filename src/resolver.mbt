@@ -34,17 +34,17 @@ pub fn Resolver::new(root_json : Json) -> Resolver raise ParseError {
 }
 
 ///|
-pub fn resolve(self : Resolver, pointer : JsonPointer) -> JsonSchema? {
+pub fn Resolver::resolve(self : Resolver, pointer : JsonPointer) -> JsonSchema? {
   self.resolver_map.get(pointer)
 }
 
 ///|
-pub fn has(self : Resolver, ref_expr : JsonPointer) -> Bool {
+pub fn Resolver::has(self : Resolver, ref_expr : JsonPointer) -> Bool {
   self.resolver_map.contains(ref_expr)
 }
 
 ///|
-pub fn get_refs(self : Resolver) -> Array[JsonPointer] {
+pub fn Resolver::get_refs(self : Resolver) -> Array[JsonPointer] {
   self.resolver_map.keys().to_array()
 }
 

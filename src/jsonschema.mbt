@@ -127,19 +127,19 @@ pub impl @json.FromJson for JsonSchema with from_json(
       IntegerSchema::from_json(json, json_path) |> JsonSchema::Integer
     { "anyOf": Array(schemas), .. } =>
       JsonSchema::AnyOf({
-        schemas: schemas.map(fn(s) {
+        schemas: schemas.map(s => {
           @json.from_json(s, path=json_path.add_key("anyOf"))
         }),
       })
     { "allOf": Array(schemas), .. } =>
       JsonSchema::AllOf({
-        schemas: schemas.map(fn(s) {
+        schemas: schemas.map(s => {
           @json.from_json(s, path=json_path.add_key("allOf"))
         }),
       })
     { "oneOf": Array(schemas), .. } =>
       JsonSchema::OneOf({
-        schemas: schemas.mapi(fn(i, s) {
+        schemas: schemas.mapi((i, s) => {
           @json.from_json(s, path=json_path.add_key("oneOf").add_index(i))
         }),
         parsed_enumerable: None,

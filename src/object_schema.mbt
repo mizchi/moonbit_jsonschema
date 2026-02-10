@@ -97,7 +97,7 @@ impl Validatable for ObjectSchema with validate(
       )
       errors.append(child_errors)
     }
-  } else if additional_props.size() > 0 {
+  } else if additional_props.length() > 0 {
     for key in additional_props {
       errors.push(
         ValidationError::new(
