@@ -13,7 +13,7 @@ impl JsonSchemaSerializable for OneOfSchema with to_json_schema(self) {
 
 ///|
 impl JsonSchemaSerializable for OneOfSchema with parse(_json) {
-  ...
+  abort("not implemented")
 }
 
 ///|

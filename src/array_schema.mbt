@@ -54,7 +54,7 @@ impl Validatable for ArraySchema with validate(
   json_path~,
   schema_path~,
 ) {
-  guard value is @json.Array(array) else {
+  guard value is Array(array) else {
     return [
       ValidationError::new(
         value, json_path, schema_path, "Value is not an array",

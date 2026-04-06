@@ -44,7 +44,7 @@ impl Validatable for ObjectSchema with validate(
   json_path~,
   schema_path~,
 ) {
-  guard value is @json.Object(obj) else {
+  guard value is Object(obj) else {
     return [
       ValidationError::new(
         value,
@@ -97,7 +97,7 @@ impl Validatable for ObjectSchema with validate(
       )
       errors.append(child_errors)
     }
-  } else if additional_props.size() > 0 {
+  } else if additional_props.length() > 0 {
     for key in additional_props {
       errors.push(
         ValidationError::new(

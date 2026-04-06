@@ -1,12 +1,12 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "mizchi/jsonschema/codegen"
 
-import(
-  "mizchi/jsonschema"
-)
+import {
+  "mizchi/jsonschema",
+}
 
 // Values
-fn generate(Json, Array[@jsonschema.JsonPointer], root_name? : String, include_refs? : Bool, prefix? : String) -> Result[String, String] raise
+pub fn generate(Json, Array[@jsonschema.JsonPointer], root_name? : String, include_refs? : Bool, prefix? : String) -> Result[String, String] raise
 
 // Errors
 

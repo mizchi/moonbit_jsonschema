@@ -1,36 +1,67 @@
-name: stable-check
+name: CI
 
 on:
   push:
     branches:
       - main
   pull_request:
-  merge_group:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  test:
-    runs-on: "ubuntu-latest"
+  lint:
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: install
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup just
+        uses: extractions/setup-just@v3
+      - name: Install MoonBit CLI
         run: |
           curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
-          echo "$HOME/.moon/bin" >> $GITHUB_PATH
-      - name: moon version
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+      - name: Moon version
+        run: moon version --all
+      - name: Moon update
+        run: moon update
+      - name: Verify format
+        run: just fmt-check
+      - name: Verify generated interfaces
+        run: just info-check
+
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: wasm-gc
+          - os: ubuntu-latest
+            target: js
+          - os: ubuntu-latest
+            target: native
+          - os: macos-latest
+            target: native
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup just
+        uses: extractions/setup-just@v3
+      - name: Install MoonBit CLI
         run: |
-          moon version --all
-          moonrun --version
-      - name: check
-        run: moon check --deny-warn --target all
-      - name: moon info
-        run: |
-          moon info --target wasm,wasm-gc,js,native
-          git diff --exit-code
-      - name: format diff
-        run: |
-          moon fmt
-          git diff --exit-code
-      - name: Set ulimit and run moon test
-        run: |
-          ulimit -s 8176
-          moon test --target all
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+      - name: Moon version
+        run: moon version --all
+      - name: Moon update
+        run: moon update
+      - name: Moon check
+        run: just target=${{ matrix.target }} check
+      - name: Moon test
+        run: just target=${{ matrix.target }} test

@@ -114,7 +114,7 @@ fn generate_stmt(
       }
       inner
       ..write_string("} derive(Eq, Show, FromJson, ToJson)\n")
-      ..write_string(outer.to_string())
+      .write_string(outer.to_string())
       inner.to_string() |> Ok
     }
     Integer(_) | Number(_) | String(_) | Boolean(_) | Ref(_) => {
@@ -235,7 +235,7 @@ test "mbt code generation" {
 }
 
 ///|
-test "mbt code generation with inner struct" (t : @test.T) {
+test "mbt code generation with inner struct" (t : @test.Test) {
   let schema : Json = @json.parse(
     (
       #|{
@@ -269,7 +269,7 @@ test "mbt code generation with inner struct" (t : @test.T) {
   let jschema : JsonSchema = @json.from_json(schema)
   let resolver = @jsonschema.build_resolver(schema)
   let code = generate_stmt(jschema, "MyStruct", resolver~)
-  t..write(code.unwrap())..snapshot(filename="nested_struct.mbt")
+  t..write(code.unwrap()).snapshot(filename="nested_struct.mbt")
 }
 
 ///|
@@ -369,7 +369,7 @@ test "generate_mbt_code" {
 }
 
 ///|
-test "render nested enumberable" (t : @test.T) {
+test "render nested enumberable" (t : @test.Test) {
   let raw : Json = {
     "definitions": {
       "V": {
@@ -407,7 +407,7 @@ test "render nested enumberable" (t : @test.T) {
 }
 
 ///|
-test "stmt" (t : @test.T) {
+test "stmt" (t : @test.Test) {
   let raw : Json = {
     "definitions": {
       "Obj": {
@@ -453,7 +453,7 @@ test "generate ref entry" {
 }
 
 ///|
-test "enumerable schema can parse itself" (_t : @test.T) {
+test "enumerable schema can parse itself" (_t : @test.Test) {
   // TODO: Fix
   let b = @jsonschema.Builder::new()
   let s = b.one_of([

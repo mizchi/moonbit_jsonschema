@@ -1,8 +1,8 @@
 ///|
-typealias @jsonschema.JsonPointer
+using @jsonschema {type JsonPointer}
 
 ///|
-typealias @jsonschema.JsonSchema
+using @jsonschema {type JsonSchema}
 
 ///|
-typealias @jsonschema.Enumerable
+using @jsonschema {type Enumerable}

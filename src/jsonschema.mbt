@@ -127,19 +127,19 @@ pub impl @json.FromJson for JsonSchema with from_json(
       IntegerSchema::from_json(json, json_path) |> JsonSchema::Integer
     { "anyOf": Array(schemas), .. } =>
       JsonSchema::AnyOf({
-        schemas: schemas.map(fn(s) {
+        schemas: schemas.map(s => {
           @json.from_json(s, path=json_path.add_key("anyOf"))
         }),
       })
     { "allOf": Array(schemas), .. } =>
       JsonSchema::AllOf({
-        schemas: schemas.map(fn(s) {
+        schemas: schemas.map(s => {
           @json.from_json(s, path=json_path.add_key("allOf"))
         }),
       })
     { "oneOf": Array(schemas), .. } =>
       JsonSchema::OneOf({
-        schemas: schemas.mapi(fn(i, s) {
+        schemas: schemas.mapi((i, s) => {
           @json.from_json(s, path=json_path.add_key("oneOf").add_index(i))
         }),
         parsed_enumerable: None,
@@ -163,7 +163,7 @@ impl JsonSchemaSerializable for AnySchema with to_json_schema(_self) {
 
 ///|
 impl JsonSchemaSerializable for AnySchema with parse(json) {
-  if not(json is { "type": "any", .. }) {
+  if !(json is { "type": "any", .. }) {
     return Err("Expected an object for AnySchema".to_string())
   }
   try {
@@ -196,7 +196,7 @@ impl JsonSchemaSerializable for NullSchema with to_json_schema(_self) {
 
 ///|
 impl JsonSchemaSerializable for NullSchema with parse(json) {
-  if not(json is { "type": "null", .. }) {
+  if !(json is { "type": "null", .. }) {
     return Err("Expected an object for NullSchema".to_string())
   }
   try {
@@ -217,7 +217,7 @@ impl Validatable for NullSchema with validate(
 ) {
   ignore((json_path, schema_path, resolver))
   match value {
-    @json.Null => []
+    Null => []
     _ =>
       [ValidationError::new(value, json_path, schema_path, "Value is not null")]
   }
@@ -234,7 +234,7 @@ impl JsonSchemaSerializable for BooleanSchema with to_json_schema(_self) {
 
 ///|
 impl JsonSchemaSerializable for BooleanSchema with parse(json) {
-  if not(json is { "type": "boolean", .. }) {
+  if !(json is { "type": "boolean", .. }) {
     return Err("Expected an object for NullSchema".to_string())
   }
   try {
@@ -255,8 +255,8 @@ impl Validatable for BooleanSchema with validate(
 ) {
   ignore((json_path, schema_path, resolver))
   match value {
-    @json.True => []
-    @json.False => []
+    True => []
+    False => []
     _ =>
       [
         ValidationError::new(

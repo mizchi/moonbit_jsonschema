@@ -10,7 +10,7 @@ impl JsonSchemaSerializable for ConstSchema with to_json_schema(self) {
 
 ///|
 impl JsonSchemaSerializable for ConstSchema with parse(_json) {
-  ...
+  abort("not implemented")
 }
 
 ///|
@@ -49,7 +49,7 @@ impl JsonSchemaSerializable for EnumSchema with to_json_schema(self) {
 
 ///|
 impl JsonSchemaSerializable for EnumSchema with parse(_json) {
-  ...
+  abort("not implemented")
 }
 
 ///|

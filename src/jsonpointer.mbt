@@ -10,12 +10,12 @@ pub(all) enum JsonPointer {
 } derive(Eq, Hash, FromJson, ToJson)
 
 ///|
-pub fn index(self : JsonPointer, index : Int) -> JsonPointer {
+pub fn JsonPointer::index(self : JsonPointer, index : Int) -> JsonPointer {
   Index(self, index~)
 }
 
 ///|
-pub fn key(self : JsonPointer, key : String) -> JsonPointer {
+pub fn JsonPointer::key(self : JsonPointer, key : String) -> JsonPointer {
   Key(self, key~)
 }
 
@@ -23,15 +23,14 @@ pub fn key(self : JsonPointer, key : String) -> JsonPointer {
 pub impl Show for JsonPointer with output(self, logger) {
   match self {
     Root => logger.write_string("#")
-    Key(p, key~) =>
-      logger..write_object(p)..write_string("/")..write_string(key)
+    Key(p, key~) => logger..write_object(p)..write_string("/").write_string(key)
     Index(p, index~) =>
-      logger..write_object(p)..write_string("/")..write_object(index)
+      logger..write_object(p)..write_string("/").write_object(index)
   }
 }
 
 ///|
-pub fn access(self : JsonPointer, json : Json) -> Json? {
+pub fn JsonPointer::access(self : JsonPointer, json : Json) -> Json? {
   match self {
     Root => Some(json)
     Key(parent, key~) =>
@@ -57,55 +56,46 @@ pub fn access(self : JsonPointer, json : Json) -> Json? {
 pub fn JsonPointer::from_string(
   pointer : String,
 ) -> Result[JsonPointer, String] {
-  try {
-    if pointer == "#" || pointer == "" {
-      return Ok(Root)
-    }
-    let normalized = try {
-      // Remove leading # or #/ if present
-      if pointer.has_prefix("#/") {
-        pointer[2:]
-      } else if pointer.has_prefix("#") {
-        pointer[1:]
-      } else if pointer.has_prefix("/") {
-        pointer[1:]
-      } else {
-        pointer
-      }
-    } catch {
-      _ =>
-        raise ParseError::PointerParseError("Invalid JSON Pointer: \{pointer}")
-    }
-
-    // Split by / and build path
-    let parts = normalized.split("/")
-    let mut path = Root
-    for part in parts {
-      if part == "" {
-        continue
-      }
-      let part_str = part.to_string()
-
-      // Check if this is a number (array index)
-      let is_digit = fn(c : Char) -> Bool { c >= '0' && c <= '9' }
-      let is_number = part_str.length() > 0 && part_str.iter().all(is_digit)
-      if is_number {
-        let mut num = 0
-        for ch in part_str.iter() {
-          num = num * 10 + (ch.to_int() - '0'.to_int())
-        }
-        path = path.index(num)
-      } else {
-        let unescaped = part_str
-          .replace(old="~1", new="/")
-          .replace(old="~0", new="~")
-        path = path.key(unescaped)
-      }
-    }
-    path |> Ok
-  } catch {
-    _ => Err("Failed to parse pointer")
+  if pointer == "#" || pointer == "" {
+    return Ok(Root)
   }
+  // Remove leading # or #/ if present
+  let normalized = if pointer.has_prefix("#/") {
+    pointer[2:]
+  } else if pointer.has_prefix("#") {
+    pointer[1:]
+  } else if pointer.has_prefix("/") {
+    pointer[1:]
+  } else {
+    pointer
+  }
+
+  // Split by / and build path
+  let parts = normalized.split("/")
+  let mut path = Root
+  for part in parts {
+    if part == "" {
+      continue
+    }
+    let part_str = part.to_string()
+
+    // Check if this is a number (array index)
+    let is_digit = fn(c : Char) -> Bool { c >= '0' && c <= '9' }
+    let is_number = part_str.length() > 0 && part_str.iter().all(is_digit)
+    if is_number {
+      let mut num = 0
+      for ch in part_str.iter() {
+        num = num * 10 + (ch.to_int() - '0'.to_int())
+      }
+      path = path.index(num)
+    } else {
+      let unescaped = part_str
+        .replace(old="~1", new="/")
+        .replace(old="~0", new="~")
+      path = path.key(unescaped)
+    }
+  }
+  path |> Ok
 }
 
 ///|

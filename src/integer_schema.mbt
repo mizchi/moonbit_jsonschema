@@ -49,7 +49,7 @@ impl Validatable for IntegerSchema with validate(
   schema_path~,
 ) {
   ignore(resolver)
-  guard value is @json.Number(input, ..) && input == input.to_int().to_double() else {
+  guard value is Number(input, ..) && input == input.to_int().to_double() else {
     return [
       ValidationError::new(
         value, json_path, schema_path, "Value is not a number",
