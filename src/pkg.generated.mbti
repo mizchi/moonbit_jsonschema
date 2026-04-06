@@ -13,8 +13,6 @@ pub fn build_validator(Json) -> Validator raise
 
 pub fn collect_refs(Json) -> @set.Set[String]
 
-pub fn emit_json_schema(Builder) -> Json
-
 // Errors
 pub suberror ParseError {
   JsonDecodeError(@json.JsonDecodeError)
@@ -42,21 +40,19 @@ pub struct ArraySchema {
   max_contains : Int?
   min_items : Int?
   max_items : Int?
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, Show, @json.FromJson)
 
 pub struct BooleanSchema {
 } derive(Eq, Show, ToJson, @json.FromJson)
 
 pub struct Builder {
-  // private fields
-}
+} derive(Eq, Show)
 pub fn Builder::all_of(Self, Array[JsonSchema]) -> JsonSchema
 pub fn Builder::any(Self) -> JsonSchema
 pub fn Builder::any_of(Self, Array[JsonSchema]) -> JsonSchema
 pub fn Builder::array(Self, items? : JsonSchema, prefix_items? : Array[JsonSchema], contains? : JsonSchema, min_contains? : Int, max_contains? : Int, min_items? : Int, max_items? : Int) -> JsonSchema
 pub fn Builder::boolean(Self) -> JsonSchema
 pub fn Builder::const_(Self, Json) -> JsonSchema
-pub fn Builder::define_schema(Self, JsonPointer, JsonSchema) -> RefSchema
 pub fn Builder::enum_(Self, Array[Json]) -> JsonSchema
 pub fn Builder::enumerable_one_of(Self, String, Array[JsonSchema], params~ : JsonSchema?) -> JsonSchema
 pub fn Builder::integer(Self, minimum? : Int, maximum? : Int, exclusive_minimum? : Int, exclusive_maximum? : Int) -> JsonSchema
@@ -115,7 +111,6 @@ pub enum JsonSchema {
   Const(ConstSchema)
 } derive(Eq, Show)
 pub impl Validatable for JsonSchema
-pub impl ToJson for JsonSchema
 pub impl @json.FromJson for JsonSchema
 
 pub struct NullSchema {
@@ -132,7 +127,7 @@ pub struct ObjectSchema {
   properties : Map[String, JsonSchema]?
   required : Array[String]?
   additional_properties : JsonSchema?
-} derive(Eq, Show, ToJson, @json.FromJson)
+} derive(Eq, Show, @json.FromJson)
 
 pub struct OneOfSchema {
   schemas : Array[JsonSchema]

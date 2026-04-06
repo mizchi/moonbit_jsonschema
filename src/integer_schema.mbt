@@ -25,22 +25,6 @@ struct IntegerSchema {
 )
 
 ///|
-impl JsonSchemaSerializable for IntegerSchema with to_json_schema(self) {
-  with_type_property(self.to_json(), "integer")
-}
-
-///|
-impl JsonSchemaSerializable for IntegerSchema with parse(json) {
-  try {
-    let v : IntegerSchema = @json.from_json(json)
-    v |> JsonSchema::Integer |> Ok
-  } catch {
-    _ => Err("Failed to parse IntegerSchema".to_string())
-  }
-  // parsed |> Ok
-}
-
-///|
 impl Validatable for IntegerSchema with validate(
   self,
   value,

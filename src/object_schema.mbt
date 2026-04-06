@@ -13,28 +13,7 @@ pub struct ObjectSchema {
       property_names(rename="propertyNames"),
     ),
   ),
-  ToJson(
-    fields(
-      additional_properties(rename="additionalProperties"),
-      pattern_properties(rename="patternProperties"),
-    ),
-  ),
 )
-
-///|
-impl JsonSchemaSerializable for ObjectSchema with to_json_schema(self) {
-  with_type_property(self.to_json(), "object")
-}
-
-///|
-impl JsonSchemaSerializable for ObjectSchema with parse(json) {
-  try {
-    let v : ObjectSchema = @json.from_json(json)
-    v |> JsonSchema::Object |> Ok
-  } catch {
-    _ => Err("Failed to parse StringConstraint".to_string())
-  }
-}
 
 ///|
 impl Validatable for ObjectSchema with validate(

@@ -25,22 +25,6 @@ pub struct NumberSchema {
 )
 
 ///|
-impl JsonSchemaSerializable for NumberSchema with to_json_schema(self) {
-  with_type_property(self.to_json(), "number")
-}
-
-///|
-impl JsonSchemaSerializable for NumberSchema with parse(json) {
-  try {
-    let v : NumberSchema = @json.from_json(json)
-    v |> JsonSchema::Number |> Ok
-  } catch {
-    _ => Err("Failed to parse StringConstraint".to_string())
-  }
-  // parsed |> Ok
-}
-
-///|
 impl Validatable for NumberSchema with validate(
   self,
   value,

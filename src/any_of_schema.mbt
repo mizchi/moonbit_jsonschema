@@ -4,16 +4,6 @@ pub struct AnyOfSchema {
 } derive(Show, Eq)
 
 ///|
-impl JsonSchemaSerializable for AnyOfSchema with to_json_schema(self) {
-  { "anyOf": self.schemas.map(fn(s) { s.to_json() }) }
-}
-
-///|
-impl JsonSchemaSerializable for AnyOfSchema with parse(_json) {
-  abort("not implemented")
-}
-
-///|
 impl Validatable for AnyOfSchema with validate(
   self,
   value,

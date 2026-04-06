@@ -23,22 +23,6 @@ pub struct StringSchema {
 )
 
 ///|
-impl JsonSchemaSerializable for StringSchema with to_json_schema(self) {
-  with_type_property(self.to_json(), "string")
-}
-
-///|
-impl JsonSchemaSerializable for StringSchema with parse(json) {
-  try {
-    let v : StringSchema = @json.from_json(json)
-    v |> JsonSchema::String |> Ok
-  } catch {
-    _ => Err("Failed to parse StringConstraint".to_string())
-  }
-  // parsed |> Ok
-}
-
-///|
 impl Validatable for StringSchema with validate(
   self,
   input,
@@ -92,7 +76,7 @@ impl Validatable for StringSchema with validate(
 ///|
 test "StringConstraint::from_json validate and to_json" {
   let json : Json = { "type": "string" }
-  let s = StringSchema::parse(json).unwrap()
+  let s : JsonSchema = @json.from_json(json)
   let resolver = build_resolver({})
   s.validate(
     "hell",
@@ -101,7 +85,6 @@ test "StringConstraint::from_json validate and to_json" {
     schema_path=JsonPointer::Root,
   )
   |> assert_eq([])
-  s.to_json() |> assert_eq(json)
 }
 
 ///|

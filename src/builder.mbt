@@ -14,36 +14,11 @@
 /// )
 /// let _result = schema.validate({ "name": "Alice", "age": 30.0 }).unwrap()
 /// ```
-pub struct Builder {
-  priv internal_state : Map[JsonPointer, JsonSchema]
-}
+pub struct Builder {} derive(Show, Eq)
 
 ///|
 pub fn Builder::new() -> Builder {
-  // TODO: use with resolver later
-  Builder::{ internal_state: Map::new() }
-}
-
-///|
-pub fn Builder::define_schema(
-  self : Builder,
-  pointer : JsonPointer,
-  schema : JsonSchema,
-) -> RefSchema {
-  self.internal_state.set(pointer, schema)
-  RefSchema::{ pointer, }
-  // Builder::{ internal_state: Map::new().set(name, schema) }
-}
-
-///|
-pub fn emit_json_schema(_self : Builder) -> Json {
-  let raw : Json = {}
-  // set json[...] = Schema.to_json() for each schema
-  // for pointer, schema in self.internal_state {
-  //   // wip
-  // }
-  raw
-  // self.internal_state
+  Builder::{  }
 }
 
 ///|
@@ -272,12 +247,6 @@ test "parse object" {
   |> inspect(
     content=(
       #|[{input: Number(42), json_path: #/name, schema_path: #/properties/name, message: "Value is not a string", children: None}]
-    ),
-  )
-  schema.to_json().to_string()
-  |> inspect(
-    content=(
-      #|Object({"type": String("object"), "properties": Object({"name": Object({"type": String("string")}), "age": Object({"type": String("number")})}), "required": Array([String("name"), String("age")])})
     ),
   )
   ()

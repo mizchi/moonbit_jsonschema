@@ -19,32 +19,7 @@ pub struct ArraySchema {
       max_items(rename="maxItems"),
     ),
   ),
-  ToJson(
-    fields(
-      prefix_items(rename="prefixItems"),
-      min_contains(rename="minContains"),
-      max_contains(rename="maxContains"),
-      min_items(rename="minItems"),
-      max_items(rename="maxItems"),
-    ),
-  ),
 )
-
-///|
-impl JsonSchemaSerializable for ArraySchema with to_json_schema(self) {
-  with_type_property(self.to_json(), "array")
-}
-
-///|
-impl JsonSchemaSerializable for ArraySchema with parse(json) {
-  try {
-    let v : StringSchema = @json.from_json(json)
-    v |> JsonSchema::String |> Ok
-  } catch {
-    _ => Err("Failed to parse StringConstraint".to_string())
-  }
-  // parsed |> Ok
-}
 
 ///|
 impl Validatable for ArraySchema with validate(

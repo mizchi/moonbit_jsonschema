@@ -451,23 +451,3 @@ test "generate ref entry" {
   generate_type_expr(b.enum_([{ "a": 1 }, { "b": 2 }]), resolver=dummy_resolver)
   |> assert_eq("Json")
 }
-
-///|
-test "enumerable schema can parse itself" (_t : @test.Test) {
-  // TODO: Fix
-  let b = @jsonschema.Builder::new()
-  let s = b.one_of([
-    b.array(prefix_items=[b.const_("A"), b.integer(), b.string()]),
-    b.array(prefix_items=[b.const_("B"), b.number()]),
-    b.array(prefix_items=[b.const_("C"), b.integer()]),
-    b.const_("D"),
-    b.array(prefix_items=[
-      b.const_("Paramed"),
-      b.object(properties={ "a": b.integer() }, required=["a"]),
-    ]),
-  ])
-  let str = s.to_json().stringify()
-  let reparsed : Json = @json.parse(str)
-  let reschema : JsonSchema = @json.from_json(reparsed)
-  assert_eq(reschema, s)
-}

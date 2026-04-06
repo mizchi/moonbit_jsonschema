@@ -1,12 +1,6 @@
 // JSON Schema types and definitions
 
 ///|
-priv trait JsonSchemaSerializable {
-  parse(Json) -> Result[JsonSchema, String]
-  to_json_schema(Self) -> Json
-}
-
-///|
 pub trait Validatable {
   validate(
     Self,
@@ -37,38 +31,6 @@ pub enum JsonSchema {
   // Not(JsonSchema)
   // If(Schema, Schema?, Schema?) // if, then, else
 } derive(Show, Eq)
-
-///|
-/// TODO: Remove this helper function if possible
-fn with_type_property(json : Json, type_name : String) -> Json {
-  guard json is Json::Object(obj) else { return json }
-  let json : Map[String, Json] = { "type": type_name.to_json() }
-  for k, v in obj {
-    json[k] = v
-  }
-  return json.to_json()
-}
-
-///|
-pub impl ToJson for JsonSchema with to_json(self) -> Json {
-  match self {
-    Any(s) => s.to_json_schema()
-    Null(s) => s.to_json_schema()
-    Boolean(s) => s.to_json_schema()
-    String(s) => s.to_json_schema()
-    Number(s) => s.to_json_schema()
-    Integer(s) => s.to_json_schema()
-    Array(s) => s.to_json_schema()
-    Object(s) => s.to_json_schema()
-    JsonSchema::AnyOf(s) => s.to_json_schema()
-    JsonSchema::AllOf(s) => s.to_json_schema()
-    JsonSchema::OneOf(s) => s.to_json_schema()
-    Ref(s) => s.to_json_schema()
-    Const(s) => s.to_json_schema()
-    Enum(s) => s.to_json_schema()
-    // JsonSchema::Not(schema) => { "not": schema }
-  }
-}
 
 ///|
 pub impl Validatable for JsonSchema with validate(
@@ -112,7 +74,10 @@ pub impl @json.FromJson for JsonSchema with from_json(
     { "type": "any", .. } =>
       AnySchema::from_json(json, json_path) |> JsonSchema::Any
     { "const": value, .. } => Const({ value, })
-    { "$ref": String(_), .. } => RefSchema::parse(json).unwrap()
+    { "$ref": String(refstr), .. } => {
+      let pointer = JsonPointer::from_string(refstr).unwrap()
+      JsonSchema::Ref(RefSchema::{ pointer, })
+    }
     { "type": "object", .. } =>
       ObjectSchema::from_json(json, json_path) |> JsonSchema::Object
     { "type": "array", .. } =>
@@ -157,24 +122,6 @@ pub impl @json.FromJson for JsonSchema with from_json(
 pub struct AnySchema {} derive(Show, Eq, FromJson, ToJson)
 
 ///|
-impl JsonSchemaSerializable for AnySchema with to_json_schema(_self) {
-  { "type": "any" }
-}
-
-///|
-impl JsonSchemaSerializable for AnySchema with parse(json) {
-  if !(json is { "type": "any", .. }) {
-    return Err("Expected an object for AnySchema".to_string())
-  }
-  try {
-    let v : AnySchema = @json.from_json(json)
-    v |> JsonSchema::Any |> Ok
-  } catch {
-    _ => Err("Failed to parse AnySchema".to_string())
-  }
-}
-
-///|
 impl Validatable for AnySchema with validate(
   _self,
   _value,
@@ -188,24 +135,6 @@ impl Validatable for AnySchema with validate(
 
 ///|
 pub struct NullSchema {} derive(Show, Eq, FromJson, ToJson)
-
-///|
-impl JsonSchemaSerializable for NullSchema with to_json_schema(_self) {
-  with_type_property({}, "null")
-}
-
-///|
-impl JsonSchemaSerializable for NullSchema with parse(json) {
-  if !(json is { "type": "null", .. }) {
-    return Err("Expected an object for NullSchema".to_string())
-  }
-  try {
-    let v : NullSchema = @json.from_json(json)
-    v |> JsonSchema::Null |> Ok
-  } catch {
-    _ => Err("Failed to parse NullSchema".to_string())
-  }
-}
 
 ///|
 impl Validatable for NullSchema with validate(
@@ -226,24 +155,6 @@ impl Validatable for NullSchema with validate(
 
 ///|
 pub struct BooleanSchema {} derive(Show, Eq, FromJson, ToJson)
-
-///|
-impl JsonSchemaSerializable for BooleanSchema with to_json_schema(_self) {
-  with_type_property({}, "boolean")
-}
-
-///|
-impl JsonSchemaSerializable for BooleanSchema with parse(json) {
-  if !(json is { "type": "boolean", .. }) {
-    return Err("Expected an object for NullSchema".to_string())
-  }
-  try {
-    let v : BooleanSchema = @json.from_json(json)
-    v |> JsonSchema::Boolean |> Ok
-  } catch {
-    _ => Err("Failed to parse NullSchema".to_string())
-  }
-}
 
 ///|
 impl Validatable for BooleanSchema with validate(

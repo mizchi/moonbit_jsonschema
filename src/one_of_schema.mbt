@@ -7,16 +7,6 @@ pub struct OneOfSchema {
 } derive(Show, Eq)
 
 ///|
-impl JsonSchemaSerializable for OneOfSchema with to_json_schema(self) {
-  { "oneOf": self.schemas.map(fn(s) { s.to_json() }) }
-}
-
-///|
-impl JsonSchemaSerializable for OneOfSchema with parse(_json) {
-  abort("not implemented")
-}
-
-///|
 impl Validatable for OneOfSchema with validate(
   self,
   value,
