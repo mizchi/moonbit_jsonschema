@@ -4,7 +4,7 @@
 struct Obj {
   x: Int
   y: Int
-} derive(Eq, Show, FromJson, ToJson)
+} derive(Eq, Debug, FromJson, ToJson)
 
 // #
-struct Root(Obj) derive(Eq, Show, FromJson, ToJson)
+struct Root(Obj) derive(Eq, Debug, FromJson, ToJson)

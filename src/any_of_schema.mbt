@@ -1,10 +1,10 @@
 ///|
 pub struct AnyOfSchema {
   schemas : Array[JsonSchema]
-} derive(Show, Eq)
+} derive(Debug, Eq)
 
 ///|
-impl Validatable for AnyOfSchema with validate(
+impl Validatable for AnyOfSchema with fn validate(
   self,
   value,
   resolver~,

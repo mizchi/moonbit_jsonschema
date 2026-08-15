@@ -7,7 +7,7 @@ pub(all) enum JsonPointer {
   Key(JsonPointer, key~ : String)
   /// Index Access
   Index(JsonPointer, index~ : Int)
-} derive(Eq, Hash, FromJson, ToJson)
+} derive(Eq, Hash, Debug, FromJson, ToJson)
 
 ///|
 pub fn JsonPointer::index(self : JsonPointer, index : Int) -> JsonPointer {
@@ -20,7 +20,7 @@ pub fn JsonPointer::key(self : JsonPointer, key : String) -> JsonPointer {
 }
 
 ///|
-pub impl Show for JsonPointer with output(self, logger) {
+pub impl Show for JsonPointer with fn output(self, logger) {
   match self {
     Root => logger.write_string("#")
     Key(p, key~) => logger..write_object(p)..write_string("/").write_string(key)
@@ -77,7 +77,7 @@ pub fn JsonPointer::from_string(
     if part == "" {
       continue
     }
-    let part_str = part.to_string()
+    let part_str = part.to_owned()
 
     // Check if this is a number (array index)
     let is_digit = fn(c : Char) -> Bool { c >= '0' && c <= '9' }
@@ -131,6 +131,11 @@ test "JsonPointer::from_string" {
 ///|
 test "JsonPointer::from_json_pointer" {
   let result = JsonPointer::from_string("#/abc/items/0/def")
-  result |> inspect(content="Ok(#/abc/items/0/def)")
+  result
+  |> debug_inspect(
+    content=(
+      #|Ok(Key(Index(Key(Key(Root, key="abc"), key="items"), index=0), key="def"))
+    ),
+  )
   // assert(result is Err(JsonPointerDecodeError(_)))
 }

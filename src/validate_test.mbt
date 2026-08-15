@@ -2,7 +2,7 @@
 
 ///|
 fn[T, E] assert_ok(x : Result[T, E]) -> Unit {
-  guard x is Ok(_)
+  guard! x is Ok(_)
 }
 
 ///|
@@ -321,9 +321,17 @@ test "validate $ref" {
   let validator = build_validator(raw_schema)
   validator.validate(5) |> assert_ok
   validator.validate("err").unwrap_err()
-  |> inspect(
+  |> debug_inspect(
     content=(
-      #|[{input: String("err"), json_path: #, schema_path: #/$ref, message: "Value is not a number", children: None}]
+      #|[
+      #|  {
+      #|    input: String("err"),
+      #|    json_path: Root,
+      #|    schema_path: Key(Root, key="$ref"),
+      #|    message: "Value is not a number",
+      #|    children: None,
+      #|  },
+      #|]
     ),
   )
 }
@@ -344,9 +352,20 @@ test "validate $ref in array" {
   let validator = build_validator(raw_schema)
   validator.validate([{ "x": 1, "y": 2 }]) |> assert_ok
   validator.validate([{ "x": "err", "y": 2 }]).unwrap_err()
-  |> inspect(
+  |> debug_inspect(
     content=(
-      #|[{input: String("err"), json_path: #/0/x, schema_path: #/items/$ref/properties/x, message: "Value is not a number", children: None}]
+      #|[
+      #|  {
+      #|    input: String("err"),
+      #|    json_path: Key(Index(Root, index=0), key="x"),
+      #|    schema_path: Key(
+      #|      Key(Key(Key(Root, key="items"), key="$ref"), key="properties"),
+      #|      key="x",
+      #|    ),
+      #|    message: "Value is not a number",
+      #|    children: None,
+      #|  },
+      #|]
     ),
   )
 }
@@ -372,13 +391,38 @@ test "validate $ref in object" {
   validator
   .validate({ "p1": { "x": 1, "y": 2 }, "p2": { "x": 3, "y": 4 } })
   .unwrap()
-  |> inspect(content="()")
+  |> debug_inspect(content="()")
   validator
   .validate({ "p1": { "x": 1, "y": 2 }, "p3": { "x": 3, "y": 4 } })
   .unwrap_err()
-  |> inspect(
+  |> debug_inspect(
     content=(
-      #|[{input: Object({"p1": Object({"x": Number(1), "y": Number(2)}), "p3": Object({"x": Number(3), "y": Number(4)})}), json_path: #/p2, schema_path: #/required, message: "Required property 'p2' is missing", children: None}, {input: Object({"p1": Object({"x": Number(1), "y": Number(2)}), "p3": Object({"x": Number(3), "y": Number(4)})}), json_path: #/p3, schema_path: #/additionalProperties, message: "Additional property '{\"p3\"}' is not allowed", children: None}]
+      #|[
+      #|  {
+      #|    input: Object(
+      #|      {
+      #|        "p1": Object({ "x": Number(1), "y": Number(2) }),
+      #|        "p3": Object({ "x": Number(3), "y": Number(4) }),
+      #|      },
+      #|    ),
+      #|    json_path: Key(Root, key="p2"),
+      #|    schema_path: Key(Root, key="required"),
+      #|    message: "Required property 'p2' is missing",
+      #|    children: None,
+      #|  },
+      #|  {
+      #|    input: Object(
+      #|      {
+      #|        "p1": Object({ "x": Number(1), "y": Number(2) }),
+      #|        "p3": Object({ "x": Number(3), "y": Number(4) }),
+      #|      },
+      #|    ),
+      #|    json_path: Key(Root, key="p3"),
+      #|    schema_path: Key(Root, key="additionalProperties"),
+      #|    message: "Additional property '<Set: [\"p3\"]>' is not allowed",
+      #|    children: None,
+      #|  },
+      #|]
     ),
   )
 }
@@ -420,9 +464,34 @@ test "validate by schema builder with custome resolver" {
   validator
   .validate({ "p1": { "x": 1, "y": 2 }, "p3": { "x": 3, "y": 4 } })
   .unwrap_err()
-  |> inspect(
+  |> debug_inspect(
     content=(
-      #|[{input: Object({"p1": Object({"x": Number(1), "y": Number(2)}), "p3": Object({"x": Number(3), "y": Number(4)})}), json_path: #/p2, schema_path: #/required, message: "Required property 'p2' is missing", children: None}, {input: Object({"p1": Object({"x": Number(1), "y": Number(2)}), "p3": Object({"x": Number(3), "y": Number(4)})}), json_path: #/p3, schema_path: #/additionalProperties, message: "Additional property '{\"p3\"}' is not allowed", children: None}]
+      #|[
+      #|  {
+      #|    input: Object(
+      #|      {
+      #|        "p1": Object({ "x": Number(1), "y": Number(2) }),
+      #|        "p3": Object({ "x": Number(3), "y": Number(4) }),
+      #|      },
+      #|    ),
+      #|    json_path: Key(Root, key="p2"),
+      #|    schema_path: Key(Root, key="required"),
+      #|    message: "Required property 'p2' is missing",
+      #|    children: None,
+      #|  },
+      #|  {
+      #|    input: Object(
+      #|      {
+      #|        "p1": Object({ "x": Number(1), "y": Number(2) }),
+      #|        "p3": Object({ "x": Number(3), "y": Number(4) }),
+      #|      },
+      #|    ),
+      #|    json_path: Key(Root, key="p3"),
+      #|    schema_path: Key(Root, key="additionalProperties"),
+      #|    message: "Additional property '<Set: [\"p3\"]>' is not allowed",
+      #|    children: None,
+      #|  },
+      #|]
     ),
   )
 }

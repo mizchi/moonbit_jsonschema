@@ -1,10 +1,10 @@
 ///|
 pub struct ConstSchema {
   value : Json
-} derive(Show, Eq, FromJson, ToJson)
+} derive(Debug, Eq, FromJson, ToJson)
 
 ///|
-impl Validatable for ConstSchema with validate(
+impl Validatable for ConstSchema with fn validate(
   self,
   value,
   resolver~,
@@ -19,7 +19,7 @@ impl Validatable for ConstSchema with validate(
         value,
         json_path,
         schema_path,
-        "Value does not match constant value \{self.value}",
+        "Value does not match constant value \{@debug.to_string(self.value)}",
       ),
     ]
   } else {
@@ -30,10 +30,10 @@ impl Validatable for ConstSchema with validate(
 ///|
 pub struct EnumSchema {
   values : Array[Json]
-} derive(Show, Eq, FromJson, ToJson)
+} derive(Debug, Eq, FromJson, ToJson)
 
 ///|
-impl Validatable for EnumSchema with validate(
+impl Validatable for EnumSchema with fn validate(
   self,
   value,
   resolver~,
@@ -47,7 +47,7 @@ impl Validatable for EnumSchema with validate(
         value,
         json_path,
         schema_path,
-        "\{value} is not in \{self.values}",
+        "\{@debug.to_string(value)} is not in \{@debug.to_string(self.values)}",
       ),
     ]
   } else {

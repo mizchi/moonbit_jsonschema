@@ -13,7 +13,7 @@ pub struct ValidationError {
   schema_path : JsonPointer
   message : String
   children : Array[ValidationError]?
-} derive(Show, Eq)
+} derive(Debug, Eq)
 
 ///|
 pub fn ValidationError::new(

@@ -3,15 +3,15 @@
 // #/definitions/B
 struct B {
   b: A
-} derive(Eq, Show, FromJson, ToJson)
+} derive(Eq, Debug, FromJson, ToJson)
 
 // #/definitions/V
 enum V {
   V1(Double)
   V2(Int)
-} derive(Show, Eq, FromJson, ToJson)
+} derive(Debug, Eq, FromJson, ToJson)
 
 // #/definitions/A
 struct A {
   a: V
-} derive(Eq, Show, FromJson, ToJson)
+} derive(Eq, Debug, FromJson, ToJson)

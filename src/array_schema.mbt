@@ -8,7 +8,7 @@ pub struct ArraySchema {
   min_items : Int?
   max_items : Int?
 } derive (
-  Show,
+  Debug,
   Eq,
   FromJson(
     fields(
@@ -22,7 +22,7 @@ pub struct ArraySchema {
 )
 
 ///|
-impl Validatable for ArraySchema with validate(
+impl Validatable for ArraySchema with fn validate(
   self,
   value,
   resolver~,

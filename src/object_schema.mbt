@@ -4,7 +4,7 @@ pub struct ObjectSchema {
   required : Array[String]?
   additional_properties : JsonSchema?
 } derive (
-  Show,
+  Debug,
   Eq,
   FromJson(
     fields(
@@ -16,7 +16,7 @@ pub struct ObjectSchema {
 )
 
 ///|
-impl Validatable for ObjectSchema with validate(
+impl Validatable for ObjectSchema with fn validate(
   self,
   value,
   resolver~,
@@ -29,7 +29,7 @@ impl Validatable for ObjectSchema with validate(
         value,
         json_path,
         schema_path,
-        "\{value} is not an object",
+        "\{@debug.to_string(value)} is not an object",
       ),
     ]
   }
@@ -53,11 +53,11 @@ impl Validatable for ObjectSchema with validate(
   // TODO: {type: string}
   let required_keys = match self.required {
     Some(keys) => Set::from_array(keys)
-    None => Set::new()
+    None => Set([])
   }
   let props_keys = match self.properties {
     Some(props) => props.keys() |> Set::from_iter
-    None => Set::new()
+    None => Set([])
   }
   let additional_props = obj
     .keys()
@@ -83,7 +83,7 @@ impl Validatable for ObjectSchema with validate(
           value,
           json_path.key(key),
           schema_path.key("additionalProperties"),
-          "Additional property '\{additional_props}' is not allowed",
+          "Additional property '\{@debug.to_string(additional_props)}' is not allowed",
         ),
       )
     }
