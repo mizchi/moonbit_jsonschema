@@ -8,7 +8,6 @@ pub struct ArraySchema {
   min_items : Int?
   max_items : Int?
 } derive (
-  Show,
   Eq,
   FromJson(
     fields(
@@ -29,6 +28,25 @@ pub struct ArraySchema {
     ),
   ),
 )
+
+///|
+pub impl Show for ArraySchema with output(self, logger) {
+  logger.write_string("{items: ")
+  self.items.output(logger)
+  logger.write_string(", prefix_items: ")
+  self.prefix_items.output(logger)
+  logger.write_string(", contains: ")
+  self.contains.output(logger)
+  logger.write_string(", min_contains: ")
+  self.min_contains.output(logger)
+  logger.write_string(", max_contains: ")
+  self.max_contains.output(logger)
+  logger.write_string(", min_items: ")
+  self.min_items.output(logger)
+  logger.write_string(", max_items: ")
+  self.max_items.output(logger)
+  logger.write_string("}")
+}
 
 ///|
 impl JsonSchemaSerializable for ArraySchema with to_json_schema(self) {
@@ -54,7 +72,7 @@ impl Validatable for ArraySchema with validate(
   json_path~,
   schema_path~,
 ) {
-  guard value is @json.Array(array) else {
+  guard value is Array(array) else {
     return [
       ValidationError::new(
         value, json_path, schema_path, "Value is not an array",

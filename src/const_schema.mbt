@@ -1,7 +1,14 @@
 ///|
 pub struct ConstSchema {
   value : Json
-} derive(Show, Eq, FromJson, ToJson)
+} derive(Eq, FromJson, ToJson)
+
+///|
+pub impl Show for ConstSchema with output(self, logger) {
+  logger.write_string("{value: ")
+  self.value.output(logger)
+  logger.write_string("}")
+}
 
 ///|
 impl JsonSchemaSerializable for ConstSchema with to_json_schema(self) {
@@ -40,7 +47,14 @@ impl Validatable for ConstSchema with validate(
 ///|
 pub struct EnumSchema {
   values : Array[Json]
-} derive(Show, Eq, FromJson, ToJson)
+} derive(Eq, FromJson, ToJson)
+
+///|
+pub impl Show for EnumSchema with output(self, logger) {
+  logger.write_string("{values: ")
+  self.values.output(logger)
+  logger.write_string("}")
+}
 
 ///|
 impl JsonSchemaSerializable for EnumSchema with to_json_schema(self) {

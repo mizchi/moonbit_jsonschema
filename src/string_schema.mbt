@@ -4,7 +4,6 @@ pub struct StringSchema {
   max_length : Int?
   enum_ : Array[String]?
 } derive (
-  Show,
   Eq,
   FromJson(
     fields(
@@ -21,6 +20,17 @@ pub struct StringSchema {
     ),
   ),
 )
+
+///|
+pub impl Show for StringSchema with output(self, logger) {
+  logger.write_string("{min_length: ")
+  self.min_length.output(logger)
+  logger.write_string(", max_length: ")
+  self.max_length.output(logger)
+  logger.write_string(", enum_: ")
+  self.enum_.output(logger)
+  logger.write_string("}")
+}
 
 ///|
 impl JsonSchemaSerializable for StringSchema with to_json_schema(self) {

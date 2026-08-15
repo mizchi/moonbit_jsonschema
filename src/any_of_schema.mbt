@@ -1,7 +1,14 @@
 ///|
 pub struct AnyOfSchema {
   schemas : Array[JsonSchema]
-} derive(Show, Eq)
+} derive(Eq)
+
+///|
+pub impl Show for AnyOfSchema with output(self, logger) {
+  logger.write_string("{schemas: ")
+  self.schemas.output(logger)
+  logger.write_string("}")
+}
 
 ///|
 impl JsonSchemaSerializable for AnyOfSchema with to_json_schema(self) {

@@ -6,7 +6,6 @@ struct IntegerSchema {
   exclusive_maximum : Int?
   // multipleOf : Double?
 } derive (
-  Show,
   Eq,
   ToJson(
     fields(
@@ -23,6 +22,19 @@ struct IntegerSchema {
     ),
   ),
 )
+
+///|
+impl Show for IntegerSchema with output(self, logger) {
+  logger.write_string("{minimum: ")
+  self.minimum.output(logger)
+  logger.write_string(", maximum: ")
+  self.maximum.output(logger)
+  logger.write_string(", exclusive_minimum: ")
+  self.exclusive_minimum.output(logger)
+  logger.write_string(", exclusive_maximum: ")
+  self.exclusive_maximum.output(logger)
+  logger.write_string("}")
+}
 
 ///|
 impl JsonSchemaSerializable for IntegerSchema with to_json_schema(self) {
@@ -49,7 +61,7 @@ impl Validatable for IntegerSchema with validate(
   schema_path~,
 ) {
   ignore(resolver)
-  guard value is @json.Number(input, ..) && input == input.to_int().to_double() else {
+  guard value is Number(input, ..) && input == input.to_int().to_double() else {
     return [
       ValidationError::new(
         value, json_path, schema_path, "Value is not a number",

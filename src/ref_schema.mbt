@@ -1,7 +1,14 @@
 ///|
 pub struct RefSchema {
   pointer : JsonPointer
-} derive(Show, Eq, FromJson, ToJson)
+} derive(Eq, FromJson, ToJson)
+
+///|
+pub impl Show for RefSchema with output(self, logger) {
+  logger.write_string("{pointer: ")
+  self.pointer.output(logger)
+  logger.write_string("}")
+}
 
 ///|
 impl JsonSchemaSerializable for RefSchema with to_json_schema(self) {

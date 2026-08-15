@@ -4,7 +4,18 @@ pub struct OneOfSchema {
   schemas : Array[JsonSchema]
   parsed_nullable : JsonSchema?
   parsed_enumerable : Array[Enumerable]?
-} derive(Show, Eq)
+} derive(Eq)
+
+///|
+pub impl Show for OneOfSchema with output(self, logger) {
+  logger.write_string("{schemas: ")
+  self.schemas.output(logger)
+  logger.write_string(", parsed_nullable: ")
+  self.parsed_nullable.output(logger)
+  logger.write_string(", parsed_enumerable: ")
+  self.parsed_enumerable.output(logger)
+  logger.write_string("}")
+}
 
 ///|
 impl JsonSchemaSerializable for OneOfSchema with to_json_schema(self) {
@@ -62,7 +73,18 @@ pub(all) struct Enumerable {
   positionals : Array[JsonSchema]?
   // named parameters
   params : Map[String, JsonSchema]?
-} derive(Show, Eq)
+} derive(Eq)
+
+///|
+pub impl Show for Enumerable with output(self, logger) {
+  logger.write_string("{tag: ")
+  self.tag.output(logger)
+  logger.write_string(", positionals: ")
+  self.positionals.output(logger)
+  logger.write_string(", params: ")
+  self.params.output(logger)
+  logger.write_string("}")
+}
 
 ///|
 pub fn Enumerable::new(

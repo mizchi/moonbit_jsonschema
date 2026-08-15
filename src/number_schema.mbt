@@ -6,7 +6,6 @@ pub struct NumberSchema {
   exclusive_maximum : Double?
   // multipleOf : Double?
 } derive (
-  Show,
   Eq,
   ToJson(
     fields(
@@ -23,6 +22,19 @@ pub struct NumberSchema {
     ),
   ),
 )
+
+///|
+pub impl Show for NumberSchema with output(self, logger) {
+  logger.write_string("{minimum: ")
+  self.minimum.output(logger)
+  logger.write_string(", maximum: ")
+  self.maximum.output(logger)
+  logger.write_string(", exclusive_minimum: ")
+  self.exclusive_minimum.output(logger)
+  logger.write_string(", exclusive_maximum: ")
+  self.exclusive_maximum.output(logger)
+  logger.write_string("}")
+}
 
 ///|
 impl JsonSchemaSerializable for NumberSchema with to_json_schema(self) {
@@ -49,7 +61,7 @@ impl Validatable for NumberSchema with validate(
   schema_path~,
 ) {
   ignore(resolver)
-  guard value is @json.Number(input, ..) else {
+  guard value is Number(input, ..) else {
     return [
       ValidationError::new(
         value, json_path, schema_path, "Value is not a number",

@@ -25,22 +25,17 @@ pub suberror ParseError {
 // Types and methods
 pub struct AllOfSchema {
   schemas : Array[JsonSchema]
-}
-pub impl Eq for AllOfSchema
+} derive(Eq)
 pub impl Show for AllOfSchema
 
 pub struct AnyOfSchema {
   schemas : Array[JsonSchema]
-}
-pub impl Eq for AnyOfSchema
+} derive(Eq)
 pub impl Show for AnyOfSchema
 
 pub struct AnySchema {
-}
-pub impl Eq for AnySchema
+} derive(Eq, ToJson, @json.FromJson)
 pub impl Show for AnySchema
-pub impl ToJson for AnySchema
-pub impl @json.FromJson for AnySchema
 
 pub struct ArraySchema {
   items : JsonSchema?
@@ -50,18 +45,12 @@ pub struct ArraySchema {
   max_contains : Int?
   min_items : Int?
   max_items : Int?
-}
-pub impl Eq for ArraySchema
+} derive(Eq, ToJson, @json.FromJson)
 pub impl Show for ArraySchema
-pub impl ToJson for ArraySchema
-pub impl @json.FromJson for ArraySchema
 
 pub struct BooleanSchema {
-}
-pub impl Eq for BooleanSchema
+} derive(Eq, ToJson, @json.FromJson)
 pub impl Show for BooleanSchema
-pub impl ToJson for BooleanSchema
-pub impl @json.FromJson for BooleanSchema
 
 pub struct Builder {
   // private fields
@@ -87,50 +76,35 @@ pub fn Builder::string(Self, minLength? : Int, maxLength? : Int, enum_? : Array[
 
 pub struct ConstSchema {
   value : Json
-}
-pub impl Eq for ConstSchema
+} derive(Eq, ToJson, @json.FromJson)
 pub impl Show for ConstSchema
-pub impl ToJson for ConstSchema
-pub impl @json.FromJson for ConstSchema
 
 pub struct EnumSchema {
   values : Array[Json]
-}
-pub impl Eq for EnumSchema
+} derive(Eq, ToJson, @json.FromJson)
 pub impl Show for EnumSchema
-pub impl ToJson for EnumSchema
-pub impl @json.FromJson for EnumSchema
 
 pub(all) struct Enumerable {
   tag : String
   positionals : Array[JsonSchema]?
   params : Map[String, JsonSchema]?
-}
+} derive(Eq)
 pub fn Enumerable::new(String, Array[JsonSchema]?, Map[String, JsonSchema]?) -> Self
 pub fn Enumerable::parse_enumerable(OneOfSchema) -> Array[Self]?
-pub impl Eq for Enumerable
 pub impl Show for Enumerable
 
-type IntegerSchema
-pub impl Eq for IntegerSchema
-pub impl Show for IntegerSchema
-pub impl ToJson for IntegerSchema
-pub impl @json.FromJson for IntegerSchema
+type IntegerSchema derive(Eq, ToJson, @json.FromJson)
 
 pub(all) enum JsonPointer {
   Root
   Key(JsonPointer, key~ : String)
   Index(JsonPointer, index~ : Int)
-}
+} derive(Eq, Hash, ToJson, @json.FromJson)
 pub fn JsonPointer::access(Self, Json) -> Json?
 pub fn JsonPointer::from_string(String) -> Result[Self, String]
 pub fn JsonPointer::index(Self, Int) -> Self
 pub fn JsonPointer::key(Self, String) -> Self
-pub impl Eq for JsonPointer
-pub impl Hash for JsonPointer
 pub impl Show for JsonPointer
-pub impl ToJson for JsonPointer
-pub impl @json.FromJson for JsonPointer
 
 pub enum JsonSchema {
   Any(AnySchema)
@@ -147,57 +121,43 @@ pub enum JsonSchema {
   Ref(RefSchema)
   Enum(EnumSchema)
   Const(ConstSchema)
-}
+} derive(Eq)
 pub impl Validatable for JsonSchema
-pub impl Eq for JsonSchema
 pub impl Show for JsonSchema
 pub impl ToJson for JsonSchema
 pub impl @json.FromJson for JsonSchema
 
 pub struct NullSchema {
-}
-pub impl Eq for NullSchema
+} derive(Eq, ToJson, @json.FromJson)
 pub impl Show for NullSchema
-pub impl ToJson for NullSchema
-pub impl @json.FromJson for NullSchema
 
 pub struct NumberSchema {
   minimum : Double?
   maximum : Double?
   exclusive_minimum : Double?
   exclusive_maximum : Double?
-}
-pub impl Eq for NumberSchema
+} derive(Eq, ToJson, @json.FromJson)
 pub impl Show for NumberSchema
-pub impl ToJson for NumberSchema
-pub impl @json.FromJson for NumberSchema
 
 pub struct ObjectSchema {
   properties : Map[String, JsonSchema]?
   required : Array[String]?
   additional_properties : JsonSchema?
-}
-pub impl Eq for ObjectSchema
+} derive(Eq, ToJson, @json.FromJson)
 pub impl Show for ObjectSchema
-pub impl ToJson for ObjectSchema
-pub impl @json.FromJson for ObjectSchema
 
 pub struct OneOfSchema {
   schemas : Array[JsonSchema]
   parsed_nullable : JsonSchema?
   parsed_enumerable : Array[Enumerable]?
-}
+} derive(Eq)
 pub fn OneOfSchema::parse_nullable(Self) -> JsonSchema?
-pub impl Eq for OneOfSchema
 pub impl Show for OneOfSchema
 
 pub struct RefSchema {
   pointer : JsonPointer
-}
-pub impl Eq for RefSchema
+} derive(Eq, ToJson, @json.FromJson)
 pub impl Show for RefSchema
-pub impl ToJson for RefSchema
-pub impl @json.FromJson for RefSchema
 
 pub struct Resolver {
   // private fields
@@ -211,11 +171,8 @@ pub struct StringSchema {
   min_length : Int?
   max_length : Int?
   enum_ : Array[String]?
-}
-pub impl Eq for StringSchema
+} derive(Eq, ToJson, @json.FromJson)
 pub impl Show for StringSchema
-pub impl ToJson for StringSchema
-pub impl @json.FromJson for StringSchema
 
 pub struct ValidationError {
   input : Json
@@ -223,9 +180,8 @@ pub struct ValidationError {
   schema_path : JsonPointer
   message : String
   children : Array[ValidationError]?
-}
+} derive(Eq)
 pub fn ValidationError::new(Json, JsonPointer, JsonPointer, String, children? : Array[Self]) -> Self
-pub impl Eq for ValidationError
 pub impl Show for ValidationError
 
 type Validator

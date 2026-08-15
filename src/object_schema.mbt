@@ -4,7 +4,6 @@ pub struct ObjectSchema {
   required : Array[String]?
   additional_properties : JsonSchema?
 } derive (
-  Show,
   Eq,
   FromJson(
     fields(
@@ -20,6 +19,17 @@ pub struct ObjectSchema {
     ),
   ),
 )
+
+///|
+pub impl Show for ObjectSchema with output(self, logger) {
+  logger.write_string("{properties: ")
+  self.properties.output(logger)
+  logger.write_string(", required: ")
+  self.required.output(logger)
+  logger.write_string(", additional_properties: ")
+  self.additional_properties.output(logger)
+  logger.write_string("}")
+}
 
 ///|
 impl JsonSchemaSerializable for ObjectSchema with to_json_schema(self) {
@@ -44,7 +54,7 @@ impl Validatable for ObjectSchema with validate(
   json_path~,
   schema_path~,
 ) {
-  guard value is @json.Object(obj) else {
+  guard value is Object(obj) else {
     return [
       ValidationError::new(
         value,
