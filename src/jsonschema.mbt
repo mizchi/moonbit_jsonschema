@@ -2,7 +2,7 @@
 
 ///|
 pub trait Validatable {
-  validate(
+  fn validate(
     Self,
     Json,
     resolver~ : Resolver,
@@ -30,10 +30,10 @@ pub enum JsonSchema {
   Const(ConstSchema)
   // Not(JsonSchema)
   // If(Schema, Schema?, Schema?) // if, then, else
-} derive(Show, Eq)
+} derive(Debug, Eq)
 
 ///|
-pub impl Validatable for JsonSchema with validate(
+pub impl Validatable for JsonSchema with fn validate(
   self,
   value,
   resolver~,
@@ -63,7 +63,7 @@ pub impl Validatable for JsonSchema with validate(
 }
 
 ///|
-pub impl @json.FromJson for JsonSchema with from_json(
+pub impl @json.FromJson for JsonSchema with fn from_json(
   json : Json,
   json_path : @json.JsonPath,
 ) -> JsonSchema raise {
@@ -119,10 +119,10 @@ pub impl @json.FromJson for JsonSchema with from_json(
 ///| Primitive types
 
 ///|
-pub struct AnySchema {} derive(Show, Eq, FromJson, ToJson)
+pub struct AnySchema {} derive(Debug, Eq, FromJson, ToJson)
 
 ///|
-impl Validatable for AnySchema with validate(
+impl Validatable for AnySchema with fn validate(
   _self,
   _value,
   resolver~,
@@ -134,10 +134,10 @@ impl Validatable for AnySchema with validate(
 }
 
 ///|
-pub struct NullSchema {} derive(Show, Eq, FromJson, ToJson)
+pub struct NullSchema {} derive(Debug, Eq, FromJson, ToJson)
 
 ///|
-impl Validatable for NullSchema with validate(
+impl Validatable for NullSchema with fn validate(
   _self,
   value,
   resolver~,
@@ -154,10 +154,10 @@ impl Validatable for NullSchema with validate(
 }
 
 ///|
-pub struct BooleanSchema {} derive(Show, Eq, FromJson, ToJson)
+pub struct BooleanSchema {} derive(Debug, Eq, FromJson, ToJson)
 
 ///|
-impl Validatable for BooleanSchema with validate(
+impl Validatable for BooleanSchema with fn validate(
   _self,
   value,
   resolver~,

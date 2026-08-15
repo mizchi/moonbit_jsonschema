@@ -4,7 +4,7 @@ pub struct StringSchema {
   max_length : Int?
   enum_ : Array[String]?
 } derive (
-  Show,
+  Debug,
   Eq,
   FromJson(
     fields(
@@ -23,7 +23,7 @@ pub struct StringSchema {
 )
 
 ///|
-impl Validatable for StringSchema with validate(
+impl Validatable for StringSchema with fn validate(
   self,
   input,
   resolver~,
@@ -66,7 +66,7 @@ impl Validatable for StringSchema with validate(
         input.to_json(),
         json_path,
         schema_path.key("enum"),
-        "\{input} is not in \{enum_values}",
+        "\{@debug.to_string(input)} is not in \{@debug.to_string(enum_values)}",
       ),
     ]
   }

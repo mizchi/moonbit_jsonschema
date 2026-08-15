@@ -1,10 +1,10 @@
 ///|
 pub struct RefSchema {
   pointer : JsonPointer
-} derive(Show, Eq, FromJson, ToJson)
+} derive(Debug, Eq, FromJson, ToJson)
 
 ///|
-impl Validatable for RefSchema with validate(
+impl Validatable for RefSchema with fn validate(
   self,
   value,
   resolver~,

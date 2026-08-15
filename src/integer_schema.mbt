@@ -6,7 +6,7 @@ struct IntegerSchema {
   exclusive_maximum : Int?
   // multipleOf : Double?
 } derive (
-  Show,
+  Debug,
   Eq,
   ToJson(
     fields(
@@ -25,7 +25,7 @@ struct IntegerSchema {
 )
 
 ///|
-impl Validatable for IntegerSchema with validate(
+impl Validatable for IntegerSchema with fn validate(
   self,
   value,
   resolver~,

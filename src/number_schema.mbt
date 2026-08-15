@@ -6,7 +6,7 @@ pub struct NumberSchema {
   exclusive_maximum : Double?
   // multipleOf : Double?
 } derive (
-  Show,
+  Debug,
   Eq,
   ToJson(
     fields(
@@ -25,7 +25,7 @@ pub struct NumberSchema {
 )
 
 ///|
-impl Validatable for NumberSchema with validate(
+impl Validatable for NumberSchema with fn validate(
   self,
   value,
   resolver~,
