@@ -21,7 +21,7 @@ pub struct Builder {
 ///|
 pub fn Builder::new() -> Builder {
   // TODO: use with resolver later
-  Builder::{ internal_state: Map::new() }
+  Builder::{ internal_state: Map([]) }
 }
 
 ///|
@@ -37,7 +37,7 @@ pub fn Builder::define_schema(
 
 ///|
 pub fn emit_json_schema(_self : Builder) -> Json {
-  let raw : Json = {}
+  let raw : Json = Json::empty_object()
   // set json[...] = Schema.to_json() for each schema
   // for pointer, schema in self.internal_state {
   //   // wip
@@ -262,22 +262,32 @@ test "parse object" {
     json_path=JsonPointer::Root,
     schema_path=JsonPointer::Root,
   )
-  |> inspect(content="[]")
+  |> debug_inspect(content="[]")
   schema.validate(
     { "name": 42, "age": 30.0 },
     resolver~,
     json_path=JsonPointer::Root,
     schema_path=JsonPointer::Root,
   )
-  |> inspect(
+  |> debug_inspect(
     content=(
-      #|[{input: Number(42), json_path: #/name, schema_path: #/properties/name, message: "Value is not a string", children: None}]
+      #|[
+      #|  {
+      #|    input: Number(42),
+      #|    json_path: Key(Root, key="name"),
+      #|    schema_path: Key(Key(Root, key="properties"), key="name"),
+      #|    message: "Value is not a string",
+      #|    children: None,
+      #|  },
+      #|]
+
     ),
   )
-  schema.to_json().to_string()
-  |> inspect(
+  schema.to_json().stringify()
+  |> debug_inspect(
     content=(
-      #|Object({"type": String("object"), "properties": Object({"name": Object({"type": String("string")}), "age": Object({"type": String("number")})}), "required": Array([String("name"), String("age")])})
+      #|"{\"type\":\"object\",\"properties\":{\"name\":{\"type\":\"string\"},\"age\":{\"type\":\"number\"}},\"required\":[\"name\",\"age\"]}"
+
     ),
   )
   ()
@@ -299,16 +309,25 @@ test "parse array" {
     json_path=JsonPointer::Root,
     schema_path=JsonPointer::Root,
   )
-  |> inspect(content="[]")
+  |> debug_inspect(content="[]")
   schema.validate(
     ["a", 1],
     resolver~,
     json_path=JsonPointer::Root,
     schema_path=JsonPointer::Root,
   )
-  |> inspect(
+  |> debug_inspect(
     content=(
-      #|[{input: Number(1), json_path: #/1, schema_path: #/items, message: "Value is not a string", children: None}]
+      #|[
+      #|  {
+      #|    input: Number(1),
+      #|    json_path: Index(Root, index=1),
+      #|    schema_path: Key(Root, key="items"),
+      #|    message: "Value is not a string",
+      #|    children: None,
+      #|  },
+      #|]
+
     ),
   )
 }
@@ -342,7 +361,7 @@ test "parse nested" {
     json_path=JsonPointer::Root,
     schema_path=JsonPointer::Root,
   )
-  |> inspect(content="[]")
+  |> debug_inspect(content="[]")
   schema.validate(
     {
       "name": "Alice",
@@ -355,9 +374,18 @@ test "parse nested" {
     json_path=JsonPointer::Root,
     schema_path=JsonPointer::Root,
   )
-  |> inspect(
+  |> debug_inspect(
     content=(
-      #|[{input: Number(1), json_path: #/friends/0, schema_path: #/properties/friends/items, message: "Value is not a string", children: None}]
+      #|[
+      #|  {
+      #|    input: Number(1),
+      #|    json_path: Index(Key(Root, key="friends"), index=0),
+      #|    schema_path: Key(Key(Key(Root, key="properties"), key="friends"), key="items"),
+      #|    message: "Value is not a string",
+      #|    children: None,
+      #|  },
+      #|]
+
     ),
   )
 }

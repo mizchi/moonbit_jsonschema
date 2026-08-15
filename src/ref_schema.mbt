@@ -1,22 +1,15 @@
 ///|
 pub struct RefSchema {
   pointer : JsonPointer
-} derive(Eq, FromJson, ToJson)
+} derive(Debug, Eq, FromJson, ToJson)
 
 ///|
-pub impl Show for RefSchema with output(self, logger) {
-  logger.write_string("{pointer: ")
-  self.pointer.output(logger)
-  logger.write_string("}")
-}
-
-///|
-impl JsonSchemaSerializable for RefSchema with to_json_schema(self) {
+impl JsonSchemaSerializable for RefSchema with fn to_json_schema(self) {
   { "$ref": self.pointer.to_string() }
 }
 
 ///|
-impl JsonSchemaSerializable for RefSchema with parse(json) {
+impl JsonSchemaSerializable for RefSchema with fn parse(json) {
   guard json is { "$ref": String(refstr), .. } else {
     return Err("Expected string for RefSchema".to_string())
   }
@@ -25,7 +18,7 @@ impl JsonSchemaSerializable for RefSchema with parse(json) {
 }
 
 ///|
-impl Validatable for RefSchema with validate(
+impl Validatable for RefSchema with fn validate(
   self,
   value,
   resolver~,

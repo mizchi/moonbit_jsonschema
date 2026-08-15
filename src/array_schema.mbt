@@ -8,6 +8,7 @@ pub struct ArraySchema {
   min_items : Int?
   max_items : Int?
 } derive (
+  Debug,
   Eq,
   FromJson(
     fields(
@@ -30,31 +31,12 @@ pub struct ArraySchema {
 )
 
 ///|
-pub impl Show for ArraySchema with output(self, logger) {
-  logger.write_string("{items: ")
-  self.items.output(logger)
-  logger.write_string(", prefix_items: ")
-  self.prefix_items.output(logger)
-  logger.write_string(", contains: ")
-  self.contains.output(logger)
-  logger.write_string(", min_contains: ")
-  self.min_contains.output(logger)
-  logger.write_string(", max_contains: ")
-  self.max_contains.output(logger)
-  logger.write_string(", min_items: ")
-  self.min_items.output(logger)
-  logger.write_string(", max_items: ")
-  self.max_items.output(logger)
-  logger.write_string("}")
-}
-
-///|
-impl JsonSchemaSerializable for ArraySchema with to_json_schema(self) {
+impl JsonSchemaSerializable for ArraySchema with fn to_json_schema(self) {
   with_type_property(self.to_json(), "array")
 }
 
 ///|
-impl JsonSchemaSerializable for ArraySchema with parse(json) {
+impl JsonSchemaSerializable for ArraySchema with fn parse(json) {
   try {
     let v : StringSchema = @json.from_json(json)
     v |> JsonSchema::String |> Ok
@@ -65,7 +47,7 @@ impl JsonSchemaSerializable for ArraySchema with parse(json) {
 }
 
 ///|
-impl Validatable for ArraySchema with validate(
+impl Validatable for ArraySchema with fn validate(
   self,
   value,
   resolver~,

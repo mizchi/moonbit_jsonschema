@@ -1,5 +1,6 @@
 import {
   "mizchi/jsonschema",
-  "moonbitlang/core/json" @json,
-  "moonbitlang/core/test" @test,
+  "moonbitlang/core/debug",
+  "moonbitlang/core/json",
+  "moonbitlang/core/test",
 }

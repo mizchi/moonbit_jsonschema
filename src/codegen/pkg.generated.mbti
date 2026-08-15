@@ -15,4 +15,3 @@ pub fn generate(Json, Array[@jsonschema.JsonPointer], root_name? : String, inclu
 // Type aliases
 
 // Traits
-

@@ -1,27 +1,20 @@
 ///|
 pub struct ConstSchema {
   value : Json
-} derive(Eq, FromJson, ToJson)
+} derive(Debug, Eq, FromJson, ToJson)
 
 ///|
-pub impl Show for ConstSchema with output(self, logger) {
-  logger.write_string("{value: ")
-  self.value.output(logger)
-  logger.write_string("}")
+impl JsonSchemaSerializable for ConstSchema with fn to_json_schema(self) {
+  { "const": @json.to_json(self.value) }
 }
 
 ///|
-impl JsonSchemaSerializable for ConstSchema with to_json_schema(self) {
-  { "const": self.value.to_json() }
-}
-
-///|
-impl JsonSchemaSerializable for ConstSchema with parse(_json) {
+impl JsonSchemaSerializable for ConstSchema with fn parse(_json) {
   ...
 }
 
 ///|
-impl Validatable for ConstSchema with validate(
+impl Validatable for ConstSchema with fn validate(
   self,
   value,
   resolver~,
@@ -36,7 +29,7 @@ impl Validatable for ConstSchema with validate(
         value,
         json_path,
         schema_path,
-        "Value does not match constant value \{self.value}",
+        "Value does not match constant value \{@debug.to_string(self.value)}",
       ),
     ]
   } else {
@@ -47,27 +40,20 @@ impl Validatable for ConstSchema with validate(
 ///|
 pub struct EnumSchema {
   values : Array[Json]
-} derive(Eq, FromJson, ToJson)
+} derive(Debug, Eq, FromJson, ToJson)
 
 ///|
-pub impl Show for EnumSchema with output(self, logger) {
-  logger.write_string("{values: ")
-  self.values.output(logger)
-  logger.write_string("}")
-}
-
-///|
-impl JsonSchemaSerializable for EnumSchema with to_json_schema(self) {
+impl JsonSchemaSerializable for EnumSchema with fn to_json_schema(self) {
   { "enum": self.values.to_json() }
 }
 
 ///|
-impl JsonSchemaSerializable for EnumSchema with parse(_json) {
+impl JsonSchemaSerializable for EnumSchema with fn parse(_json) {
   ...
 }
 
 ///|
-impl Validatable for EnumSchema with validate(
+impl Validatable for EnumSchema with fn validate(
   self,
   value,
   resolver~,
@@ -81,7 +67,7 @@ impl Validatable for EnumSchema with validate(
         value,
         json_path,
         schema_path,
-        "\{value} is not in \{self.values}",
+        "\{@debug.to_string(value)} is not in \{@debug.to_string(self.values)}",
       ),
     ]
   } else {

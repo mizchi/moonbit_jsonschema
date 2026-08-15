@@ -6,6 +6,7 @@ struct IntegerSchema {
   exclusive_maximum : Int?
   // multipleOf : Double?
 } derive (
+  Debug,
   Eq,
   ToJson(
     fields(
@@ -24,25 +25,12 @@ struct IntegerSchema {
 )
 
 ///|
-impl Show for IntegerSchema with output(self, logger) {
-  logger.write_string("{minimum: ")
-  self.minimum.output(logger)
-  logger.write_string(", maximum: ")
-  self.maximum.output(logger)
-  logger.write_string(", exclusive_minimum: ")
-  self.exclusive_minimum.output(logger)
-  logger.write_string(", exclusive_maximum: ")
-  self.exclusive_maximum.output(logger)
-  logger.write_string("}")
-}
-
-///|
-impl JsonSchemaSerializable for IntegerSchema with to_json_schema(self) {
+impl JsonSchemaSerializable for IntegerSchema with fn to_json_schema(self) {
   with_type_property(self.to_json(), "integer")
 }
 
 ///|
-impl JsonSchemaSerializable for IntegerSchema with parse(json) {
+impl JsonSchemaSerializable for IntegerSchema with fn parse(json) {
   try {
     let v : IntegerSchema = @json.from_json(json)
     v |> JsonSchema::Integer |> Ok
@@ -53,7 +41,7 @@ impl JsonSchemaSerializable for IntegerSchema with parse(json) {
 }
 
 ///|
-impl Validatable for IntegerSchema with validate(
+impl Validatable for IntegerSchema with fn validate(
   self,
   value,
   resolver~,

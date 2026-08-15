@@ -1,6 +1,2 @@
-.DS_Store
-target/
-.mooncakes/
-.moonagent/
-examples/*.mooncakes
-_scratch.mbt
+/_build/
+/target

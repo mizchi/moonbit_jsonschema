@@ -6,6 +6,7 @@ pub struct NumberSchema {
   exclusive_maximum : Double?
   // multipleOf : Double?
 } derive (
+  Debug,
   Eq,
   ToJson(
     fields(
@@ -24,25 +25,12 @@ pub struct NumberSchema {
 )
 
 ///|
-pub impl Show for NumberSchema with output(self, logger) {
-  logger.write_string("{minimum: ")
-  self.minimum.output(logger)
-  logger.write_string(", maximum: ")
-  self.maximum.output(logger)
-  logger.write_string(", exclusive_minimum: ")
-  self.exclusive_minimum.output(logger)
-  logger.write_string(", exclusive_maximum: ")
-  self.exclusive_maximum.output(logger)
-  logger.write_string("}")
-}
-
-///|
-impl JsonSchemaSerializable for NumberSchema with to_json_schema(self) {
+impl JsonSchemaSerializable for NumberSchema with fn to_json_schema(self) {
   with_type_property(self.to_json(), "number")
 }
 
 ///|
-impl JsonSchemaSerializable for NumberSchema with parse(json) {
+impl JsonSchemaSerializable for NumberSchema with fn parse(json) {
   try {
     let v : NumberSchema = @json.from_json(json)
     v |> JsonSchema::Number |> Ok
@@ -53,7 +41,7 @@ impl JsonSchemaSerializable for NumberSchema with parse(json) {
 }
 
 ///|
-impl Validatable for NumberSchema with validate(
+impl Validatable for NumberSchema with fn validate(
   self,
   value,
   resolver~,

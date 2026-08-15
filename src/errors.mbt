@@ -13,22 +13,7 @@ pub struct ValidationError {
   schema_path : JsonPointer
   message : String
   children : Array[ValidationError]?
-} derive(Eq)
-
-///|
-pub impl Show for ValidationError with output(self, logger) {
-  logger.write_string("{input: ")
-  self.input.output(logger)
-  logger.write_string(", json_path: ")
-  self.json_path.output(logger)
-  logger.write_string(", schema_path: ")
-  self.schema_path.output(logger)
-  logger.write_string(", message: ")
-  self.message.output(logger)
-  logger.write_string(", children: ")
-  self.children.output(logger)
-  logger.write_string("}")
-}
+} derive(Debug, Eq)
 
 ///|
 pub fn ValidationError::new(

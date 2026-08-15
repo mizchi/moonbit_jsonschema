@@ -2,13 +2,13 @@
 
 ///|
 priv trait JsonSchemaSerializable {
-  parse(Json) -> Result[JsonSchema, String]
-  to_json_schema(Self) -> Json
+  fn parse(Json) -> Result[JsonSchema, String]
+  fn to_json_schema(Self) -> Json
 }
 
 ///|
 pub trait Validatable {
-  validate(
+  fn validate(
     Self,
     Json,
     resolver~ : Resolver,
@@ -36,83 +36,7 @@ pub enum JsonSchema {
   Const(ConstSchema)
   // Not(JsonSchema)
   // If(Schema, Schema?, Schema?) // if, then, else
-} derive(Eq)
-
-///|
-pub impl Show for JsonSchema with output(self, logger) {
-  match self {
-    Any(s) => {
-      logger.write_string("Any(")
-      s.output(logger)
-      logger.write_string(")")
-    }
-    Null(s) => {
-      logger.write_string("Null(")
-      s.output(logger)
-      logger.write_string(")")
-    }
-    Boolean(s) => {
-      logger.write_string("Boolean(")
-      s.output(logger)
-      logger.write_string(")")
-    }
-    String(s) => {
-      logger.write_string("String(")
-      s.output(logger)
-      logger.write_string(")")
-    }
-    Number(s) => {
-      logger.write_string("Number(")
-      s.output(logger)
-      logger.write_string(")")
-    }
-    Integer(s) => {
-      logger.write_string("Integer(")
-      s.output(logger)
-      logger.write_string(")")
-    }
-    Array(s) => {
-      logger.write_string("Array(")
-      s.output(logger)
-      logger.write_string(")")
-    }
-    Object(s) => {
-      logger.write_string("Object(")
-      s.output(logger)
-      logger.write_string(")")
-    }
-    AnyOf(s) => {
-      logger.write_string("AnyOf(")
-      s.output(logger)
-      logger.write_string(")")
-    }
-    AllOf(s) => {
-      logger.write_string("AllOf(")
-      s.output(logger)
-      logger.write_string(")")
-    }
-    OneOf(s) => {
-      logger.write_string("OneOf(")
-      s.output(logger)
-      logger.write_string(")")
-    }
-    Ref(s) => {
-      logger.write_string("Ref(")
-      s.output(logger)
-      logger.write_string(")")
-    }
-    Enum(s) => {
-      logger.write_string("Enum(")
-      s.output(logger)
-      logger.write_string(")")
-    }
-    Const(s) => {
-      logger.write_string("Const(")
-      s.output(logger)
-      logger.write_string(")")
-    }
-  }
-}
+} derive(Debug, Eq)
 
 ///|
 /// TODO: Remove this helper function if possible
@@ -126,7 +50,7 @@ fn with_type_property(json : Json, type_name : String) -> Json {
 }
 
 ///|
-pub impl ToJson for JsonSchema with to_json(self) -> Json {
+pub impl ToJson for JsonSchema with fn to_json(self) -> Json {
   match self {
     Any(s) => s.to_json_schema()
     Null(s) => s.to_json_schema()
@@ -147,7 +71,7 @@ pub impl ToJson for JsonSchema with to_json(self) -> Json {
 }
 
 ///|
-pub impl Validatable for JsonSchema with validate(
+pub impl Validatable for JsonSchema with fn validate(
   self,
   value,
   resolver~,
@@ -177,7 +101,7 @@ pub impl Validatable for JsonSchema with validate(
 }
 
 ///|
-pub impl @json.FromJson for JsonSchema with from_json(
+pub impl @json.FromJson for JsonSchema with fn from_json(
   json : Json,
   json_path : @json.JsonPath,
 ) -> JsonSchema raise {
@@ -230,20 +154,15 @@ pub impl @json.FromJson for JsonSchema with from_json(
 ///| Primitive types
 
 ///|
-pub struct AnySchema {} derive(Eq, FromJson, ToJson)
+pub struct AnySchema {} derive(Debug, Eq, FromJson, ToJson)
 
 ///|
-pub impl Show for AnySchema with output(_self, logger) {
-  logger.write_string("{}")
-}
-
-///|
-impl JsonSchemaSerializable for AnySchema with to_json_schema(_self) {
+impl JsonSchemaSerializable for AnySchema with fn to_json_schema(_self) {
   { "type": "any" }
 }
 
 ///|
-impl JsonSchemaSerializable for AnySchema with parse(json) {
+impl JsonSchemaSerializable for AnySchema with fn parse(json) {
   if !(json is { "type": "any", .. }) {
     return Err("Expected an object for AnySchema".to_string())
   }
@@ -256,7 +175,7 @@ impl JsonSchemaSerializable for AnySchema with parse(json) {
 }
 
 ///|
-impl Validatable for AnySchema with validate(
+impl Validatable for AnySchema with fn validate(
   _self,
   _value,
   resolver~,
@@ -268,20 +187,15 @@ impl Validatable for AnySchema with validate(
 }
 
 ///|
-pub struct NullSchema {} derive(Eq, FromJson, ToJson)
+pub struct NullSchema {} derive(Debug, Eq, FromJson, ToJson)
 
 ///|
-pub impl Show for NullSchema with output(_self, logger) {
-  logger.write_string("{}")
-}
-
-///|
-impl JsonSchemaSerializable for NullSchema with to_json_schema(_self) {
+impl JsonSchemaSerializable for NullSchema with fn to_json_schema(_self) {
   with_type_property({}, "null")
 }
 
 ///|
-impl JsonSchemaSerializable for NullSchema with parse(json) {
+impl JsonSchemaSerializable for NullSchema with fn parse(json) {
   if !(json is { "type": "null", .. }) {
     return Err("Expected an object for NullSchema".to_string())
   }
@@ -294,7 +208,7 @@ impl JsonSchemaSerializable for NullSchema with parse(json) {
 }
 
 ///|
-impl Validatable for NullSchema with validate(
+impl Validatable for NullSchema with fn validate(
   _self,
   value,
   resolver~,
@@ -311,20 +225,15 @@ impl Validatable for NullSchema with validate(
 }
 
 ///|
-pub struct BooleanSchema {} derive(Eq, FromJson, ToJson)
+pub struct BooleanSchema {} derive(Debug, Eq, FromJson, ToJson)
 
 ///|
-pub impl Show for BooleanSchema with output(_self, logger) {
-  logger.write_string("{}")
-}
-
-///|
-impl JsonSchemaSerializable for BooleanSchema with to_json_schema(_self) {
+impl JsonSchemaSerializable for BooleanSchema with fn to_json_schema(_self) {
   with_type_property({}, "boolean")
 }
 
 ///|
-impl JsonSchemaSerializable for BooleanSchema with parse(json) {
+impl JsonSchemaSerializable for BooleanSchema with fn parse(json) {
   if !(json is { "type": "boolean", .. }) {
     return Err("Expected an object for NullSchema".to_string())
   }
@@ -337,7 +246,7 @@ impl JsonSchemaSerializable for BooleanSchema with parse(json) {
 }
 
 ///|
-impl Validatable for BooleanSchema with validate(
+impl Validatable for BooleanSchema with fn validate(
   _self,
   value,
   resolver~,

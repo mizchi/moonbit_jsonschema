@@ -4,31 +4,20 @@ pub struct OneOfSchema {
   schemas : Array[JsonSchema]
   parsed_nullable : JsonSchema?
   parsed_enumerable : Array[Enumerable]?
-} derive(Eq)
+} derive(Debug, Eq)
 
 ///|
-pub impl Show for OneOfSchema with output(self, logger) {
-  logger.write_string("{schemas: ")
-  self.schemas.output(logger)
-  logger.write_string(", parsed_nullable: ")
-  self.parsed_nullable.output(logger)
-  logger.write_string(", parsed_enumerable: ")
-  self.parsed_enumerable.output(logger)
-  logger.write_string("}")
-}
-
-///|
-impl JsonSchemaSerializable for OneOfSchema with to_json_schema(self) {
+impl JsonSchemaSerializable for OneOfSchema with fn to_json_schema(self) {
   { "oneOf": self.schemas.map(fn(s) { s.to_json() }) }
 }
 
 ///|
-impl JsonSchemaSerializable for OneOfSchema with parse(_json) {
+impl JsonSchemaSerializable for OneOfSchema with fn parse(_json) {
   ...
 }
 
 ///|
-impl Validatable for OneOfSchema with validate(
+impl Validatable for OneOfSchema with fn validate(
   self,
   value,
   resolver~,
@@ -73,18 +62,7 @@ pub(all) struct Enumerable {
   positionals : Array[JsonSchema]?
   // named parameters
   params : Map[String, JsonSchema]?
-} derive(Eq)
-
-///|
-pub impl Show for Enumerable with output(self, logger) {
-  logger.write_string("{tag: ")
-  self.tag.output(logger)
-  logger.write_string(", positionals: ")
-  self.positionals.output(logger)
-  logger.write_string(", params: ")
-  self.params.output(logger)
-  logger.write_string("}")
-}
+} derive(Debug, Eq)
 
 ///|
 pub fn Enumerable::new(
@@ -121,19 +99,19 @@ pub fn Enumerable::parse_enumerable(schema : OneOfSchema) -> Array[Enumerable]? 
           ..,
         }
       ) => {
-        let matched = match child_schemas.to_array() {
+        let matched = match child_schemas.to_owned() {
           [] => { tag: tag_value, positionals: None, params: None }
           // [.. positionals, Object(properties=Some(params), ..)] =>
           [.. positionals, Object(v)] =>
             {
               tag: tag_value,
-              positionals: positionals.to_array() |> Some,
+              positionals: positionals.to_owned() |> Some,
               params: v.properties,
             }
           [.. positionals] =>
             {
               tag: tag_value,
-              positionals: positionals.to_array() |> Some,
+              positionals: positionals.to_owned() |> Some,
               params: None,
             }
         }
@@ -189,10 +167,62 @@ test "parse enumerable" {
   guard Enumerable::parse_enumerable(schema) is Some(enum_values) else {
     raise fail("Failed to parse enumerable")
   }
-  inspect(
+  debug_inspect(
     enum_values,
     content=(
-      #|[{tag: "Single", positionals: None, params: None}, {tag: "A", positionals: Some([Integer({minimum: None, maximum: None, exclusive_minimum: None, exclusive_maximum: None}), String({min_length: None, max_length: None, enum_: None})]), params: None}, {tag: "B", positionals: Some([Number({minimum: None, maximum: None, exclusive_minimum: None, exclusive_maximum: None})]), params: None}, {tag: "C", positionals: Some([Integer({minimum: None, maximum: None, exclusive_minimum: None, exclusive_maximum: None})]), params: None}]
+      #|[
+      #|  { tag: "Single", positionals: None, params: None },
+      #|  {
+      #|    tag: "A",
+      #|    positionals: Some(
+      #|      [
+      #|        Integer(
+      #|          {
+      #|            minimum: None,
+      #|            maximum: None,
+      #|            exclusive_minimum: None,
+      #|            exclusive_maximum: None,
+      #|          },
+      #|        ),
+      #|        String({ min_length: None, max_length: None, enum_: None }),
+      #|      ],
+      #|    ),
+      #|    params: None,
+      #|  },
+      #|  {
+      #|    tag: "B",
+      #|    positionals: Some(
+      #|      [
+      #|        Number(
+      #|          {
+      #|            minimum: None,
+      #|            maximum: None,
+      #|            exclusive_minimum: None,
+      #|            exclusive_maximum: None,
+      #|          },
+      #|        ),
+      #|      ],
+      #|    ),
+      #|    params: None,
+      #|  },
+      #|  {
+      #|    tag: "C",
+      #|    positionals: Some(
+      #|      [
+      #|        Integer(
+      #|          {
+      #|            minimum: None,
+      #|            maximum: None,
+      #|            exclusive_minimum: None,
+      #|            exclusive_maximum: None,
+      #|          },
+      #|        ),
+      #|      ],
+      #|    ),
+      #|    params: None,
+      #|  },
+      #|]
+
     ),
   )
 }

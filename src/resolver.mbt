@@ -10,7 +10,7 @@ pub struct Resolver {
 
 ///|
 pub fn Resolver::new(root_json : Json) -> Resolver raise ParseError {
-  let resolver_map : Map[JsonPointer, JsonSchema] = {}
+  let resolver_map : Map[JsonPointer, JsonSchema] = Map([])
   let using_refs = collect_refs(root_json)
   for ref_expr in using_refs {
     guard JsonPointer::from_string(ref_expr) is Ok(pointer) else {
@@ -51,7 +51,7 @@ pub fn Resolver::get_refs(self : Resolver) -> Array[JsonPointer] {
 ///|
 /// get $ref references in json
 pub fn collect_refs(json : Json) -> Set[String] {
-  let set : Set[String] = Set::new()
+  let set : Set[String] = Set([])
   match json {
     Object(obj) =>
       for key, value in obj {

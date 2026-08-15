@@ -4,6 +4,7 @@ pub struct ObjectSchema {
   required : Array[String]?
   additional_properties : JsonSchema?
 } derive (
+  Debug,
   Eq,
   FromJson(
     fields(
@@ -21,23 +22,12 @@ pub struct ObjectSchema {
 )
 
 ///|
-pub impl Show for ObjectSchema with output(self, logger) {
-  logger.write_string("{properties: ")
-  self.properties.output(logger)
-  logger.write_string(", required: ")
-  self.required.output(logger)
-  logger.write_string(", additional_properties: ")
-  self.additional_properties.output(logger)
-  logger.write_string("}")
-}
-
-///|
-impl JsonSchemaSerializable for ObjectSchema with to_json_schema(self) {
+impl JsonSchemaSerializable for ObjectSchema with fn to_json_schema(self) {
   with_type_property(self.to_json(), "object")
 }
 
 ///|
-impl JsonSchemaSerializable for ObjectSchema with parse(json) {
+impl JsonSchemaSerializable for ObjectSchema with fn parse(json) {
   try {
     let v : ObjectSchema = @json.from_json(json)
     v |> JsonSchema::Object |> Ok
@@ -47,7 +37,7 @@ impl JsonSchemaSerializable for ObjectSchema with parse(json) {
 }
 
 ///|
-impl Validatable for ObjectSchema with validate(
+impl Validatable for ObjectSchema with fn validate(
   self,
   value,
   resolver~,
@@ -60,7 +50,7 @@ impl Validatable for ObjectSchema with validate(
         value,
         json_path,
         schema_path,
-        "\{value} is not an object",
+        "\{@debug.to_string(value)} is not an object",
       ),
     ]
   }
@@ -84,11 +74,11 @@ impl Validatable for ObjectSchema with validate(
   // TODO: {type: string}
   let required_keys = match self.required {
     Some(keys) => Set::from_array(keys)
-    None => Set::new()
+    None => Set([])
   }
   let props_keys = match self.properties {
     Some(props) => props.keys() |> Set::from_iter
-    None => Set::new()
+    None => Set([])
   }
   let additional_props = obj
     .keys()
@@ -114,7 +104,7 @@ impl Validatable for ObjectSchema with validate(
           value,
           json_path.key(key),
           schema_path.key("additionalProperties"),
-          "Additional property '\{additional_props}' is not allowed",
+          "Additional property '\{@debug.to_string(additional_props)}' is not allowed",
         ),
       )
     }

@@ -1,27 +1,20 @@
 ///|
 pub struct AnyOfSchema {
   schemas : Array[JsonSchema]
-} derive(Eq)
+} derive(Debug, Eq)
 
 ///|
-pub impl Show for AnyOfSchema with output(self, logger) {
-  logger.write_string("{schemas: ")
-  self.schemas.output(logger)
-  logger.write_string("}")
-}
-
-///|
-impl JsonSchemaSerializable for AnyOfSchema with to_json_schema(self) {
+impl JsonSchemaSerializable for AnyOfSchema with fn to_json_schema(self) {
   { "anyOf": self.schemas.map(fn(s) { s.to_json() }) }
 }
 
 ///|
-impl JsonSchemaSerializable for AnyOfSchema with parse(_json) {
+impl JsonSchemaSerializable for AnyOfSchema with fn parse(_json) {
   ...
 }
 
 ///|
-impl Validatable for AnyOfSchema with validate(
+impl Validatable for AnyOfSchema with fn validate(
   self,
   value,
   resolver~,

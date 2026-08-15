@@ -24,9 +24,9 @@ fn generate_typescript(
           JsonSchema::Object(sub_constraints) =>
             match sub_constraints.required {
               Some(req) => req |> Set::from_array
-              None => Set::new()
+              None => Set([])
             }
-          _ => Set::new()
+          _ => Set([])
         }
         let child_prefix = "  ".repeat(depth + 1)
         for key, subschema in properties {
@@ -95,16 +95,11 @@ test "ts code generation" {
   )
   let jschema : JsonSchema = @json.from_json(schema)
   let code = generate_typescript(jschema)
-  inspect(
+  debug_inspect(
     code,
     content=(
-      #|export type Root = {
-      #|  name: string
-      #|  age: number
-      #|  items?: Array<string>
-      #|  opt_str?: string | null
-      #|  opt_number?: number | null
-      #|};
+      #|"export type Root = {\n  name: string\n  age: number\n  items?: Array<string>\n  opt_str?: string | null\n  opt_number?: number | null\n};"
+
     ),
   )
 }
@@ -130,15 +125,11 @@ test "ts code generation nested" {
   )
   let jschema : JsonSchema = @json.from_json(schema)
   let code = generate_typescript(jschema)
-  inspect(
+  debug_inspect(
     code,
     content=(
-      #|export type Root = {
-      #|  nested: {
-      #|    v1?: number
-      #|    v2?: number
-      #|  };
-      #|};
+      #|"export type Root = {\n  nested: {\n    v1?: number\n    v2?: number\n  };\n};"
+
     ),
   )
 }

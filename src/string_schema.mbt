@@ -4,6 +4,7 @@ pub struct StringSchema {
   max_length : Int?
   enum_ : Array[String]?
 } derive (
+  Debug,
   Eq,
   FromJson(
     fields(
@@ -22,23 +23,12 @@ pub struct StringSchema {
 )
 
 ///|
-pub impl Show for StringSchema with output(self, logger) {
-  logger.write_string("{min_length: ")
-  self.min_length.output(logger)
-  logger.write_string(", max_length: ")
-  self.max_length.output(logger)
-  logger.write_string(", enum_: ")
-  self.enum_.output(logger)
-  logger.write_string("}")
-}
-
-///|
-impl JsonSchemaSerializable for StringSchema with to_json_schema(self) {
+impl JsonSchemaSerializable for StringSchema with fn to_json_schema(self) {
   with_type_property(self.to_json(), "string")
 }
 
 ///|
-impl JsonSchemaSerializable for StringSchema with parse(json) {
+impl JsonSchemaSerializable for StringSchema with fn parse(json) {
   try {
     let v : StringSchema = @json.from_json(json)
     v |> JsonSchema::String |> Ok
@@ -49,7 +39,7 @@ impl JsonSchemaSerializable for StringSchema with parse(json) {
 }
 
 ///|
-impl Validatable for StringSchema with validate(
+impl Validatable for StringSchema with fn validate(
   self,
   input,
   resolver~,
@@ -92,7 +82,7 @@ impl Validatable for StringSchema with validate(
         input.to_json(),
         json_path,
         schema_path.key("enum"),
-        "\{input} is not in \{enum_values}",
+        "\{@debug.to_string(input)} is not in \{@debug.to_string(enum_values)}",
       ),
     ]
   }
